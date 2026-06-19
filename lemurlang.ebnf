@@ -1,0 +1,236 @@
+/* === Lexical Tokens === */
+
+<letter> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j"
+           | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t"
+           | "u" | "v" | "w" | "x" | "y" | "z"
+           | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"
+           | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T"
+           | "U" | "V" | "W" | "X" | "Y" | "Z"
+           | "_"
+
+<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+<letter-or-digit> ::= <letter> | <digit>
+
+<printable-char> ::= " "  | "!"  | "\"" | "#"  | "$"  | "%"  | "&"
+                   | "("  | ")"  | "*"  | "+"  | ","  | "-"  | "."  | "/"
+                   | "0"  | "1"  | "2"  | "3"  | "4"  | "5"  | "6"  | "7" | "8" | "9"
+                   | ":"  | ";"  | "<"  | "="  | ">"  | "?"  | "@"
+                   | "A"  | "B"  | "C"  | "D"  | "E"  | "F"  | "G"  | "H" | "I" | "J"
+                   | "K"  | "L"  | "M"  | "N"  | "O"  | "P"  | "Q"  | "R" | "S" | "T"
+                   | "U"  | "V"  | "W"  | "X"  | "Y"  | "Z"
+                   | "["  | "]"  | "^"  | "_"  | "`"
+                   | "a"  | "b"  | "c"  | "d"  | "e"  | "f"  | "g"  | "h" | "i" | "j"
+                   | "k"  | "l"  | "m"  | "n"  | "o"  | "p"  | "q"  | "r" | "s" | "t"
+                   | "u"  | "v"  | "w"  | "x"  | "y"  | "z"
+                   | "{"  | "|"  | "}"  | "~"
+
+<escape-sequence> ::= "\\" <escape-char>
+
+<escape-char> ::= "n"   (* newline *)
+                | "r"   (* carriage return *)
+                | "t"   (* tab *)
+                | "\\"  (* backslash *)
+                | "'"   (* single quote *)
+                | "\""  (* double quote *)
+
+<character> ::= <printable-char> | <escape-sequence>
+
+/* === Identifiers === */
+
+<identifier> ::= <letter> <identifier-tail>
+
+<identifier-tail> ::= <letter-or-digit> <identifier-tail> | ε
+
+/* === Literals === */
+
+<literal> ::= <int-literal> | <float-literal> | <bool-literal> | <string-literal> | <char-literal> | <temporary-array>
+
+<int-literal> ::= <digit>+
+
+<float-literal> ::= <digit>+ "." <digit>+
+
+<bool-literal> ::= "true" | "false"
+
+<string-literal> ::= '"' <character>* '"'
+
+<char-literal> ::= "'" <character> "'"
+
+<temporary-array> ::= "[" <literal-array> "]"
+
+<int-literal-array> ::= <int-literal> ("," <int-literal>)* | ε
+
+<float-literal-array> ::= <float-literal> ("," <float-literal>)* | ε 
+
+<bool-literal-array> ::= <bool-literal> ("," <bool-literal>)* | ε 
+
+<string-literal-array> ::= <string-literal> ("," <string-literal>)* | ε 
+
+<char-literal-array> ::= <char-literal> ("," <char-literal>)* | ε 
+
+<literal-array> ::= <int-literal-array> | <float-literal-array> | <bool-literal-array> | <string-literal-array> | <char-literal-array>
+
+/* === Ownership Modifiers === */
+
+<ownership-modifier> ::= "own" | "share" | "view" | "mut" | "weak"
+
+/* === Types === */
+
+<type> ::= "int" | "float" | "bool" | "char" | "string" | <custom-type> | "infer" | <function-type>
+
+<type-wrapped> ::= [<ownership-modifier>] <type>
+
+<custom-type> ::= <identifier> [ <initializer-list> ]
+
+<function-type> ::= "fn" "(" <type-list> ")" ":" <type-wrapped>
+
+<type-list> ::= <type-wrapped> ("," <type-wrapped>)* | ε
+
+<initializer-list> ::= "<" <initializer-items> ">"
+
+<initializer-items> ::= <initializer-item> ("," <initializer-item>)* | ε
+
+<initializer-item> ::= <type-wrapped> | <literal>
+
+/* === Expressions === */
+
+<expression> ::= <logical-or-expr> || <assignment>
+
+<logical-or-expr> ::= <logical-and-expr>
+                    | <logical-or-expr> "||" <logical-and-expr>
+
+<logical-and-expr> ::= <equality-expr>
+                     | <logical-and-expr> "&&" <equality-expr>
+
+<equality-expr> ::= <relational-expr>
+                  | <equality-expr> ("==" | "!=") <relational-expr>
+
+<relational-expr> ::= <additive-expr>
+                    | <relational-expr> ("<" | ">" | "<=" | ">=") <additive-expr>
+
+<additive-expr> ::= <multiplicative-expr>
+                  | <additive-expr> ("+" | "-") <multiplicative-expr>
+
+<multiplicative-expr> ::= <unary-expr>
+                        | <multiplicative-expr> ("*" | "/" | "%") <unary-expr>
+
+<unary-expr> ::= <primary-expr>
+               | ("-" | "!") <unary-expr>
+
+/* === Primary Expression Forms === */
+
+<primary-expr> ::= <literal>
+                 | <identifier>
+                 | <call-expr>
+                 | <access-expr>
+                 | <function-expr>
+                 | "(" <expression> ")"
+
+<access-expr> ::= <primary-expr> { <access-tail> }
+
+<access-tail> ::= ("." | "->") <identifier> [<call-suffix>]
+                | "[" <expression> "]"
+
+<call-suffix> ::= "(" <argument-list> ")"
+
+<call-expr> ::= <identifier> "(" <argument-list> ")"
+
+<argument-list> ::= <expression> ("," <expression> )* | ε
+
+<function-expr> ::= "(" <parameter-list> ")" ":" <type-wrapped> ">>" <block>
+
+/* === Statements === */
+
+<statement> ::= <var-decl>
+              | <expression-stmt>
+              | <if-stmt>
+              | <for-loop>
+              | <return-stmt>
+              | <break-stmt>
+              | <continue-stmt>
+              | <block>
+              | <function-decl>
+
+<var-decl> ::= <identifier> ":" <type-wrapped> [ "=" <expression> ] ";"
+
+<expression-stmt> ::= <expression> ";"
+
+<assignment> ::= <identifier> "=" <expression>
+
+<return-stmt> ::= "return" [ <expression> ] ";"
+
+<continue-stmt> ::= "continue" ";"
+
+<break-stmt> ::= "break" ";"
+
+/* === Control Flow === */
+
+<if-stmt> ::= "if" "(" <expression> ")" <block> [ <else-stmt> ]
+
+<else-stmt> ::= "else" <block> | "else" <if-stmt>
+
+/* === Blocks === */
+
+<block> ::= "{" <statement>* "}"
+
+/* === Function Declarations === */
+
+<function-decl> ::= "fn" <identifier> "(" [<parameter-list>] ")" ":" <type-wrapped> <block>
+
+<parameter-list> ::= <parameter> ("," <parameter>)* | ε
+
+<parameter> ::= <identifier> ":" <type-wrapped>
+
+/* === For Loops === */
+
+<for-loop> ::= "for" <identifier> ":" <type-wrapped> "in" <iterator> [<step-expr>] [<where-expr>] <block>
+
+<step-expr> ::= "step" <expression>
+
+<where-expr> ::= "where" <expression>
+
+<range-expr> ::= <expression> ("to" | "until") <expression>
+
+<iterator> ::= <range-expr>
+             | <custom-type>
+             | <temporary-array>
+
+/* === Interface Declaration === */
+
+<interface-decl> ::= "interface" <identifier> [<interfaces>] <interface-body>
+
+<interfaces> ::= "extends <identifier> ("," <identifier)*
+
+<interface-body> ::= "{" (<interface-method>)* "}"
+
+<interface-method> ::= <identifier> "(" <parameter-list> ")" ":" <type-wrapped> ";"
+
+/* === Class Declaration === */
+
+<class-decl> ::= [<class-modifier>] "class" <identifier> [<class-inheritance>] [<class-interfaces>] <class-body>
+
+<class-inheritance> ::= "extends" <identifier>
+
+<class-interfaces> ::= "with" <identifier> ("," <identifier>)*
+
+<visibility-modifier> ::= "private" | "public" | "protected"
+
+<class-modifier> ::= "abstract" | "final"
+
+<method-modifiers> ::= <single-modifier>* | ε
+
+<single-modifier> ::= "static" | "virtual" | "override" | "final" | "abstract"
+
+<class-method> ::= <visibility-modifier> [<method-modifiers>] <identifier> "(" <parameter-list> ")" ":" <type-wrapped> (<block> | ";")
+
+<class-property> ::= <visibility-modifier> <identifier> ":" <type-wrapped> [ "=" <expression> ] ";"
+
+<class-member> ::= <class-property> | <class-method>
+
+<class-body> ::= "{" (<class-member>)* "}"
+
+<import-statement> ::= "import" <import-specifier> ";"
+
+<import-specifier> ::= "{" <identifier> ( "," <identifier> )* "}" <identifier> | "from" <identifier>
+
+<module-declaration> ::= "module" <identifier> ";"
