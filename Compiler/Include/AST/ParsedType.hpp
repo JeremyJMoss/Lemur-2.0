@@ -8,8 +8,9 @@
 #include "Utils/OwnershipKind.hpp"
 
 // Generic Type References
-enum class Type
+enum class ParsedTypeKind
 {
+    Named,
     Function,
     Ownership,
     Generic,
@@ -18,90 +19,69 @@ enum class Type
 };
 
 struct ParsedType : ASTNode {
-    Type kind;
-    std::unique_ptr<Identifier> identifier;  // for Identifier
-    OwnershipKind ownership = OwnershipKind::None; // for Ownership
-    std::unique_ptr<ParsedType> inner; // ownership or array inner type
-    std::vector<std::unique_ptr<ParsedType>> typeArgs; // generic parameters
-    std::unique_ptr<Expression> arraySize; // for fixed-size array
+    ParsedTypeKind kind;
+
+    virtual ~ParsedType() = default;
+    ParsedType( ParsedTypeKind kind ) : kind( kind ) {}
 
     ASTNodeType type() const override { return ASTNodeType::ParsedType; }
-
-    static std::unique_ptr<ParsedType> makeIdentifier( std::unique_ptr<Identifier>&& id ) 
-    {
-        auto t = std::make_unique<ParsedType>();
-        t->kind = Type::Generic; // or Identifier if you add a separate kind
-        t->identifier = std::move(id);
-        return t;
-    }
-
-    // Function type
-    static std::unique_ptr<ParsedType> makeFunction(
-        std::vector<std::unique_ptr<ParsedType>>&& params, std::unique_ptr<ParsedType>&& returnType
-    )
-    {
-        auto t = std::make_unique<ParsedType>();
-        t->kind = Type::Function;
-        t->typeArgs = std::move(params); // reuse typeArgs for parameters
-        t->inner = std::move(returnType); // store return type in inner
-        return t;
-    }
-
-    // Ownership wrapper
-    static std::unique_ptr<ParsedType> makeOwnership( 
-        OwnershipKind kind, std::unique_ptr<ParsedType>&& inner 
-    ) 
-    {
-        auto t = std::make_unique<ParsedType>();
-        t->kind = Type::Ownership;
-        t->ownership = kind;
-        t->inner = std::move(inner);
-        return t;
-    }
-
-    // Array type
-    static std::unique_ptr<ParsedType> makeArray( 
-        std::unique_ptr<ParsedType>&& inner, std::unique_ptr<Expression>&& size 
-    ) 
-    {
-        auto t = std::make_unique<ParsedType>();
-        t->kind = Type::Array;
-        t->inner = std::move(inner);
-        t->arraySize = std::move(size);
-        return t;
-    }
-
-    // Generic type
-    static std::unique_ptr<ParsedType> makeGeneric( 
-        std::unique_ptr<Identifier>&& id, 
-        std::vector<std::unique_ptr<ParsedType>>&& args 
-    ) 
-    {
-        auto t = std::make_unique<ParsedType>();
-        t->kind = Type::Generic;
-        t->identifier = std::move(id);
-        t->typeArgs = std::move(args);
-        return t;
-    }
-
-    // Inferred type
-    static std::unique_ptr<ParsedType> makeInferred() 
-    {
-        auto t = std::make_unique<ParsedType>();
-        t->kind = Type::Inferred;
-        return t;
-    }
 };
 
-inline const std::string toString( const Type& type ) 
+struct ParsedInferredType: ParsedType {
+    ParsedInferredType() : ParsedType( ParsedTypeKind::Inferred ) {}
+};
+
+struct ParsedNamedType : ParsedType {
+    std::unique_ptr<Identifier> identifier;
+
+    ParsedNamedType( std::unique_ptr<Identifier>&& identifier )
+        : ParsedType( ParsedTypeKind::Named ), identifier( std::move(identifier) ) {}
+};
+
+struct ParsedFunctionType : ParsedType {
+    std::vector<std::unique_ptr<ParsedType>> parameters;
+    std::unique_ptr<ParsedType> returnType;
+
+    ParsedFunctionType( std::vector<std::unique_ptr<ParsedType>>&& parameters, std::unique_ptr<ParsedType>&& returnType )
+        : ParsedType( ParsedTypeKind::Function ), parameters( std::move( parameters ) ), returnType( std::move( returnType ) ) {}
+};
+
+struct ParsedArrayType : ParsedType {
+    std::unique_ptr<ParsedType> elementType;
+    std::unique_ptr<Expression> size;
+
+    ParsedArrayType( std::unique_ptr<ParsedType>&& elementType, std::unique_ptr<Expression> size )
+        : ParsedType( ParsedTypeKind::Array ), elementType( std::move( elementType ) ), size( std::move( size ) ) {}
+};
+
+struct ParsedGenericType : ParsedType
+{
+    std::unique_ptr<Identifier> identifier;
+    std::vector<std::unique_ptr<ParsedType>> arguments;
+
+    ParsedGenericType( std::unique_ptr<Identifier>&& identifier, std::vector<std::unique_ptr<ParsedType>>&& arguments )
+        : ParsedType( ParsedTypeKind::Generic ), identifier( std::move( identifier ) ), arguments( std::move( arguments ) ) {}
+};
+
+struct ParsedOwnershipType : ParsedType
+{
+    OwnershipKind ownership;
+    std::unique_ptr<ParsedType> inner;
+
+    ParsedOwnershipType( OwnershipKind ownership, std::unique_ptr<ParsedType>&& inner )
+        : ParsedType( ParsedTypeKind::Ownership ), ownership( ownership ), inner( std::move( inner ) ) {}
+};
+
+inline const std::string toString( const ParsedTypeKind& type ) 
 {
     switch ( type ) 
     {
-        case Type::Function:   return "Function";
-        case Type::Ownership:  return "Ownership";
-        case Type::Inferred:   return "Inferred";
-        case Type::Generic:    return "Generic";
-        case Type::Array:      return "Array";
+        case ParsedTypeKind::Function:   return "Function";
+        case ParsedTypeKind::Ownership:  return "Ownership";
+        case ParsedTypeKind::Inferred:   return "Inferred";
+        case ParsedTypeKind::Generic:    return "Generic";
+        case ParsedTypeKind::Array:      return "Array";
+        case ParsedTypeKind::Named:      return "Named";
         default:               return "Unknown";
     }
 };

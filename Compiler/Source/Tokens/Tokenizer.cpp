@@ -32,7 +32,7 @@ void Tokenizer::resetState()
 std::vector<Token> Tokenizer::tokenizeFile( const std::string& filePath ) 
 {
     resetState();
-    size_t fileId = m_srcManager.addFile(filePath);
+    std::size_t fileId = m_srcManager.addFile(filePath);
     
     std::ifstream fileStream( filePath );
     if ( !fileStream.is_open() ) 
@@ -48,14 +48,14 @@ std::vector<Token> Tokenizer::tokenizeFile( const std::string& filePath )
     return tokenizeStream( fileStream, fileId );
 }
 
-std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, size_t fileId, bool onlyHeader ) 
+std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, std::size_t fileId, bool onlyHeader ) 
 {
     std::string line;
     m_tokens.clear();
     m_lineNum = 0;
-    size_t pos;
-    size_t maxTokens = 20;
-    size_t headerTokens = 0;
+    std::size_t pos;
+    std::size_t maxTokens = 20;
+    std::size_t headerTokens = 0;
     clearPartialToken();
 
     while ( true ) 
@@ -210,14 +210,14 @@ std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, size_t fileI
 }
 
 
-void Tokenizer::checkIssueWithOutput( size_t fileId ) 
+void Tokenizer::checkIssueWithOutput( std::size_t fileId ) 
 {
     if ( !m_inToken ) return;
 
-    size_t startLine = m_partialToken.getLocation().start.line;
+    std::size_t startLine = m_partialToken.getLocation().start.line;
 
     std::string lineStr = m_srcManager.getLine( fileId, startLine );
-    size_t endColumn = lineStr.size();
+    std::size_t endColumn = lineStr.size();
     
     SourceRange errorLocation = {
         m_partialToken.getLocation().start,
@@ -248,7 +248,7 @@ void Tokenizer::checkIssueWithOutput( size_t fileId )
     );
 }
 
-void Tokenizer::setPartialToken( TokenKind type, const std::string& value, size_t start_line, size_t start_pos ) 
+void Tokenizer::setPartialToken( TokenKind type, const std::string& value, std::size_t start_line, std::size_t start_pos ) 
 {
     m_inToken = true;
     m_partialToken.setType( type );
@@ -258,7 +258,7 @@ void Tokenizer::setPartialToken( TokenKind type, const std::string& value, size_
     );
 }
 
-void Tokenizer::appendPartialToken( const std::string& amendment, size_t line, size_t pos ) 
+void Tokenizer::appendPartialToken( const std::string& amendment, std::size_t line, std::size_t pos ) 
 {
     m_partialToken.addToValue( amendment );
     m_partialToken.setLocationEnd(
@@ -272,7 +272,7 @@ void Tokenizer::clearPartialToken()
     m_partialToken.clear();
 }
 
-bool Tokenizer::matchRegex( const std::string& input, size_t pos, std::smatch& match, const std::regex& tokenPattern ) 
+bool Tokenizer::matchRegex( const std::string& input, std::size_t pos, std::smatch& match, const std::regex& tokenPattern ) 
 {
     return std::regex_search( input.begin() + pos, input.end(), match, tokenPattern ) && match.position() == 0;
 }

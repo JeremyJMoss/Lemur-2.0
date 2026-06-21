@@ -5,12 +5,7 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "Types/TypeInfo.hpp"
 #include "Utils/SourceLocation.hpp"
-
-/* === Forward Declarations === */
-
-struct Symbol;
 
 /* === Enums === */
 
@@ -40,28 +35,26 @@ enum class ASTNodeType
 
 /* === Base AST Node === */
 
+using NodeId = std::size_t;
+
 struct ASTNode 
 {
+    static inline NodeId nextId = 0;
+
+    NodeId id;
     SourceRange location;
     virtual ~ASTNode() = default;
     virtual ASTNodeType type() const = 0;
+    ASTNode(): id(nextId++) {}
 };
 
 /* === Derived AST Nodes === */
 
-struct Expression : ASTNode {
-    std::shared_ptr<TypeInfo> resolvedType;
-
-    bool isLValue = false; // Is this assignable
-
-    bool isAssignable() { return isLValue; }
-};
+struct Expression : ASTNode {};
 
 struct Statement : ASTNode {};
 
-struct Declaration : Statement {
-    std::shared_ptr<Symbol> boundSymbol;
-};
+struct Declaration : Statement {};
 
 /* === AST === */
 

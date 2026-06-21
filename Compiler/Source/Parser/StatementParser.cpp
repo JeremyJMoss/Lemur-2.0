@@ -49,9 +49,9 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
         })
     );
 
-    std::unique_ptr<ParsedType> returnType;
+    std::unique_ptr<ParsedNamedType> returnType;
 
-    returnType = ParsedType::makeIdentifier( std::make_unique<Identifier>( "void" ) );
+    returnType = std::make_unique<ParsedNamedType>( std::make_unique<Identifier>( "void" ) );
 
     auto maybeEndReturn = m_utils.peekBack();
     if ( !maybeEndReturn ) return std::unexpected( maybeEndReturn.error() );
@@ -234,7 +234,7 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
             })
         );
 
-        varType = ParsedType::makeInferred();
+        varType = std::make_unique<ParsedInferredType>();
         m_errReporter.report(
             CompilerError(
                 ErrorSeverity::Warning,
@@ -255,7 +255,7 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         Logger::trace(
             "Parsed variable type", 
             std::to_array<Attribute>({ 
-                { "Type", "'" + varType->identifier->name + "'" } 
+                { "Type", "'" + toString( varType->kind ) + "'" } 
             })
         );
     }

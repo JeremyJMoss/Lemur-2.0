@@ -5,7 +5,6 @@
 #include <memory>
 #include "AST/ASTNode.hpp"
 #include "AST/ParsedType.hpp"
-#include "Types/TypeInfo.hpp"
 #include "AST/Identifier.hpp"
 
 /* === VariableDeclaration === */

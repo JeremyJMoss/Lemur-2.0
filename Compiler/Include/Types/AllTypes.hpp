@@ -2,35 +2,35 @@
 
 /* === Imports === */
 
-#include "Types/TypeInfo.hpp"
-#include "Types/PrimitiveTypeInfo.hpp"
-#include "Types/FunctionTypeInfo.hpp"
-#include "Types/OwnershipTypeInfo.hpp"
-#include "Types/CustomTypeInfo.hpp"
-#include "Types/InferredTypeInfo.hpp"
-#include "Types/NullTypeInfo.hpp"
-#include "Types/UnresolvedTypeInfo.hpp"
+#include "Types/Type.hpp"
+#include "Types/PrimitiveType.hpp"
+#include "Types/FunctionType.hpp"
+#include "Types/OwnershipType.hpp"
+#include "Types/CustomType.hpp"
+#include "Types/InferredType.hpp"
+#include "Types/NullType.hpp"
+#include "Types/UnresolvedType.hpp"
 #include <string>
 #include <sstream>
 
 /* === Utility === */
 
-inline const std::string toString( const TypeInfo& typeInfo ) 
+inline const std::string toString( const Type& type ) 
 {
-    switch ( typeInfo.kind )
+    switch ( type.kind )
     {
         case TypeKind::Primitive: 
         {
-            const auto* prim = dynamic_cast<const PrimitiveTypeInfo*>( &typeInfo );
+            const auto* prim = dynamic_cast<const PrimitiveType*>( &type );
             return prim->name;
         }
 
         case TypeKind::Function: 
         {
-            const auto* func = dynamic_cast<const FunctionTypeInfo*>( &typeInfo );
+            const auto* func = dynamic_cast<const FunctionType*>( &type );
             std::ostringstream oss;
             oss << "fn(";
-            for ( size_t i = 0; i < func->paramTypes.size(); ++i ) 
+            for ( std::size_t i = 0; i < func->paramTypes.size(); ++i ) 
             {
                 if (i > 0) oss << ", ";
                 oss << toString( *func->paramTypes[i] );
@@ -41,7 +41,7 @@ inline const std::string toString( const TypeInfo& typeInfo )
 
         case TypeKind::Ownership: 
         {
-            const auto* owner = dynamic_cast<const OwnershipTypeInfo*>( &typeInfo );
+            const auto* owner = dynamic_cast<const OwnershipType*>( &type );
             std::ostringstream oss;
             oss << toString( owner->ownership ) << " {";
             oss << toString( *owner->inner ) << "}";
@@ -50,7 +50,7 @@ inline const std::string toString( const TypeInfo& typeInfo )
 
         case TypeKind::Custom: 
         {
-            const auto* custom = dynamic_cast<const CustomTypeInfo*>( &typeInfo );
+            const auto* custom = dynamic_cast<const CustomType*>( &type );
             return custom->name;
         }
 
@@ -71,7 +71,7 @@ inline const std::string toString( const TypeInfo& typeInfo )
 
         default:
         {
-            return "<unknown type>";
+            return "unknown type";
         }
     }
 }

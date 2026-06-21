@@ -17,7 +17,7 @@ class Output
 {
     public:
         // User-friendly messages
-        static void success( const std::string& msg, size_t indent = 0 ) 
+        static void success( const std::string& msg, std::size_t indent = 0 ) 
         {
             auto indentation = std::string( indent * 4, ' ' );
             if ( !s_quiet ) 
@@ -26,7 +26,7 @@ class Output
             }
         }
         
-        static void info( const std::string& msg, size_t indent = 0 ) 
+        static void info( const std::string& msg, std::size_t indent = 0 ) 
         {
             auto indentation = std::string( indent * 4, ' ' );
             if ( !s_quiet )

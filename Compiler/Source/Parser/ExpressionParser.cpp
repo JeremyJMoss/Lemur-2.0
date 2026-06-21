@@ -32,7 +32,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
         
         if ( !current.checkTypeMatches( TokenKind::Symbol ) ) break;
 
-        size_t nextPrecedence = m_utils.getPrecedence( current.getSymbol() );
+        std::size_t nextPrecedence = m_utils.getPrecedence( current.getSymbol() );
 
         if ( nextPrecedence <= m_precedence ) break;
 
@@ -120,7 +120,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
         // Peek ahead for function expression pattern
         // We need to look for the pattern '):' after parameters
 
-        size_t pos = m_utils.getCurrentPosition();
+        std::size_t pos = m_utils.getCurrentPosition();
         int parenthesisCount = 0;
         bool isFunction = false;
 

@@ -5,8 +5,8 @@
 
 struct SourceLocation 
 {
-    size_t line;
-    size_t column;
+    std::size_t line;
+    std::size_t column;
     std::string toString() const { 
         return std::to_string( line ) + ":" + std::to_string( column + 1 ); 
     }
@@ -16,7 +16,7 @@ struct SourceRange
 {
     SourceLocation start;
     SourceLocation end;
-    size_t fileId;
+    std::size_t fileId;
 
     std::string toString() const { 
         // If start and end are the same line/column, just show one position

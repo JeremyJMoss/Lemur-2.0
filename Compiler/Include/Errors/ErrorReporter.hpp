@@ -108,10 +108,10 @@ class ErrorReporter
 
         bool hasErrors() const;
 
-        size_t getErrCount() const { return m_errCount; }
+        std::size_t getErrCount() const { return m_errCount; }
     private:
         SourceManager& m_srcManager;
         std::vector<CompilerError> m_compilerErrors;
         std::vector<RuntimeError> m_runtimeErrors;
-        size_t m_errCount = 0;
+        std::size_t m_errCount = 0;
 };

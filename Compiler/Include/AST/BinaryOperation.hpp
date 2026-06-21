@@ -4,7 +4,6 @@
 
 #include <string>
 #include <memory>
-#include "Types/TypeInfo.hpp"
 #include "AST/ASTNode.hpp"
 
 /* === Enums === */

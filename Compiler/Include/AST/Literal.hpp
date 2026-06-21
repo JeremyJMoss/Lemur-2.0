@@ -6,7 +6,6 @@
 #include <variant>
 #include <regex>
 #include "AST/ASTNode.hpp"
-#include "Types/TypeInfo.hpp"
 
 /* === Constants === */
 

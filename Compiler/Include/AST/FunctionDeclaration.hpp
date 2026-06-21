@@ -6,7 +6,6 @@
 #include <vector>
 #include "AST/ASTNode.hpp"
 #include "AST/ParsedType.hpp"
-#include "Types/FunctionTypeInfo.hpp"
 #include "AST/Parameter.hpp"
 #include "AST/Identifier.hpp"
 #include "AST/Block.hpp"

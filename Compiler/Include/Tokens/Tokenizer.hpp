@@ -3,6 +3,7 @@
 #include <string>
 #include <regex>
 #include <unordered_set>
+#include <unordered_map>
 #include <fstream>
 #include <sstream>
 #include "Tokens/Token.hpp"
@@ -15,7 +16,7 @@ class Tokenizer
     public:
         Tokenizer( SourceManager& sm, ErrorReporter& errReporter ) : m_srcManager( sm ), m_errReporter( errReporter ) {}
         std::vector<Token> tokenizeFile( const std::string& filePath );
-        void checkIssueWithOutput( size_t fileId );
+        void checkIssueWithOutput( std::size_t fileId );
 
     private:
         static const std::regex s_WHITESPACE;
@@ -87,12 +88,12 @@ class Tokenizer
         ErrorReporter& m_errReporter;
         std::vector<Token> m_tokens;
         bool m_inToken = false;
-        size_t m_lineNum = 0;
-        void setPartialToken( TokenKind type, const std::string& value, size_t start_line, size_t start_pos );
-        void appendPartialToken( const std::string& amendment, size_t line, size_t pos );
+        std::size_t m_lineNum = 0;
+        void setPartialToken( TokenKind type, const std::string& value, std::size_t start_line, std::size_t start_pos );
+        void appendPartialToken( const std::string& amendment, std::size_t line, std::size_t pos );
         void clearPartialToken();
         void resetState();
-        bool matchRegex( const std::string& input, size_t pos, std::smatch& match, const std::regex& tokenPattern );
+        bool matchRegex( const std::string& input, std::size_t pos, std::smatch& match, const std::regex& tokenPattern );
         TokenKind getTokenType( const std::string& value );
-        std::vector<Token> tokenizeStream( std::istream& stream, size_t fileId, bool onlyHeader = false );
+        std::vector<Token> tokenizeStream( std::istream& stream, std::size_t fileId, bool onlyHeader = false );
 };

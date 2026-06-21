@@ -42,7 +42,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         } 
         else if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::Assign ) )
         {
-            returnType = ParsedType::makeInferred();
+            returnType = std::make_unique<ParsedInferredType>();
 
             auto maybeEndToken = m_utils.peekBack();
             if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
@@ -61,7 +61,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
             );
         }
 
-        auto typeFunc = ParsedType::makeFunction( std::move( params ), std::move( returnType ) );
+        auto typeFunc = std::make_unique<ParsedFunctionType>( std::move( params ), std::move( returnType ) );
 
         auto maybeEndToken = m_utils.peekBack();
         if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
@@ -119,7 +119,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         auto maybeReferenceVal = parseType();
         if ( !maybeReferenceVal ) return std::unexpected( maybeReferenceVal.error() );
 
-        auto reference = ParsedType::makeOwnership( kind, std::move( maybeReferenceVal.value() ) );
+        auto reference = std::make_unique<ParsedOwnershipType>( kind, std::move( maybeReferenceVal.value() ) );
 
         auto maybeEndToken = m_utils.peekBack();
         if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
@@ -133,7 +133,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         auto maybeInfer = m_utils.expect( TokenKind::Keyword, TokenKeyword::Infer );
         if ( !maybeInfer ) return std::unexpected( maybeInfer.error() );
         
-        auto inferType = ParsedType::makeInferred();
+        auto inferType = std::make_unique<ParsedInferredType>();
 
         auto maybeEndToken = m_utils.peekBack();
         if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
@@ -182,13 +182,13 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseGeneri
 
     if ( !current.checkValueMatches( TokenSymbol::Less ) ) 
     {
-        return ParsedType::makeIdentifier( std::move( identifier ) );
+        return std::make_unique<ParsedNamedType>( std::move( identifier ) );
     }
 
     auto maybeCustomTypeArgs = parseGenericTypeArgs();
     if ( !maybeCustomTypeArgs ) return std::unexpected( maybeCustomTypeArgs.error() );
 
-    return ParsedType::makeGeneric( std::move( identifier ) , std::move( maybeCustomTypeArgs.value() ) );
+    return std::make_unique<ParsedGenericType>( std::move( identifier ) , std::move( maybeCustomTypeArgs.value() ) );
 }
 
 std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser::parseGenericTypeArgs() 

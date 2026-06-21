@@ -3,4 +3,4 @@ lemur
 test.lmur
 ast_output.json
 .vscode
-Compiler/Build
+Compiler/Build/*

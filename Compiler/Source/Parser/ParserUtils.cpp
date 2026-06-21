@@ -4,13 +4,13 @@
 /**
  * Attempts to check the next token in the token list
  * 
- * @param const size_t peekIndex How far ahead to look
+ * @param const std::size_t peekIndex How far ahead to look
  * @return std::expected<Token, ErrorVariant> Token in the position from the current position in the token list specified 
  * by peekIndex returns Error otherwise if could not retrieve token
  */
-std::expected<Token, ErrorVariant> ParserUtils::peek( const size_t peekIndex ) 
+std::expected<Token, ErrorVariant> ParserUtils::peek( const std::size_t peekIndex ) 
 {
-    size_t index = m_position + peekIndex - 1;
+    std::size_t index = m_position + peekIndex - 1;
 
     if ( index >= m_tokens.size() ) 
     {
@@ -62,11 +62,11 @@ std::expected<Token, ErrorVariant> ParserUtils::peek( const size_t peekIndex )
 /**
  * Attempts to check the most recently consumed token in the token list
  * 
- * @param const size_t reviewIndex How far behind to look
+ * @param const std::size_t reviewIndex How far behind to look
  * @return std::expected<Token, RuntimeError> in the position from the current position in the token list specified by the reviewIndex 
  * or Runtime Error if at first place in the list
  */
-std::expected<Token, RuntimeError> ParserUtils::peekBack( const size_t reviewIndex ) 
+std::expected<Token, RuntimeError> ParserUtils::peekBack( const std::size_t reviewIndex ) 
 {
     // Check if previous token is before token stream
     if ( (int) ( m_position - reviewIndex ) >= 0 ) return m_tokens.at( m_position - reviewIndex );
@@ -259,7 +259,7 @@ SourceRange ParserUtils::getLocation( const Token& token )
  */
 size_t ParserUtils::getPrecedence( TokenSymbol op ) 
 {
-    size_t prec = 0;
+    std::size_t prec = 0;
 
     if ( op == TokenSymbol::Or ) prec = 1;
     else if ( op == TokenSymbol::And ) prec = 2;

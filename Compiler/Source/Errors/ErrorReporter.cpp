@@ -7,27 +7,27 @@ void ErrorReporter::printErrorDiagnostic(
     const SourceRange& range
 ) const
 {
-    size_t startLine = range.start.line;
-    size_t endLine   = range.end.line;
-    size_t startCol  = range.start.column;
-    size_t endCol    = range.end.column;
+    std::size_t startLine = range.start.line;
+    std::size_t endLine   = range.end.line;
+    std::size_t startCol  = range.start.column;
+    std::size_t endCol    = range.end.column;
     const std::string& fileName = m_srcManager.getFileName( range.fileId );
     
-    std::vector<std::tuple<std::string, size_t>> lines;
+    std::vector<std::tuple<std::string, std::size_t>> lines;
 
-    for ( size_t i = startLine; i <= endLine; i++ ) 
+    for ( std::size_t i = startLine; i <= endLine; i++ ) 
     {
         lines.emplace_back( m_srcManager.getLine( range.fileId, i ), i );
     }
 
     std::string lineNumberWidth = std::to_string( endLine );
-    size_t width = lineNumberWidth.length();
+    std::size_t width = lineNumberWidth.length();
 
     std::cerr << toString( severity ) << ": " << fileName << " " << "at line " << startLine << ", column " << ( startCol + 1 ) << ": " << message << std::endl;
 
-    for ( const std::tuple<std::string, size_t>& line : lines ) 
+    for ( const std::tuple<std::string, std::size_t>& line : lines ) 
     {
-        size_t lineNo = std::get<1>(line);
+        std::size_t lineNo = std::get<1>(line);
         std::string lineNoStr = std::to_string(lineNo);
         std::string ind(width - lineNoStr.length(), ' ');
         std::string lineStr = std::get<0>(line);
@@ -64,21 +64,21 @@ void ErrorReporter::printErrorDiagnostic(
     CompilerError& compErr
 ) const
 {
-    size_t startLine = compErr.range.start.line;
-    size_t endLine   = compErr.range.end.line;
-    size_t startCol  = compErr.range.start.column;
-    size_t endCol    = compErr.range.end.column;
+    std::size_t startLine = compErr.range.start.line;
+    std::size_t endLine   = compErr.range.end.line;
+    std::size_t startCol  = compErr.range.start.column;
+    std::size_t endCol    = compErr.range.end.column;
     const std::string& fileName = m_srcManager.getFileName( compErr.range.fileId );
     
-    std::vector<std::tuple<std::string, size_t>> lines;
+    std::vector<std::tuple<std::string, std::size_t>> lines;
 
-    for ( size_t i = startLine; i <= endLine; i++ ) 
+    for ( std::size_t i = startLine; i <= endLine; i++ ) 
     {
         lines.emplace_back( m_srcManager.getLine( compErr.range.fileId, i ), i );
     }
 
     std::string lineNumberWidth = std::to_string( endLine );
-    size_t width = lineNumberWidth.length();
+    std::size_t width = lineNumberWidth.length();
 
     std::cerr << toString( compErr.category ) << " " << 
         toString( compErr.severity ) << ": " << 
@@ -86,9 +86,9 @@ void ErrorReporter::printErrorDiagnostic(
         ", column " << (startCol + 1) << ": " << 
         compErr.message << std::endl;
 
-    for ( const std::tuple<std::string, size_t>& line : lines ) 
+    for ( const std::tuple<std::string, std::size_t>& line : lines ) 
     {
-        size_t lineNo = std::get<1>( line );
+        std::size_t lineNo = std::get<1>( line );
         std::string lineNoStr = std::to_string( lineNo );
         std::string ind( width - lineNoStr.length(), ' ' );
         std::string lineStr = std::get<0>( line );

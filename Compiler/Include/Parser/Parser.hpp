@@ -7,7 +7,6 @@
 #include <memory>
 #include <iostream>
 #include <regex>
-#include <unordered_map>
 #include <algorithm>
 #include <expected>
 #include "Tokens/Token.hpp"
@@ -18,14 +17,18 @@
 #include "Parser/TypeParser.hpp"
 #include "Parser/ExpressionParser.hpp"
 #include "Parser/StatementParser.hpp"
+#include "Driver/CompilationUnit.hpp"
 
 /* === Parser === */
+
+using fileId = std::size_t;
 
 class Parser 
 {
     public:
-        Parser( ErrorReporter& errReporter ) 
+        Parser( ErrorReporter& errReporter, std::unordered_map<fileId, CompilationUnit>& compilationUnits )
             : m_errReporter( errReporter ),
+            m_compilationUnits( compilationUnits ),
             m_typeParser( m_utils ),
             m_paramParser( m_utils, m_typeParser ),
             m_stmtParser( *this, m_utils, m_errReporter, m_typeParser, m_paramParser ),
@@ -40,6 +43,7 @@ class Parser
 
     private:
         ErrorReporter& m_errReporter;
+        std::unordered_map<fileId, CompilationUnit>& m_compilationUnits;
         std::vector<std::unique_ptr<Statement>> m_statements;
         ParserUtils m_utils;
         TypeParser m_typeParser;

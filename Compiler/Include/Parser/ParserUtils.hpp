@@ -17,13 +17,13 @@ class Parser;
 class ParserUtils
 {
     public:
-        size_t getCurrentPosition() { return m_position; }
+        std::size_t getCurrentPosition() { return m_position; }
 
         const std::vector<Token>& getTokens() { return m_tokens; }
 
-        std::expected<Token, ErrorVariant> peek( const size_t peekIndex = 1 );
+        std::expected<Token, ErrorVariant> peek( const std::size_t peekIndex = 1 );
 
-        std::expected<Token, RuntimeError> peekBack( const size_t reviewIndex = 1 );
+        std::expected<Token, RuntimeError> peekBack( const std::size_t reviewIndex = 1 );
 
         std::expected<Token, ErrorVariant> consume( TokenKind expectedType );
 
@@ -36,7 +36,7 @@ class ParserUtils
 
         static SourceRange getLocation( const Token& token );
 
-        static size_t getPrecedence( TokenSymbol op );
+        static std::size_t getPrecedence( TokenSymbol op );
 
         void reset( std::vector<Token>&& inputTokens ) { 
             m_tokens = inputTokens;
@@ -44,7 +44,7 @@ class ParserUtils
         }
 
     private:
-        size_t m_position;
+        std::size_t m_position;
         std::vector<Token> m_tokens;
 
         bool isTerminatingToken( const Token& token ) const;

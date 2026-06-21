@@ -4,7 +4,6 @@
 
 #include <memory>
 #include "AST/ASTNode.hpp"
-#include "Types/TypeInfo.hpp"
 #include "AST/Identifier.hpp"
 
 /* === Assignment === */

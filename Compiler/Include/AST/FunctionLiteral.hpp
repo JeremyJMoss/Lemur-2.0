@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 #include "AST/ParsedType.hpp"
-#include "Types/FunctionTypeInfo.hpp"
 #include "AST/Parameter.hpp"
 #include "AST/Block.hpp"
 

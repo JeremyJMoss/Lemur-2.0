@@ -9,20 +9,29 @@ enum class TypeKind
     Ownership,
     Inferred,
     Custom,
-    Class,
-    Interface,
     Null, 
     Unresolved
 };
 
-struct TypeInfo 
+enum class TypeOrigin {
+    Builtin,
+    UserDefined
+};
+
+using typeId = std::size_t;
+
+struct Type
 {
+    static inline typeId nextId = 0;
+    typeId id;
     TypeKind kind;
-    bool isBuiltIn = false;
+    std::size_t size;
+    TypeOrigin origin;
 
-    TypeInfo( TypeKind kind ) : kind( kind ) {};
+    Type( TypeKind kind, TypeOrigin origin ) 
+        : id( nextId++ ), kind( kind ), origin( origin ) {};
 
-    virtual ~TypeInfo() = default;
+    virtual ~Type() = default;
 };
 
 inline const std::string toString( const TypeKind kind ) 
@@ -34,8 +43,6 @@ inline const std::string toString( const TypeKind kind )
         case TypeKind::Inferred:      return "Inferred";
         case TypeKind::Custom:        return "Custom";
         case TypeKind::Function:      return "Function";
-        case TypeKind::Class:         return "Class";
-        case TypeKind::Interface:     return "Interface";
         case TypeKind::Null:          return "Null";
         case TypeKind::Unresolved:    return "Unresolved";
         default:                      return "Unknown";

@@ -43,7 +43,7 @@ class ExpressionParser{
         TypeParser& m_typeParser;
         ParameterParser& m_paramParser;
         StatementParser* m_stmtParser = nullptr;
-        size_t m_precedence = 0;
+        std::size_t m_precedence = 0;
 
         std::expected<LiteralValue, ErrorVariant> getLiteralValue();
 

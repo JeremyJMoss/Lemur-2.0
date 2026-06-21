@@ -18,7 +18,7 @@ struct FileData
 class SourceManager 
 {
     public:
-        size_t addFile( const fs::path& filePath ) 
+        std::size_t addFile( const fs::path& filePath ) 
         {
             const auto pathStr = "'" + filePath.string() + "'";
 
@@ -71,7 +71,7 @@ class SourceManager
                 pathAttr
             );
 
-            size_t id = nextFileId++;
+            std::size_t id = nextFileId++;
             files.emplace( id, std::move( data ) );
             pathToId.emplace(filePath, id);
 
@@ -84,7 +84,7 @@ class SourceManager
             return id;
         }
 
-        std::string getLine( int fileId, size_t lineNumber ) 
+        std::string getLine( int fileId, std::size_t lineNumber ) 
         {
             auto it = files.find( fileId );
             if ( it == files.end() ) 
@@ -163,6 +163,6 @@ class SourceManager
 
     private:
         std::unordered_map<int, FileData> files;
-        std::unordered_map<fs::path, size_t> pathToId;
-        size_t nextFileId = 1;
+        std::unordered_map<fs::path, std::size_t> pathToId;
+        std::size_t nextFileId = 1;
 };
