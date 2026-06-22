@@ -62,7 +62,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
         left = std::make_unique<BinaryOperation>( std::move( left ), op, std::move( right ) );
 
-        left->location = {front.getLocation().start, right->location.end, front.getLocation().fileId };
+        left->location = {front.getLocation().start, left->location.end, front.getLocation().fileId };
     }
 
     return left;

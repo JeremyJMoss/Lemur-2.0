@@ -302,14 +302,9 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         std::move( initialiser ) 
     );
 
-    auto endToken = m_tokenStream.peek();
+    auto endLocation = initialiser != nullptr ? initialiser->location.end : varType->location.end;
 
-    if (endToken.checkTypeMatches( TokenKind::EndOfFile)) {
-        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, endToken.getType(), endToken.getLocation()));
-
-    }
-
-    decl->location = m_utils.getLocation( frontToken, endToken );
+    decl->location = {frontToken.getLocation().start, endLocation, frontToken.getLocation().fileId };
 
     Logger::debug(
         "Completed variable declaration", 
