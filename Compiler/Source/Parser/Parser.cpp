@@ -106,7 +106,7 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
         auto maybeDeclaration = m_stmtParser.parseVariableDeclaration( true );
         if ( !maybeDeclaration ) return std::unexpected( maybeDeclaration.error() );
 
-        auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
         return std::move( maybeDeclaration.value() );
@@ -118,7 +118,7 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
         auto maybeReturn = m_stmtParser.parseReturn();
         if ( !maybeReturn ) return std::unexpected( maybeReturn.error() );
 
-        auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
         return std::move( maybeReturn.value() );
@@ -205,13 +205,10 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseIdentifierS
 
         auto stmt = std::make_unique<ExpressionStatement>( std::move( maybeAssignment.value() ) );
 
-        auto maybeEndToken = m_utils.peekBack();
-        if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-        stmt->location = m_utils.getLocation( token, maybeEndToken.value() );
-
-        auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
+
+        stmt->location = m_utils.getLocation( token, maybeEndingNode.value() );
 
         return stmt;
     }
@@ -223,14 +220,11 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseIdentifierS
 
     // Otherwise it's just an expression statement (covers bare identifiers too)
     auto stmt = std::make_unique<ExpressionStatement>( std::move( maybeExpression.value() ) );
-    
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
 
-    stmt->location = m_utils.getLocation( token, maybeEndToken.value() );
-
-    auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+    auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
     if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
+
+    stmt->location = m_utils.getLocation( token, maybeEndingNode.value() );
 
     return stmt;
 }
@@ -242,14 +236,11 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseExpressionS
     if ( !maybeExpression ) return std::unexpected( maybeExpression.error() );
 
     auto stmt = std::make_unique<ExpressionStatement>( std::move( maybeExpression.value() ) );
-
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-    
-    stmt->location = m_utils.getLocation( token, maybeEndToken.value() );
-    
-    auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        
+    auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
     if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
+
+    stmt->location = m_utils.getLocation( token, maybeEndingNode.value() );
 
     return stmt;
 }

@@ -8,11 +8,13 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
         "Parsing function declaration"
     );
 
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
 
-    auto maybeFunctionKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::Fn );
+    if (front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected(UnexpectedEndOfInputError(front.getLocation()));
+    }
+
+    auto maybeFunctionKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Fn );
     if ( !maybeFunctionKeyword ) 
     {
         std::visit( [&] ( auto&& err ) 
@@ -22,10 +24,14 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
             maybeFunctionKeyword.error()
         );
     }
-    
-    auto maybeIdToken = m_utils.consume( TokenKind::Identifier );
-    if ( !maybeIdToken ) return std::unexpected( maybeIdToken.error() );
-    const Token& idToken = maybeIdToken.value();
+
+    auto peekedToken = m_tokenStream.peek();
+
+    if (!peekedToken.checkTypeMatches(TokenKind::Identifier)) {
+        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, peekedToken.getType(), peekedToken.getLocation()));
+    }
+
+    auto idToken = m_tokenStream.consume();
 
     Logger::trace(
         "Function name parsed", 
@@ -49,19 +55,16 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
         })
     );
 
-    std::unique_ptr<ParsedNamedType> returnType;
+    auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
+    if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
-    returnType = std::make_unique<ParsedNamedType>( std::make_unique<Identifier>( "void" ) );
-
-    auto maybeEndReturn = m_utils.peekBack();
-    if ( !maybeEndReturn ) return std::unexpected( maybeEndReturn.error() );
-
-    returnType->location = m_utils.getLocation( front, maybeEndReturn.value() );
+    auto maybeReturnType = m_typeParser.parseType();
+    if ( !maybeReturnType ) return std::unexpected( maybeReturnType.error() );
 
     Logger::trace(
         "Return type parsed", 
         std::to_array<Attribute>({
-            { "Type", "'" + returnType->identifier->name + "'" }
+            { "Type", "'" + toString( maybeReturnType.value()->kind ) + "'" }
         })
     );
 
@@ -75,18 +78,15 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
         "Function body parsed"
     );
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
     auto funDec = std::make_unique<FunctionDeclaration>(
         std::move( identifier ), 
-        std::move( returnType ), 
+        std::move( maybeReturnType.value() ), 
         std::move( parameters ), 
         std::move( block ),
         true
     );
 
-    funDec->location = m_utils.getLocation( front, maybeEndToken.value() );
+    funDec->location = { front.getLocation().start, block->location.end, front.getLocation().fileId};
 
     Logger::debug(
         "Function declaration parsed successfully",
@@ -100,9 +100,11 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
 
 std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock() 
 {
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
+
+    if (front.checkTypeMatches( TokenKind::EndOfFile )){
+        return std::unexpected(UnexpectedEndOfInputError(front.getLocation()));
+    }
 
     Logger::debug(
         "Parsing block", 
@@ -111,22 +113,24 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
         })
     );
 
-    auto maybeFrontBrace = m_utils.expect( TokenKind::Symbol, TokenSymbol::LBrace );
+    auto maybeFrontBrace = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LBrace );
     if ( !maybeFrontBrace ) return std::unexpected( maybeFrontBrace.error() );
 
     std::vector<std::unique_ptr<Statement>> body;
 
     Logger::trace( "Parsing statements inside block" );
 
+    auto current = m_tokenStream.peek();
+
     while ( true ) 
     {
-        auto maybeCurrentToken = m_utils.peek();
-        if ( !maybeCurrentToken ) return std::unexpected( maybeCurrentToken.error() );
-        const Token& current = maybeCurrentToken.value();
+        if (current.checkTypeMatches( TokenKind::EndOfFile ) ) {
+            return std::unexpected(UnexpectedEndOfInputError(current.getLocation()));
+        }
 
         if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::RBrace ) ) 
         {
-            auto maybeClosingBrace = m_utils.expect( TokenKind::Symbol, TokenSymbol::RBrace );
+            auto maybeClosingBrace = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RBrace );
             if ( !maybeClosingBrace ) return std::unexpected( maybeClosingBrace.error() );
 
             Logger::trace(
@@ -150,23 +154,26 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
             Logger::trace( "Recovering from error inside block" );
 
             m_utils.recoverFromError();
+
+            current = m_tokenStream.peek();
             continue;
         }
 
         body.emplace_back( std::move( maybeStatement.value() ) );
+
+        current = m_tokenStream.peek();
     }
+
+    size_t bodySize = body.size();
 
     auto block = std::make_unique<Block>( std::move( body ) );
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-    block->location = m_utils.getLocation( front, maybeEndToken.value() );
+    block->location = m_utils.getLocation( front, current );
 
     Logger::debug( 
         "Parsing statements inside block successful",
         std::to_array<Attribute>({
-            { "StatementCount", std::to_string( body.size() ) }
+            { "StatementCount", std::to_string( bodySize ) }
         })
     );
 
@@ -182,30 +189,36 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         })
     );
 
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto frontToken = m_tokenStream.peek();
+
+    if (frontToken.checkTypeMatches( TokenKind::EndOfFile)) {
+        return std::unexpected( UnexpectedEndOfInputError( frontToken.getLocation() ) );
+    }
 
     if ( locked ) 
     {
-        auto maybeLocked = m_utils.expect( TokenKind::Keyword, TokenKeyword::Lock );
+        auto maybeLocked = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Lock );
         if ( !maybeLocked )
         {
             // Report locked variable missing lock keyword
             m_errReporter.report(
                 CompilerError(
-                    ErrorSeverity::Warning,
                     "Locked variable missing lock keyword",
-                    front.getLocation(),
+                    ErrorSeverity::Warning,
+                    frontToken.getLocation(),
                     ErrorCategory::Syntax
                 )
             );
         }
     }
 
-    auto maybeIdentifier = m_utils.consume( TokenKind::Identifier );
-    if ( !maybeIdentifier ) return std::unexpected( maybeIdentifier.error() );
-    const Token& idToken = maybeIdentifier.value();
+    auto peekedToken = m_tokenStream.peek();
+
+    if (!peekedToken.checkTypeMatches(TokenKind::Identifier)) {
+        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, peekedToken.getType(), peekedToken.getLocation()));
+    }
+
+    auto idToken = m_tokenStream.consume();
 
     Logger::trace(
         "Consumed variable identifier", 
@@ -215,18 +228,15 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
     );
 
     auto identifier = std::make_unique<Identifier>( idToken.getValue() );
-    identifier->location = m_utils.getLocation( front, idToken );
+    identifier->location = m_utils.getLocation( frontToken, idToken );
 
-    auto maybeColon = m_utils.expect( TokenKind::Symbol, TokenSymbol::Colon );
+    auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
     std::unique_ptr<ParsedType> varType;
     auto maybeParsedType = m_typeParser.parseType();
     if ( !maybeParsedType )
     {
-        auto maybePrevToken = m_utils.peekBack();
-        if ( !maybePrevToken ) return std::unexpected( maybePrevToken.error() );
-
         Logger::debug(
             "Type parsing failed, using inferred type", 
             std::to_array<Attribute>({ 
@@ -237,13 +247,9 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         varType = std::make_unique<ParsedInferredType>();
         m_errReporter.report(
             CompilerError(
-                ErrorSeverity::Warning,
                 "Could not parse type. Converted to inferred type.",
-                {
-                    maybeColon.value().getLocation().end,
-                    maybePrevToken.value().getLocation().start,
-                    maybePrevToken.value().getLocation().fileId
-                },
+                ErrorSeverity::Warning,
+                maybeColon.value().getLocation(),
                 ErrorCategory::Syntax
             )
         );
@@ -260,9 +266,11 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         );
     }
 
-    auto maybeCurrent = m_utils.peek();
-    if ( !maybeCurrent ) return std::unexpected( maybeCurrent.error() );
-    const Token& current = maybeCurrent.value();
+    auto current = m_tokenStream.peek();
+
+    if (!current.checkTypeMatches(TokenKind::Identifier)) {
+        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, current.getType(), current.getLocation()));
+    }
 
     std::unique_ptr<Expression> initialiser;
 
@@ -294,10 +302,14 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         std::move( initialiser ) 
     );
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
+    auto endToken = m_tokenStream.peek();
 
-    decl->location = m_utils.getLocation( front, maybeEndToken.value() );
+    if (endToken.checkTypeMatches( TokenKind::EndOfFile)) {
+        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, endToken.getType(), endToken.getLocation()));
+
+    }
+
+    decl->location = m_utils.getLocation( frontToken, endToken );
 
     Logger::debug(
         "Completed variable declaration", 

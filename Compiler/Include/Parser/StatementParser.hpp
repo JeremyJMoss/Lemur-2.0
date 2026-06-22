@@ -7,6 +7,7 @@
 #include "AST/IfConditional.hpp"
 #include "AST/ForLoop.hpp"
 #include "AST/VariableDeclaration.hpp"
+#include "Tokens/TokenStream.hpp"
 
 /* === Forward Declarations === */
 
@@ -19,13 +20,14 @@ class StatementParser
 {
     public:
         StatementParser( 
-            Parser& parent, 
+            Parser& parent,
+            TokenStream& tStream,
             ParserUtils& utils, 
             ErrorReporter& errReporter,
             TypeParser& typeParser,
             ParameterParser& paramParser
         ) 
-        : m_parent( parent ), m_utils( utils ), 
+        : m_parent( parent ), m_tokenStream( tStream ), m_utils( utils ), 
         m_errReporter( errReporter ), m_typeParser( typeParser ), 
         m_paramParser( paramParser ) {}
 
@@ -45,6 +47,7 @@ class StatementParser
 
     private:
         Parser& m_parent;
+        TokenStream& m_tokenStream;
         ParserUtils& m_utils;
         ErrorReporter& m_errReporter;
         TypeParser& m_typeParser;

@@ -103,6 +103,43 @@ struct FatalCompilerError : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+struct UnexpectedEndOfInputError : CompilerError {
+    UnexpectedEndOfInputError(SourceRange location) 
+        : CompilerError(
+            "Unexpected end of input",
+            ErrorSeverity::Fatal,
+            location,
+            ErrorCategory::Syntax
+        ) {}
+};
+
+struct UnexpectedTypeError : CompilerError {
+    UnexpectedTypeError(TokenKind expectedType, TokenKind actualType, SourceRange location)
+        : CompilerError( 
+            "Expected '" + toString( expectedType ) + "' got " + toString( actualType ),
+            ErrorSeverity::Error,
+            location,
+            ErrorCategory::Syntax 
+        ) {}
+};
+
+struct UnexpectedValueError : CompilerError {
+    UnexpectedValueError( TokenSymbol expectedValue, TokenSymbol actualValue, SourceRange location)
+        : CompilerError(
+            "Expected '" + toString( expectedValue ) + "' got " + toString( actualValue ),
+            ErrorSeverity::Error,
+            location,
+            ErrorCategory::Syntax
+        ) {}
+    UnexpectedValueError( TokenKeyword expectedValue, TokenKeyword actualValue, SourceRange location)
+        : CompilerError(
+            "Expected '" + toString( expectedValue ) + "' got " + toString( actualValue ),
+            ErrorSeverity::Error,
+            location,
+            ErrorCategory::Syntax
+        ) {}
+};
+
 struct ErrorVariant : public std::variant<CompilerError, SemanticError, RuntimeError>
 {
     using Base = std::variant<CompilerError, SemanticError, RuntimeError>;

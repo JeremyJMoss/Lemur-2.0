@@ -30,10 +30,11 @@ class Parser
         Parser( ErrorReporter& errReporter, std::unordered_map<fileId, CompilationUnit>& compilationUnits )
             : m_errReporter( errReporter ),
             m_compilationUnits( compilationUnits ),
-            m_typeParser( m_utils ),
-            m_paramParser( m_utils, m_typeParser ),
-            m_stmtParser( *this, m_utils, m_errReporter, m_typeParser, m_paramParser ),
-            m_exprParser( m_utils, m_typeParser, m_paramParser ){
+            m_tokenStream(),
+            m_typeParser( m_tokenStream, m_utils ),
+            m_paramParser( m_tokenStream, m_utils, m_typeParser ),
+            m_stmtParser( *this, m_tokenStream, m_utils, m_errReporter, m_typeParser, m_paramParser ),
+            m_exprParser( m_tokenStream, m_utils, m_typeParser, m_paramParser ) {
                 m_stmtParser.setExpressionParser( &m_exprParser );
                 m_exprParser.setStatementParser( &m_stmtParser );
             }

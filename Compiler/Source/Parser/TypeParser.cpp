@@ -2,60 +2,60 @@
 
 std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType() 
 {
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto frontToken = m_tokenStream.peek();
+    if ( frontToken.checkTypeMatches( TokenKind::EndOfFile) ) {
+        return std::unexpected( UnexpectedEndOfInputError( frontToken.getLocation() ) );
+    }
+    
 
-    if ( front.checkMatches( TokenKind::Keyword, TokenKeyword::Fn ) ) {
-        auto maybeFunctionKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::Fn );
+    if ( frontToken.checkMatches( TokenKind::Keyword, TokenKeyword::Fn ) ) {
+        auto maybeFunctionKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Fn );
         if ( !maybeFunctionKeyword ) return std::unexpected( maybeFunctionKeyword.error() );
 
-        auto maybeCurrentToken = m_utils.peek();
-        if ( !maybeCurrentToken ) return std::unexpected( maybeCurrentToken.error() );
-        const Token& current = maybeCurrentToken.value();
+        auto currentToken = m_tokenStream.peek();
+        if ( currentToken.checkTypeMatches( TokenKind::EndOfFile ) ) {
+            return std::unexpected( UnexpectedEndOfInputError( currentToken.getLocation() ) );
+        }
 
         std::vector<std::unique_ptr<ParsedType>> params;
         std::unique_ptr<ParsedType> returnType;
 
-        if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) 
+        if ( currentToken.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) 
         {
             auto maybeParams = parseParameterTypes();
             if ( !maybeParams ) return std::unexpected( maybeParams.error() );
 
             params = std::move( maybeParams.value() );
 
-            auto maybeColon = m_utils.expect( TokenKind::Symbol, TokenSymbol::Colon );
+            auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
             if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
             auto maybeReturnType = parseType();
             if ( !maybeReturnType ) return std::unexpected( maybeReturnType.error() );
             returnType = std::move( maybeReturnType.value() );
         } 
-        else if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::Colon ) ) 
+        else if ( currentToken.checkMatches( TokenKind::Symbol, TokenSymbol::Colon ) ) 
         {
-            auto maybeColon = m_utils.expect( TokenKind::Symbol, TokenSymbol::Colon );
+            auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
             if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
             auto maybeReturnType = parseType();
             if ( !maybeReturnType ) return std::unexpected( maybeReturnType.error() );
             returnType = std::move( maybeReturnType.value() );
         } 
-        else if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::Assign ) )
+        else if ( currentToken.checkMatches( TokenKind::Symbol, TokenSymbol::Assign ) )
         {
             returnType = std::make_unique<ParsedInferredType>();
 
-            auto maybeEndToken = m_utils.peekBack();
-            if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-            returnType->location = m_utils.getLocation( current, maybeEndToken.value() );
+            returnType->location = currentToken.getLocation();
         } 
         else 
         {
             return std::unexpected( 
                 CompilerError(
+                    "Unexpected '" + currentToken.getValue() + "' in function type declaration", 
                     ErrorSeverity::Error,
-                    "Unexpected '" + current.getValue() + "' in function type declaration", 
-                    current.getLocation(),
+                    currentToken.getLocation(),
                     ErrorCategory::Syntax
                 )
             );
@@ -63,21 +63,21 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
 
         auto typeFunc = std::make_unique<ParsedFunctionType>( std::move( params ), std::move( returnType ) );
 
-        auto maybeEndToken = m_utils.peekBack();
-        if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-        typeFunc->location = m_utils.getLocation( front, maybeEndToken.value() );
+        typeFunc->location = { frontToken.getLocation().start, typeFunc->returnType->location.end, frontToken.getLocation().fileId };
         
         return typeFunc;
     } 
-    else if ( front.checkMatches( TokenKind::Keyword, std::vector<TokenKeyword> 
+    else if ( frontToken.checkMatches( TokenKind::Keyword, std::vector<TokenKeyword> 
         { TokenKeyword::View, TokenKeyword::Mut, TokenKeyword::Own, TokenKeyword::Share, TokenKeyword::Weak, TokenKeyword::Atomic } 
     ) ) 
     {
-        auto maybeOwnershipKeyword = m_utils.consume( TokenKind::Keyword );
-        if ( !maybeOwnershipKeyword ) return std::unexpected( maybeOwnershipKeyword.error() );
+        auto peekToken = m_tokenStream.peek();
 
-        const std::string& ownershipKeyword = maybeOwnershipKeyword.value().getValue();
+        if ( !peekToken.checkTypeMatches( TokenKind::Keyword )) {
+            return std::unexpected( UnexpectedTypeError(TokenKind::Keyword, peekToken.getType(), peekToken.getLocation() ));
+        }
+
+        auto ownershipKeyword = m_tokenStream.consume().getValue();
         
         OwnershipKind kind;
         
@@ -108,9 +108,10 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         else 
         {
             return std::unexpected( 
-                CompilerError( 
+                CompilerError(
+                    "Unexpected keyword " + frontToken.getValue(),
                     ErrorSeverity::Error,
-                    "Unexpected keyword " + front.getValue(), front.getLocation(), 
+                    frontToken.getLocation(),
                     ErrorCategory::Syntax 
                 )
             );
@@ -121,24 +122,18 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
 
         auto reference = std::make_unique<ParsedOwnershipType>( kind, std::move( maybeReferenceVal.value() ) );
 
-        auto maybeEndToken = m_utils.peekBack();
-        if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-        reference->location = m_utils.getLocation( front, maybeEndToken.value() );
+        reference->location = {frontToken.getLocation().start, reference->inner->location.end, frontToken.getLocation().fileId};
 
         return reference;
     } 
-    else if ( front.checkMatches( TokenKind::Keyword, TokenKeyword::Infer ) ) 
+    else if ( frontToken.checkMatches( TokenKind::Keyword, TokenKeyword::Infer ) ) 
     {
-        auto maybeInfer = m_utils.expect( TokenKind::Keyword, TokenKeyword::Infer );
+        auto maybeInfer = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Infer );
         if ( !maybeInfer ) return std::unexpected( maybeInfer.error() );
         
         auto inferType = std::make_unique<ParsedInferredType>();
 
-        auto maybeEndToken = m_utils.peekBack();
-        if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-        inferType->location = m_utils.getLocation( front, maybeEndToken.value() );
+        inferType->location = m_utils.getLocation( frontToken, maybeInfer.value() );
 
         return inferType;
     }
@@ -146,9 +141,9 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
     {
         return std::unexpected(
             CompilerError(
-                ErrorSeverity::Error,
                 "Parsed type invalid",
-                front.getLocation(),
+                ErrorSeverity::Error,
+                frontToken.getLocation(),
                 ErrorCategory::Syntax
             ) 
         );
@@ -157,20 +152,22 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
 
 std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser::parseParameterTypes() 
 {
-    auto maybeFrontParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::LParens );
+    auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
     std::vector<std::unique_ptr<ParsedType>> types;
 
     while( true ) 
     {
-        auto maybeCurrentToken = m_utils.peek();
-        if ( !maybeCurrentToken ) return std::unexpected( maybeCurrentToken.error() );
-        const Token& current = maybeCurrentToken.value();
+        auto current = m_tokenStream.peek();
+
+        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        }
 
         if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
         {
-            auto maybeClosingParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::RParens );
+            auto maybeClosingParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RParens );
             if ( !maybeClosingParens ) return std::unexpected( maybeClosingParens.error() );
             break;
         }
@@ -179,8 +176,8 @@ std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser
         {
             return std::unexpected( 
                 CompilerError(
-                    ErrorSeverity::Error,
                     "Unexpected '" + current.getValue() + "' in function type declaration parameter list.", 
+                    ErrorSeverity::Error,
                     current.getLocation(),
                     ErrorCategory::Syntax
                 )
@@ -192,9 +189,11 @@ std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser
 
         types.emplace_back( std::move( maybeParsedType.value() ) );
 
-        auto maybeNextToken = m_utils.peek();
-        if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
-        const Token& next = maybeNextToken.value();
+        auto next = m_tokenStream.peek();
+
+        if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        }
 
         if ( next.checkTypeMatches( TokenKind::Symbol ) ) 
         {
@@ -206,15 +205,15 @@ std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser
             {
                 return std::unexpected( 
                     CompilerError(
-                        ErrorSeverity::Error,
                         "Unexpected '" + next.getValue() + "' in function type declaration parameter list.", 
+                        ErrorSeverity::Error,
                         next.getLocation(),
                         ErrorCategory::Syntax
                     )
                 );
             } 
             
-            auto maybeComma = m_utils.expect( TokenKind::Symbol, TokenSymbol::Comma );
+            auto maybeComma = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Comma );
             if ( !maybeComma ) return std::unexpected( maybeComma.error() );
         }
     }

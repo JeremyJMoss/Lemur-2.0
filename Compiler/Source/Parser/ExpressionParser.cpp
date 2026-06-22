@@ -680,8 +680,8 @@ std::expected<std::unique_ptr<FunctionLiteral>, ErrorVariant> ExpressionParser::
 
         return std::unexpected(
             CompilerError(
-                ErrorSeverity::Error,
                 "Function Expressions must have function body",
+                ErrorSeverity::Error,
                 maybeIssueToken.value().getLocation(),
                 ErrorCategory::Syntax
             )

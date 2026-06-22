@@ -14,17 +14,19 @@
 #include "Parser/TypeParser.hpp"
 #include "Parser/ParameterParser.hpp"
 #include "Parser/StatementParser.hpp"
+#include "Tokens/TokenStream.hpp"
 
 class Parser;
 
 class ExpressionParser{
     public:
         ExpressionParser( 
-            ParserUtils& utils, 
+            TokenStream& tStream,
+            ParserUtils& utils,
             TypeParser& typeParser,
             ParameterParser& paramParser
         ) 
-        : m_utils( utils ), m_typeParser( typeParser ), m_paramParser( paramParser ) {}
+        : m_tokenStream( tStream ), m_utils( utils ), m_typeParser( typeParser ), m_paramParser( paramParser ) {}
 
         void setStatementParser( StatementParser* stmtParser ) { m_stmtParser = stmtParser; }
 
@@ -39,6 +41,7 @@ class ExpressionParser{
     private:
         static const std::regex s_RE_STRING_REPL;
 
+        TokenStream& m_tokenStream;
         ParserUtils& m_utils;
         TypeParser& m_typeParser;
         ParameterParser& m_paramParser;
