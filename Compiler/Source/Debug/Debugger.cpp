@@ -1,7 +1,5 @@
 #include <fstream>
 #include "Debug/Debugger.hpp"
-#include "Types/AllTypes.hpp"
-
 
 void Debugger::printASTTree( const std::vector<std::unique_ptr<Statement>>& statements ) const
 {
@@ -113,32 +111,6 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
             out << indentStr( indent + 1 ) << "\"ownership\": \"" << toString( ownershipType->ownership ) + "\"," << std::endl;
             out << indentStr( indent + 1 ) << "\"inner\": " << std::endl;
             printAST( ownershipType->inner.get(), out, indent + 2 );
-            endBlock( out, indent, hasTrailingComma );
-            break;
-        }
-
-        case ParsedTypeKind::Generic: 
-        {
-            auto genericType = static_cast<const ParsedGenericType*>( type );
-            startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << genericType->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"Named\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"identifier\":" << std::endl;
-            printAST( genericType->identifier.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"arguments\": [";
-            if ( !genericType->arguments.empty() ) 
-            {
-                out << std::endl;
-
-                for ( std::size_t i = 0; i < genericType->arguments.size(); ++i ) 
-                {
-                    printAST( genericType->arguments[i].get(), out, 
-                        indent + 2, i != genericType->arguments.size() - 1 );
-                }
-
-                out << indentStr( indent + 1 );
-            }
-            out << "]" << std::endl; 
             endBlock( out, indent, hasTrailingComma );
             break;
         }

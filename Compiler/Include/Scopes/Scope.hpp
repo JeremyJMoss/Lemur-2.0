@@ -1,7 +1,7 @@
 #include "Scopes/NameBinding.hpp"
 
 using ScopeId = size_t;
-constexpr ScopeId InvalidScope = static_cast<ScopeId>(-1);
+constexpr ScopeId InvalidScopeId = static_cast<ScopeId>(-1);
 
 enum class ScopeOwnerKind 
 {
@@ -17,7 +17,7 @@ struct Scope {
     ScopeOwnerKind m_kind;
 
     bool hasParent(const Scope& scope) {
-        return scope.m_parentId != InvalidScope;
+        return scope.m_parentId != InvalidScopeId;
     }
 
     Scope( ScopeId id, ScopeId parentId, ScopeOwnerKind kind )

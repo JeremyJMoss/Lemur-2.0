@@ -36,27 +36,42 @@ Lemur2/
 |   |   ├── Debug/
 |   |   |   └── Debugger.hpp
 │   │   ├── Driver/
+|   |   |   ├── CompilationUnit.hpp
 │   │   |   └── Driver.cpp
 |   |   ├── Errors/
 |   |   |   ├── ErrorReporter.hpp
 |   |   |   └── Errors.hpp
 |   |   ├── Parser/
-|   |   |   └── Parser.hpp
-│   │   ├── Tests/
+|   |   |   ├── ExpressionParser.hpp
+|   |   |   ├── ParameterParser.hpp
+|   |   |   ├── Parser.hpp
+|   |   |   ├── ParserUtils.hpp
+|   |   |   ├── StatementParser.hpp
+|   |   |   └── TypeParser.hpp
+|   |   ├── Scopes/
+|   |   |   ├── NameBinding.hpp
+|   |   |   ├── Scope.hpp
+|   |   |   └── ScopeTable.hpp
+|   |   ├── Symbols/
+|   |   |   ├── Symbol.hpp
+|   |   |   └── SymbolTable.hpp
 |   |   ├── Tokens/
 |   |   |   ├── Token.hpp
 |   |   |   └── Tokenizer.hpp
 |   |   ├── Types/
-|   |   |   ├── AllTypeInfo.hpp
-|   |   |   ├── CustomTypeInfo.hpp
-|   |   |   ├── FunctionTypeInfo.hpp
-|   |   |   ├── InferredTypeInfo.hpp
-|   |   |   ├── NullTypeInfo.hpp
-|   |   |   ├── OwnershipTypeInfo.hpp
-|   |   |   ├── PrimitiveTypeInfo.hpp
-|   |   |   └── TypeInfo.hpp
+|   |   |   ├── AllTypes.hpp
+|   |   |   ├── CustomType.hpp
+|   |   |   ├── FunctionType.hpp
+|   |   |   ├── InferredType.hpp
+|   |   |   ├── NullType.hpp
+|   |   |   ├── OwnershipType.hpp
+|   |   |   ├── PrimitiveType.hpp
+|   |   |   ├── Type.hpp
+|   |   |   ├── TypeTable.hpp
+|   |   |   └── UnresolvedType.hpp
 |   |   ├── Utils/
 |   |   |   ├── Logger.hpp
+|   |   |   ├── Output.hpp
 |   |   |   ├── OwnershipKind.hpp
 |   |   |   ├── SourceLocation.hpp
 |   |   |   └── SourceManager.hpp
@@ -72,13 +87,20 @@ Lemur2/
 │   │   ├── Errors/
 |   |   |   └── ErrorReporter.hpp
 │   │   ├── Parser/
-│   │   |   └── Parser.cpp
+│   │   |   ├── ExpressionParser.cpp
+│   │   |   ├── ParameterParser.cpp
+│   │   |   ├── Parser.cpp
+│   │   |   ├── ParserUtils.cpp
+│   │   |   ├── StatementParser.cpp
+│   │   |   └── TypeParser.cpp
+│   │   ├── Symbols/
+|   |   |   └── SymbolTable.cpp
 │   │   ├── Tokens/
 |   |   |   ├── Token.cpp
 |   |   |   └── Tokenizer.cpp
 |   |   ├── Utils/
-|   |   |   ├── ConfigurationParser.cpp
-|   |   |   └── Modifiers.cpp
+|   |   |   ├── Logger.cpp
+|   |   |   └── Output.cpp
 │   │   └── Run.cpp # Entry point
 │   ├── Tests/ # Test source code directory
 │   │   └── CMakeLists.txt

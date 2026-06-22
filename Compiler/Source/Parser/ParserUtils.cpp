@@ -8,9 +8,9 @@
  * @return std::expected<Token, ErrorVariant> Token in the position from the current position in the token list specified 
  * by peekIndex returns Error otherwise if could not retrieve token
  */
-std::expected<Token, ErrorVariant> ParserUtils::peek( const std::size_t peekIndex ) 
+std::expected<Token, ErrorVariant> ParserUtils::peek( const std::size_t peekIndex )
 {
-    std::size_t index = m_position + peekIndex - 1;
+    std::size_t index = m_position + peekIndex;
 
     if ( index >= m_tokens.size() ) 
     {
@@ -23,8 +23,8 @@ std::expected<Token, ErrorVariant> ParserUtils::peek( const std::size_t peekInde
 
         return std::unexpected(
             CompilerError(
-                ErrorSeverity::Error,
                 "Peek index out of bounds",
+                ErrorSeverity::Error,
                 {},
                 ErrorCategory::Internal
             )
@@ -32,28 +32,6 @@ std::expected<Token, ErrorVariant> ParserUtils::peek( const std::size_t peekInde
     }
 
     auto nextToken = m_tokens.at( index );
-
-    // Check if next token exists
-    if ( nextToken.checkTypeMatches( TokenKind::EndOfFile ) ) 
-    {
-        auto maybePrevToken = peekBack();
-        if ( !maybePrevToken ) 
-        {
-            Logger::trace( "Peek hit EOF with no previous token" );
-            return std::unexpected( maybePrevToken.error() );
-        }
-
-        auto prevToken = maybePrevToken.value();
-
-        return std::unexpected(
-            CompilerError(
-                ErrorSeverity::Error,
-                "Unexpected end of input",
-                prevToken.getLocation(), 
-                ErrorCategory::Syntax
-            )
-        );
-    }
 
     // Return next token in the list
     return nextToken;
@@ -69,7 +47,10 @@ std::expected<Token, ErrorVariant> ParserUtils::peek( const std::size_t peekInde
 std::expected<Token, RuntimeError> ParserUtils::peekBack( const std::size_t reviewIndex ) 
 {
     // Check if previous token is before token stream
-    if ( (int) ( m_position - reviewIndex ) >= 0 ) return m_tokens.at( m_position - reviewIndex );
+    if (reviewIndex <= m_position)
+    {
+        return m_tokens.at(m_position - reviewIndex);
+    }
 
     return std::unexpected( 
         RuntimeError( 
@@ -88,13 +69,13 @@ std::expected<Token, RuntimeError> ParserUtils::peekBack( const std::size_t revi
  * @throws std::runtime_error If reached end of input tokens
  * @throws ParseError If expected type does not match type of current token
  */
-std::expected<Token, ErrorVariant> ParserUtils::consume( TokenKind expectedType ) 
+Token& ParserUtils::consume( TokenKind expectedType ) 
 {
     auto maybeToken = peek();
 
     if ( !maybeToken ) 
     {
-        Logger::trace( "Consume failed. No token available (likely EOF)" );
+        Logger::trace( "Consume failed. No token available." );
         return std::unexpected( maybeToken.error() );
     }
 
@@ -170,14 +151,22 @@ void ParserUtils::recoverFromError()
         if ( !maybeToken ) 
         {
             Logger::trace( 
-                "Reached EOF", 
+                "Unexpected end of input", 
                 posAttr
             );
-            return; // EOF reached
+            return; // Error
         }
 
         const Token& token = maybeToken.value();
 
+        if ( token.checkTypeMatches(TokenKind::EndOfFile) )
+        {
+            Logger::trace( 
+                "Reached end of file", 
+                posAttr
+            );
+            return; // EOF reached
+        }
         if ( isFrontBrace( token ) ) 
         {
             braceDepth++;
@@ -259,14 +248,35 @@ SourceRange ParserUtils::getLocation( const Token& token )
  */
 size_t ParserUtils::getPrecedence( TokenSymbol op ) 
 {
-    std::size_t prec = 0;
+    size_t prec = 0;
 
-    if ( op == TokenSymbol::Or ) prec = 1;
-    else if ( op == TokenSymbol::And ) prec = 2;
-    else if ( op == TokenSymbol::Equals || op == TokenSymbol::NotEquals ) prec = 3;
-    else if ( op == TokenSymbol::Less || op == TokenSymbol::Greater || op == TokenSymbol::LessEquals || op == TokenSymbol::GreaterEquals ) prec = 4;
-    else if ( op == TokenSymbol::Plus || op == TokenSymbol::Minus ) prec = 5;
-    else if ( op == TokenSymbol::Star || op == TokenSymbol::Slash || op == TokenSymbol::Percent ) prec = 6;
+    switch (op){
+        case TokenSymbol::Or:
+            prec = 1;
+            break;
+        case TokenSymbol::And:
+            prec = 2;
+            break;
+        case TokenSymbol::Equals:
+        case TokenSymbol::NotEquals:
+            prec = 3;
+            break;
+        case TokenSymbol::Less:
+        case TokenSymbol::Greater:
+        case TokenSymbol::LessEquals:
+        case TokenSymbol::GreaterEquals:
+            prec = 4;
+            break;
+        case TokenSymbol::Plus:
+        case TokenSymbol::Minus:
+            prec = 5;
+            break;
+        case TokenSymbol::Star:
+        case TokenSymbol::Slash:
+        case TokenSymbol::Percent:
+            prec = 6;
+            break;
+    }
 
     Logger::trace( "Operator '" + toString( op ) + "' has precedence " + std::to_string( prec ) );
     return prec;

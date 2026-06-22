@@ -21,9 +21,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
     while ( true ) 
     {
-        auto maybeCurrentToken = m_utils.peek();
-        if ( !maybeCurrentToken ) return std::unexpected( maybeCurrentToken.error() );
-        const Token& current = maybeCurrentToken.value();
+        auto currentToken = m_utils.peek();
 
         if ( current.checkMatches( TokenKind::Keyword, std::vector<TokenKeyword> { TokenKeyword::To, TokenKeyword::Until } ) ) 
         {
@@ -36,23 +34,20 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
         if ( nextPrecedence <= m_precedence ) break;
 
-        auto maybeOperator = m_utils.consume( TokenKind::Symbol );
-        if ( !maybeOperator ) 
-        {
-            auto maybePrevToken = m_utils.peekBack();
-            if ( !maybePrevToken ) return std::unexpected( maybePrevToken.error() );
-
+        if (!m_utils.peek().checkTypeMatches(TokenKind::Symbol)){
             return std::unexpected( 
                 CompilerError(
-                    ErrorSeverity::Error,
                     "Missing binary operator in expression.",
-                    maybePrevToken.value().getLocation(),
+                    ErrorSeverity::Error,
+                    m_utils.peek().getLocation(),
                     ErrorCategory::Syntax
                 )
             );
         }
 
-        const std::string& op = maybeOperator.value().getValue();
+        auto operator = m_utils.consume( TokenKind::Symbol );
+
+        const std::string& op = operator.getValue();
         
         auto maybeRight = parseUnary();
         if ( !maybeRight ) return std::unexpected( maybeRight.error() );
@@ -195,7 +190,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
     if ( front.checkTypeMatches( TokenKind::Identifier ) ) 
     {
         
-        auto maybeNextToken = m_utils.peek( 2 );
+        auto maybeNextToken = m_utils.peek( 1 );
 
         if ( maybeNextToken )
         {
@@ -419,8 +414,8 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
     
     return std::unexpected( 
         CompilerError(
-            ErrorSeverity::Error,
             "Expected number, boolean, char or string literal, got '" + current.getValue() + "'", 
+            ErrorSeverity::Error,
             current.getLocation(),
             ErrorCategory::Syntax 
         )

@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 #include "AST/ParsedType.hpp"
-#include "Utils/SourceLocation.hpp"
+#include "SourceControl/SourceLocation.hpp"
 
 /* === Parameter === */
 

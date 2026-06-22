@@ -5,7 +5,7 @@
 #include "AST/ASTNode.hpp"
 #include "Symbols/Symbol.hpp"
 #include "Types/Type.hpp"
-#include "Utils/SourceLocation.hpp"
+#include "SourceControl/SourceLocation.hpp"
 
 /* === SymbolTable === */
 
@@ -15,13 +15,11 @@ class SymbolTable
 {
     public:
         SymbolId add(Symbol symbol) {
-            SymbolId id = symbols.size();
-
-            symbol.id = id;
+            symbol.setId( symbols.size() );
 
             symbols.push_back(std::move(symbol));
 
-            return id;
+            return symbol.m_id;
         }
 
         Symbol& get(SymbolId id) {

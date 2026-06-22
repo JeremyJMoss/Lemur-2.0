@@ -49,10 +49,10 @@ void Driver::compileProgram( std::string& filePath )
 
 std::expected<void, std::string> Driver::parseFile( const std::string& filePath )
 {
-    auto tokens = m_tokenizer.tokenizeFile( filePath );
+    auto compUnit = m_tokenizer.tokenizeFile( filePath );
 
     Logger::debug( 
-        std::to_string( tokens.size() ) + " tokens generated"
+        std::to_string( compUnit->getTokenCount() ) + " tokens generated"
     );
 
     if ( m_errReporter.hasErrors() ) return std::unexpected( "Error(s) during lexing" );
@@ -61,7 +61,7 @@ std::expected<void, std::string> Driver::parseFile( const std::string& filePath 
         "Parsing tokens for file"
     );
 
-    auto ast = m_parser.parse( std::move( tokens ) );
+    auto ast = m_parser.parse( compUnit );
     if ( m_errReporter.hasErrors() ) return std::unexpected( "Error(s) during parsing" );
 
     Debugger debugger = Debugger();

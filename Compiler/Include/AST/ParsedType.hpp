@@ -13,7 +13,6 @@ enum class ParsedTypeKind
     Named,
     Function,
     Ownership,
-    Generic,
     Array,
     Inferred
 };
@@ -54,15 +53,6 @@ struct ParsedArrayType : ParsedType {
         : ParsedType( ParsedTypeKind::Array ), elementType( std::move( elementType ) ), size( std::move( size ) ) {}
 };
 
-struct ParsedGenericType : ParsedType
-{
-    std::unique_ptr<Identifier> identifier;
-    std::vector<std::unique_ptr<ParsedType>> arguments;
-
-    ParsedGenericType( std::unique_ptr<Identifier>&& identifier, std::vector<std::unique_ptr<ParsedType>>&& arguments )
-        : ParsedType( ParsedTypeKind::Generic ), identifier( std::move( identifier ) ), arguments( std::move( arguments ) ) {}
-};
-
 struct ParsedOwnershipType : ParsedType
 {
     OwnershipKind ownership;
@@ -79,7 +69,6 @@ inline const std::string toString( const ParsedTypeKind& type )
         case ParsedTypeKind::Function:   return "Function";
         case ParsedTypeKind::Ownership:  return "Ownership";
         case ParsedTypeKind::Inferred:   return "Inferred";
-        case ParsedTypeKind::Generic:    return "Generic";
         case ParsedTypeKind::Array:      return "Array";
         case ParsedTypeKind::Named:      return "Named";
         default:               return "Unknown";

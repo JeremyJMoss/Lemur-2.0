@@ -1,5 +1,8 @@
 #include "Tokens/Tokenizer.hpp"
 #include "Tokens/Token.hpp"
+#include "Driver/CompilationUnit.hpp"
+
+using FileId = std::size_t;
 
 const std::regex Tokenizer::s_TOKEN_PATTERN(
      R"(&&|\|\||==|!=|<=|>=|->|::|=>|'([^']*)'|[0-9]+\.[0-9]+|[0-9]+|/\*|\*/|[\"+\-*/()=;:<>{}%,!.\[\]]|\w+)"
@@ -23,18 +26,16 @@ const std::regex Tokenizer::s_RE_CHAR(
 
 void Tokenizer::resetState() 
 {
-    m_tokens.clear();
     m_lineNum = 0;
     m_partialToken.clear();
     m_inToken = false;
 }
 
-std::vector<Token> Tokenizer::tokenizeFile( const std::string& filePath ) 
+std::unique_ptr<CompilationUnit> Tokenizer::tokenizeFile( const std::string& filePath ) 
 {
     resetState();
-    std::size_t fileId = m_srcManager.addFile(filePath);
-    
     std::ifstream fileStream( filePath );
+
     if ( !fileStream.is_open() ) 
     {
         m_errReporter.report( RuntimeError(
@@ -42,21 +43,23 @@ std::vector<Token> Tokenizer::tokenizeFile( const std::string& filePath )
                 "Error opening .lmur file"
             ) 
         );
-        return m_tokens;
+        return nullptr;
     }
+
+    FileId fileId = m_srcManager.addFile(filePath);
+    auto compUnit = std::make_unique<CompilationUnit>( fileId );
     
-    return tokenizeStream( fileStream, fileId );
+    tokenizeStream( fileStream, compUnit );
+
+    return compUnit;
 }
 
-std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, std::size_t fileId, bool onlyHeader ) 
+void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<CompilationUnit>& compUnit, bool onlyHeader ) 
 {
     std::string line;
-    m_tokens.clear();
-    m_lineNum = 0;
     std::size_t pos;
     std::size_t maxTokens = 20;
     std::size_t headerTokens = 0;
-    clearPartialToken();
 
     while ( true ) 
     {
@@ -113,7 +116,8 @@ std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, std::size_t 
                     if ( m_partialToken.getType() == TokenKind::String && value.front() == '"' ) 
                     {
                         appendPartialToken( value, m_lineNum, pos + match.length() );
-                        m_tokens.emplace_back( TokenKind::String,  m_partialToken.getValue(), m_partialToken.getLocation() );
+                        auto newToken = Token( TokenKind::String,  m_partialToken.getValue(), m_partialToken.getLocation() );
+                        compUnit->addToken(newToken);
                         if (onlyHeader) headerTokens++;
                         clearPartialToken();
                     } 
@@ -147,7 +151,7 @@ std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, std::size_t 
                 SourceRange range = { 
                     { m_lineNum, pos }, 
                     { m_lineNum, pos + match.length() },
-                    fileId
+                    compUnit->getFileId()
                 };
 
                 TokenKind type = getTokenType( value );
@@ -155,16 +159,19 @@ std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, std::size_t 
                 if ( type == TokenKind::Keyword ) 
                 {
                     TokenKeyword kw = m_KEYWORDS.at( value );
-                    m_tokens.emplace_back( type, kw, value, range );
+                    auto newToken = Token( type, kw, value, range );
+                    compUnit->addToken(newToken);
                 }
                 else if ( type == TokenKind::Symbol )
                 {
                     TokenSymbol symbol = m_SYMBOLS.at( value );
-                    m_tokens.emplace_back( type, symbol, value, range );
+                    auto newToken = Token( type, symbol, value, range );
+                    compUnit->addToken(newToken);
                 }
                 else
                 {
-                    m_tokens.emplace_back( type, value, range );
+                    auto newToken = Token( type, value, range );
+                    compUnit->addToken(newToken);
                 }
 
                 if ( onlyHeader ) headerTokens++;
@@ -178,7 +185,7 @@ std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, std::size_t 
                     SourceRange errorLocation = {
                         { m_lineNum, pos },
                         { m_lineNum, pos + match.length() },
-                        fileId
+                        compUnit->getFileId()
                     };
 
                     m_errReporter.report( CompilerError( 
@@ -199,18 +206,17 @@ std::vector<Token> Tokenizer::tokenizeStream( std::istream& stream, std::size_t 
     SourceRange eofLocation = {
         { m_lineNum, pos },
         { m_lineNum, pos },
-        fileId
+        compUnit->getFileId()
     };
 
-    m_tokens.emplace_back( TokenKind::EndOfFile, "", eofLocation );
+    auto newToken = Token( TokenKind::EndOfFile, "", eofLocation );
+    compUnit->addToken(newToken);
 
-    checkIssueWithOutput(fileId);
-
-    return m_tokens;
+    checkIssueWithOutput(compUnit->getFileId());
 }
 
 
-void Tokenizer::checkIssueWithOutput( std::size_t fileId ) 
+void Tokenizer::checkIssueWithOutput( FileId fileId ) 
 {
     if ( !m_inToken ) return;
 
@@ -264,12 +270,6 @@ void Tokenizer::appendPartialToken( const std::string& amendment, std::size_t li
     m_partialToken.setLocationEnd(
         { line, pos }
     );
-}
-
-void Tokenizer::clearPartialToken() 
-{
-    m_inToken = false;
-    m_partialToken.clear();
 }
 
 bool Tokenizer::matchRegex( const std::string& input, std::size_t pos, std::smatch& match, const std::regex& tokenPattern ) 

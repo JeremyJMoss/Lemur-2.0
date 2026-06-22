@@ -17,23 +17,9 @@ class Output
 {
     public:
         // User-friendly messages
-        static void success( const std::string& msg, std::size_t indent = 0 ) 
-        {
-            auto indentation = std::string( indent * 4, ' ' );
-            if ( !s_quiet ) 
-            {
-                std::cout << indentation << Console::Green << "✓ " << msg << Console::Reset << std::endl;
-            }
-        }
+        static void success( const std::string& msg, std::size_t indent = 0 );
         
-        static void info( const std::string& msg, std::size_t indent = 0 ) 
-        {
-            auto indentation = std::string( indent * 4, ' ' );
-            if ( !s_quiet )
-            {
-                std::cout << indentation << Console::White << msg << Console::Reset << std::endl;
-            }
-        }
+        static void info( const std::string& msg, std::size_t indent = 0 );
         
         // Quiet mode support
         static void setQuiet( bool quiet ) { s_quiet = quiet; }

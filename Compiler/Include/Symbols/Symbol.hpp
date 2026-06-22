@@ -4,14 +4,9 @@
 
 #include <string>
 #include <ostream>
-#include <vector>
-#include <memory>
-#include <optional>
-#include "Types/Type.hpp"
-#include "Types/FunctionType.hpp"
-#include "AST/ASTNode.hpp"
 
 using SymbolId = std::size_t;
+using TypeId = std::size_t;
 
 /* === Forward References === */
 
@@ -25,54 +20,57 @@ enum class SymbolType
     Type
 };
 
-/* === Symbol Structs === */
+/* === Symbols === */
+
+constexpr SymbolId InvalidSymbolId = static_cast<std::size_t>(-1);
 
 struct Symbol 
 {
-    static inline SymbolId nextId = 0;
-    SymbolId id;
-    std::string name;
-    SymbolType kind;
+    // Symbolid assigned via Symbol Table
+    SymbolId m_id;
+    TypeId m_typeId;
+    std::string m_name;
+    SymbolType m_kind;
+    
+    void setId( SymbolId symbolId ) { m_id = symbolId; }
+
     virtual ~Symbol() = default;
 
     Symbol( 
-        const std::string& name,
-        const SymbolType& kind
-    ) 
-        : id( nextId++ ),
-          name( std::move( name ) ), 
-          kind( kind ) {}
+        std::string name,
+        const SymbolType& kind,
+        TypeId typeId
+    ) : m_id( InvalidSymbolId ), 
+        m_name( std::move( name ) ), 
+        m_kind( kind ),
+        m_typeId( typeId ) {}
+        
 };
 
 struct VariableSymbol : Symbol {
-    std::shared_ptr<Type> type;
     bool isMutable;
     bool isTemporary;
 
     VariableSymbol(
-        const std::string& name,
+        std::string name,
         bool isMutable,
-        std::shared_ptr<Type> type = nullptr,
+        TypeId typeId,
         bool isTemporary = false
-    ) : Symbol( name, SymbolType::Variable ), type(type), isMutable(isMutable), isTemporary(isTemporary) {}
+    ) : Symbol( std::move(name), SymbolType::Variable, typeId ), isMutable(isMutable), isTemporary(isTemporary) {}
 };
 
 struct FunctionSymbol : Symbol {
-    std::shared_ptr<FunctionType> type;
-
     FunctionSymbol(
-        const std::string& name,
-        std::shared_ptr<FunctionType> type = nullptr
-    ) : Symbol( name, SymbolType::Function ), type(type) {}
+        std::string name,
+        TypeId typeId
+    ) : Symbol( std::move(name), SymbolType::Function, typeId ) {}
 };
 
 struct TypeSymbol : Symbol {
-    std::shared_ptr<Type> type;
-
     TypeSymbol(
         const std::string& name,
-        std::shared_ptr<Type> type = nullptr
-    ) : Symbol( name, SymbolType::Type ), type( type ) {}
+        TypeId typeId
+    ) : Symbol( name, SymbolType::Type, typeId ) {}
 };
 
 /* === Utility === */
@@ -92,9 +90,9 @@ inline std::ostream& operator<< ( std::ostream& os, const Symbol& symbol )
 {
     const std::string ind( 4, ' ' );
     os << "Symbol {" << std::endl;
-    os << ind << "id: " << symbol.id << std::endl;
-    os << ind << "name: " << symbol.name << std::endl;
-    os << ind << "kind: " << toString( symbol.kind ) << std::endl;
+    os << ind << "id: " << symbol.m_id << std::endl;
+    os << ind << "name: " << symbol.m_name << std::endl;
+    os << ind << "kind: " << toString( symbol.m_kind ) << std::endl;
     os << "}";
     return os;
 }

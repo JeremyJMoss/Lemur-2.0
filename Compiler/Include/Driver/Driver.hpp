@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include "Errors/ErrorReporter.hpp"
-#include "Utils/SourceManager.hpp"
+#include "SourceControl/SourceManager.hpp"
 #include "Tokens/Tokenizer.hpp"
 #include "Parser/Parser.hpp"
 #include "Driver/CompilationUnit.hpp"

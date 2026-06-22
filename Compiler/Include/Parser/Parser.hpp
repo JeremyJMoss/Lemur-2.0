@@ -18,6 +18,7 @@
 #include "Parser/ExpressionParser.hpp"
 #include "Parser/StatementParser.hpp"
 #include "Driver/CompilationUnit.hpp"
+#include "Tokens/TokenStream.hpp"
 
 /* === Parser === */
 
@@ -37,7 +38,7 @@ class Parser
                 m_exprParser.setStatementParser( &m_stmtParser );
             }
         
-        std::unique_ptr<AST> parse( std::vector<Token>&& inputTokens );
+        void parse( std::unique_ptr<CompilationUnit>& compUnit );
 
         std::expected<std::unique_ptr<Statement>, ErrorVariant> createStatement( const Token& token );
 
@@ -46,14 +47,13 @@ class Parser
         std::unordered_map<fileId, CompilationUnit>& m_compilationUnits;
         std::vector<std::unique_ptr<Statement>> m_statements;
         ParserUtils m_utils;
+        TokenStream m_tokenStream;
         TypeParser m_typeParser;
         ParameterParser m_paramParser;
         StatementParser m_stmtParser;
         ExpressionParser m_exprParser;
 
-        void resetState( std::vector<Token>&& inputTokens );
-
-        void parseNextStatement();
+        void parseNextStatement( std::unique_ptr<CompilationUnit>& compUnit );
 
         std::expected<std::unique_ptr<Statement>, ErrorVariant> parseKeywordStatement( const Token& token );
 

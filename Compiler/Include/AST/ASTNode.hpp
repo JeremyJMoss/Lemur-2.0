@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "Utils/SourceLocation.hpp"
+#include "SourceControl/SourceLocation.hpp"
 
 /* === Enums === */
 
@@ -59,10 +59,9 @@ struct Declaration : Statement {};
 /* === AST === */
 
 struct AST {
-    std::vector<std::unique_ptr<Statement>> statements;
+    std::vector<std::unique_ptr<Statement>> m_statements;
 
-    AST( std::vector<std::unique_ptr<Statement>>&& statements ) 
-        : statements( std::move( statements ) ) {}
+    void addStatement( std::unique_ptr<Statement>&& statement ) { m_statements.push_back(std::move(statement)); }
 };
 
 /* === Utility === */

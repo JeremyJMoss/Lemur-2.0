@@ -1,19 +1,14 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include <fstream>
 #include <unordered_map>
-#include <filesystem>
 #include "Utils/Logger.hpp"
+#include "SourceControl/FileData.hpp"
 
 namespace fs = std::filesystem;
 
-struct FileData 
-{
-    fs::path filePath;
-    std::vector<std::streampos> lineOffsets; // byte offset at start of each line
-};
+using FileId = size_t;
 
 class SourceManager 
 {
@@ -53,38 +48,36 @@ class SourceManager
                 pathAttr
             );
 
-            FileData data;
-            data.filePath = filePath;
+            auto data = FileData(filePath);
 
-            data.lineOffsets.push_back( file.tellg() );
+            data.addLineOffset( file.tellg() );
 
             std::string line;
             while ( std::getline( file, line ) ) 
             {
-                data.lineOffsets.push_back( file.tellg() );
+                data.addLineOffset( file.tellg() );
             }
 
             Logger::trace( 
                 "Collected " + 
-                std::to_string( data.lineOffsets.size() - 1 ) +
+                std::to_string( data.getLinesCollected() ) +
                 " line(s) for file",
                 pathAttr
             );
 
-            std::size_t id = nextFileId++;
-            files.emplace( id, std::move( data ) );
-            pathToId.emplace(filePath, id);
+            files.emplace( data.getFileId(), std::move( data ) );
+            pathToId.emplace( filePath, data.getFileId() );
 
             Logger::trace( 
                 "Assigned file ID " + 
-                std::to_string( id ) + 
+                std::to_string( data.getFileId() ) + 
                 " to " + filePath.string() 
             );
 
-            return id;
+            return data.getFileId();
         }
 
-        std::string getLine( int fileId, std::size_t lineNumber ) 
+        std::string getLine( FileId fileId, std::size_t lineNumber ) 
         {
             auto it = files.find( fileId );
             if ( it == files.end() ) 
@@ -104,10 +97,10 @@ class SourceManager
             FileData& data = it->second;
 
             const std::array pathAttr { 
-                Attribute{ "Path", "'" + data.filePath.string() + "'"} 
+                Attribute{ "Path", "'" + data.getFilePath().string() + "'"} 
             };
 
-            if ( lineNumber == 0 || lineNumber > data.lineOffsets.size() )
+            if ( lineNumber == 0 || lineNumber > data.getLinesCollected() )
             {
                 Logger::trace( 
                     "Line number " + 
@@ -126,7 +119,7 @@ class SourceManager
                 pathAttr
             );
 
-            std::ifstream file( data.filePath, std::ios::binary );
+            std::ifstream file( data.getFilePath(), std::ios::binary );
             if ( !file.is_open() ) 
             {
                 Logger::trace( 
@@ -138,7 +131,7 @@ class SourceManager
             }
 
             file.clear();
-            file.seekg( data.lineOffsets[ lineNumber - 1 ] );
+            file.seekg( data.getStreamPosition( lineNumber ) );
 
             std::string line;
             std::getline( file, line );
@@ -148,7 +141,7 @@ class SourceManager
                 std::to_string( lineNumber ) +
                 " from file",
                 std::to_array<Attribute>({
-                    { "Path", "'" + data.filePath.string() + "'" },
+                    { "Path", "'" + data.getFilePath().string() + "'" },
                     { "Length", std::to_string( line.size() ) }
                 })
             );
@@ -156,13 +149,12 @@ class SourceManager
             return line;
         }
 
-        std::string getFileName( int fileId ) 
+        std::string getFileName( FileId fileId ) 
         {
-            return files.at( fileId ).filePath.string();
+            return files.at( fileId ).getFilePath().string();
         }
 
     private:
-        std::unordered_map<int, FileData> files;
-        std::unordered_map<fs::path, std::size_t> pathToId;
-        std::size_t nextFileId = 1;
+        std::unordered_map<FileId, FileData> files;
+        std::unordered_map<fs::path, FileId> pathToId;
 };

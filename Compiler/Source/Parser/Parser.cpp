@@ -4,52 +4,27 @@
 #include "Errors/Errors.hpp"
 #include "Utils/Logger.hpp"
 
-void Parser::resetState( std::vector<Token>&& inputTokens )
-{
-    Logger::trace( "Resetting parser internal state" );
-
-    m_utils.reset( std::move( inputTokens ) );
-    m_statements.clear();
-
-    Logger::trace( "Reset parser internal state" );
-}
-
 /**
  * Parses all tokens and turns them into a statement list
  *
  * @return std::vector<std::unique_ptr<Statement>> List of statements
  */
-std::unique_ptr<AST> Parser::parse( std::vector<Token>&& inputTokens )
+void Parser::parse( std::unique_ptr<CompilationUnit>& compUnit )
 {
-    resetState( std::move( inputTokens ) );
+    m_tokenStream.reset();
 
+    m_tokenStream.initializeTokenStream(compUnit->readTokens());
     // while there are still tokens in the list continue parsing
-    while ( m_utils.peek() ) 
+    while ( !m_tokenStream.peek().checkTypeMatches(TokenKind::EndOfFile) ) 
     {
         if ( m_errReporter.hasFatalErrors() ) break;
-        parseNextStatement();
+        parseNextStatement(compUnit);
     }
-
-    return std::make_unique<AST>( std::move( m_statements ) );
 }
 
-void Parser::parseNextStatement() 
+void Parser::parseNextStatement( std::unique_ptr<CompilationUnit>& compUnit ) 
 {
-    auto maybeToken = m_utils.peek();
-
-    if ( !maybeToken )
-    {
-        Logger::trace( "Reached EOF while peeking next token" );
-        std::visit(
-            [&](auto&& err) {
-                m_errReporter.report( std::move( err ) );
-            },
-            maybeToken.error()
-        );
-        return;
-    }
-
-    const Token &current = maybeToken.value();
+    auto current = m_tokenStream.peek();
 
     auto maybeStatement = createStatement( current );
 
@@ -83,7 +58,7 @@ void Parser::parseNextStatement()
         attrs
     );
 
-    m_statements.emplace_back( std::move( maybeStatement.value() ) );
+    compUnit->addToAST( std::move( maybeStatement.value() ) );
 }
 
 std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::createStatement( const Token& token ) 
@@ -158,13 +133,13 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
     // Break statement
     if ( token.checkValueMatches( TokenKeyword::Break ) ) 
     {
-        auto maybeBreak = m_utils.expect( TokenKind::Keyword, TokenKeyword::Break );
+        auto maybeBreak = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Break );
         if ( !maybeBreak ) return std::unexpected( maybeBreak.error() );
 
         auto stmt = std::make_unique<Break>();
         stmt->location = m_utils.getLocation( token );
 
-        auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
         return stmt;
@@ -173,13 +148,13 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
     // Continue Statement
     if ( token.checkValueMatches( TokenKeyword::Continue ) ) 
     {
-        auto maybeContinue = m_utils.expect( TokenKind::Keyword, TokenKeyword::Continue );
+        auto maybeContinue = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Continue );
         if ( !maybeContinue ) return std::unexpected( maybeContinue.error() );
 
         auto stmt = std::make_unique<Continue>();
         stmt->location = m_utils.getLocation( token );
 
-        auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
         return stmt;
@@ -190,8 +165,8 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
 
     return std::unexpected( 
         CompilerError(
-            ErrorSeverity::Error,
             "Unknown keyword: '" + token.getValue() + "'", 
+            ErrorSeverity::Error,
             token.getLocation(),
             ErrorCategory::Syntax
         ) 
@@ -201,17 +176,25 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
 std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseIdentifierStatement( const Token& token )
 {
     // Look ahead to see if this is a declaration like: x : int = ...
-    auto maybeNextToken = m_utils.peek( 2 );
-    if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
+    if( m_tokenStream.peek( 1 ).checkTypeMatches(TokenKind::EndOfFile)) {
+        return std::unexpected(
+            CompilerError(
+                "Unexpected end of input",
+                ErrorSeverity::Fatal,
+                m_tokenStream.peek(1).getLocation(),
+                ErrorCategory::Syntax
+            )
+        );
+    };
 
-    const Token& next = maybeNextToken.value();
+    const Token& next = m_tokenStream.consume();
 
     if ( next.checkValueMatches( TokenSymbol::Colon ) ) 
     {
         auto maybeDeclaration = m_stmtParser.parseVariableDeclaration();
         if ( !maybeDeclaration ) return std::unexpected( maybeDeclaration.error() );
 
-        auto maybeEndingNode = m_utils.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
         return std::move( maybeDeclaration.value() );

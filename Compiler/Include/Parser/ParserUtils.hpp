@@ -6,7 +6,7 @@
 #include <array>
 #include "Tokens/Token.hpp"
 #include "Errors/ErrorReporter.hpp"
-#include "Utils/SourceLocation.hpp"
+#include "SourceControl/SourceLocation.hpp"
 
 /* === Forward Declarations === */
 
@@ -18,17 +18,6 @@ class ParserUtils
 {
     public:
         std::size_t getCurrentPosition() { return m_position; }
-
-        const std::vector<Token>& getTokens() { return m_tokens; }
-
-        std::expected<Token, ErrorVariant> peek( const std::size_t peekIndex = 1 );
-
-        std::expected<Token, RuntimeError> peekBack( const std::size_t reviewIndex = 1 );
-
-        std::expected<Token, ErrorVariant> consume( TokenKind expectedType );
-
-        template <typename ExpectedValue>
-        std::expected<Token, ErrorVariant> expect( TokenKind expectedType, ExpectedValue expectedValue );
 
         void recoverFromError();
 
@@ -51,81 +40,3 @@ class ParserUtils
         bool isEndBrace( const Token& token ) const;
         bool isFrontBrace( const Token& token ) const;
 };
-
-template <typename ExpectedValue>
-std::expected<Token, ErrorVariant> ParserUtils::expect( TokenKind expectedType, ExpectedValue expectedValue )
-{
-    Logger::trace(
-        "Expecting token",
-        std::to_array<Attribute>({
-            { "ExpectedType", "'" + toString( expectedType ) + "'" },
-            { "ExpectedValue", "'" + toString( expectedValue ) + "'" }
-        })
-    );
-
-    auto maybeToken = consume( expectedType );
-
-    if ( !maybeToken ) 
-    {
-        Logger::trace( "Expect failed: consume() did not return a valid token" );
-
-        auto maybeNextToken = peek();
-
-        if ( !maybeNextToken ) 
-        {
-            Logger::trace( "Expect failed: even peek() gave no token (EOF)" );
-            return std::unexpected( maybeNextToken.error() );
-        }
-
-        auto nextToken = maybeNextToken.value();
-        Logger::trace(
-            "Expect mismatch",
-            std::to_array<Attribute>({
-                { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + nextToken.getValue() + "'" },
-                { "Type", "'" + toString( nextToken.getType() ) + "'" }
-            })
-        );
-
-        return std::unexpected(
-            CompilerError(
-                ErrorSeverity::Error,
-                "Expected '" + toString( expectedValue ) + "', got '" + nextToken.getValue() + "'",
-                nextToken.getLocation(),
-                ErrorCategory::Syntax
-            )
-        );
-    }
-
-    auto token = maybeToken.value();
-    if ( !token.checkValueMatches( expectedValue ) ) {
-
-        Logger::trace(
-            "Expect mismatch. Token type matched but value mismatch. Rolling back position.",
-            std::to_array<Attribute>({ 
-                { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + token.getValue() + "'" }
-            })
-        );
-
-        m_position--;
-        return std::unexpected(
-            CompilerError(
-                ErrorSeverity::Error,
-                "Expected '" + toString( expectedValue ) + "', got '" + token.getValue() + "'",
-                token.getLocation(),
-                ErrorCategory::Syntax
-            )
-        );
-    }
-
-    Logger::trace(
-        "Expect succeeded",
-        std::to_array<Attribute>({
-            { "Type", "'" + toString( token.getType() ) + "'" },
-            { "Value", "'" + token.getValue() + "'" }
-        })
-    );
-
-    return token;
-}

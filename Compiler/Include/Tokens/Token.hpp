@@ -2,7 +2,9 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "Utils/SourceLocation.hpp"
+#include "SourceControl/SourceLocation.hpp"
+
+using TokenId = size_t;
 
 enum class TokenKind 
 {
@@ -173,6 +175,8 @@ inline std::string toString( const TokenKeyword& keyword )
 class Token 
 {
     public:
+        static inline TokenId nextId = 0;
+
         bool checkMatches( TokenKind inputType, TokenSymbol inputValue ) const;
 
         bool checkMatches( TokenKind inputType, TokenKeyword inputValue ) const;
@@ -188,6 +192,8 @@ class Token
         bool checkValueMatches( TokenKeyword inputValue ) const;
 
         bool checkValueMatches( const std::string& inputValue ) const;
+
+        TokenId getId() { return m_id; }
 
         TokenKind getType() const;
 
@@ -218,15 +224,16 @@ class Token
         Token() {}
 
         Token( TokenKind type, TokenSymbol symbol, const std::string& value, SourceRange location ) 
-            : m_type( type ), m_symbol( symbol ), m_value( value ), m_location( location ) {}
+            : m_id( nextId++ ), m_type( type ), m_symbol( symbol ), m_value( value ), m_location( location ) {}
 
         Token( TokenKind type, TokenKeyword kw, const std::string& value, SourceRange location )
-            : m_type( type ), m_keyword( kw ), m_value( value ), m_location( location ) {}
+            : m_id( nextId++ ), m_type( type ), m_keyword( kw ), m_value( value ), m_location( location ) {}
 
         Token( TokenKind type, const std::string& value, SourceRange location )
-            : m_type( type ), m_value( value ), m_location( location ) {}
+            : m_id( nextId++ ), m_type( type ), m_value( value ), m_location( location ) {}
     
     private:
+        TokenId m_id;
         TokenKind m_type = TokenKind::None;
         TokenSymbol m_symbol = TokenSymbol::None;
         TokenKeyword m_keyword = TokenKeyword::None;

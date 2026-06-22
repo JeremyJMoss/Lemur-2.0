@@ -151,7 +151,7 @@ void ErrorReporter::report( CompilerError&& compErr )
     }
 
     if ( compErr.severity == ErrorSeverity::Error ) m_errCount++;
-    }
+}
 
 void ErrorReporter::report( RuntimeError&& runErr )
 {
@@ -166,6 +166,13 @@ void ErrorReporter::report( RuntimeError&& runErr )
     }
 
     if ( runErr.severity == ErrorSeverity::Error ) m_errCount++;
+}
+
+void ErrorReporter::report( SemanticError&& semErr ) 
+{
+    if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
+
+    m_semanticErrors.emplace_back( std::move( semErr ) );
 }
 
 bool ErrorReporter::hasFatalErrors() const

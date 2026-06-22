@@ -5,14 +5,12 @@ using TypeId = std::size_t;
 
 class TypeTable {
     public:
-        TypeId add(Type symbol) {
-            TypeId id = types.size();
+        TypeId add(Type type) {
+            type.setId(types.size());
 
-            symbol.id = id;
+            types.push_back(std::move(type));
 
-            types.push_back(std::move(symbol));
-
-            return id;
+            return type.m_id;
         }
 
         Type& get(TypeId id) {

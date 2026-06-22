@@ -6,23 +6,70 @@
 #include "Symbols/SymbolTable.hpp"
 #include "Types/TypeTable.hpp"
 #include "Scopes/ScopeTable.hpp"
+#include "Tokens/TokenTable.hpp"
 
 using NodeId = std::size_t;
 using SymbolId = std::size_t;
 using TypeId = std::size_t;
 using ScopeId = std::size_t;
+using FileId = std::size_t;
+using TokenId = std::size_t;
 
 class CompilationUnit {
-    
-    ScopeId m_globalScope;
-    ScopeId m_currentScope;
+    public:
+        TokenId addToken( Token token ) {
+            return m_tokens.add(std::move(token));
+        }
 
-    AST m_ast;
-    SymbolTable m_symbols;
-    TypeTable m_types;
-    ScopeTable m_scopes;
+        SymbolId addSymbol( Symbol symbol ) {
+            return m_symbols.add(std::move(symbol));
+        }
 
-    std::unordered_map<NodeId, SymbolId> m_resolvedSymbols;
-    std::unordered_map<NodeId, TypeId> m_resolvedTypes;
-    std::unordered_map<NodeId, ScopeId> m_nodeScopes;
+        void bindSymbol( NodeId nodeId, SymbolId symbolId ) {
+            m_resolvedSymbols.emplace(nodeId, symbolId);
+        }
+
+        TypeId addType( Type type ) {
+            return m_types.add(std::move(type));
+        }
+
+        void bindType( NodeId nodeId, TypeId typeId ) {
+            m_resolvedTypes.emplace(nodeId, typeId);
+        }
+
+        ScopeId createScope( ScopeId parent, ScopeOwnerKind kind ) {
+            return m_scopes.addScope(parent, kind);
+        }
+
+        void bindScope( NodeId nodeId, ScopeId scopeId ) {
+            m_nodeScopes.emplace(nodeId, scopeId);
+        }
+
+        CompilationUnit( FileId fileId ) : m_fileId( fileId ) {
+            ScopeId scopeId = createScope(InvalidScopeId, ScopeOwnerKind::Global );
+            m_globalScope = scopeId;
+            m_currentScope = scopeId;
+        }
+
+        FileId getFileId() { return m_fileId; }
+
+        size_t getTokenCount() { return m_tokens.count(); }
+
+        void addToAST( std::unique_ptr<Statement> statement) { m_ast.addStatement(std::move(statement)); }
+
+        std::span<const Token> readTokens() { return m_tokens.getReadOnlyTokens(); }
+    private:
+        FileId m_fileId;
+        ScopeId m_globalScope;
+        ScopeId m_currentScope;
+
+        TokenTable m_tokens;
+        AST m_ast;
+        SymbolTable m_symbols;
+        TypeTable m_types;
+        ScopeTable m_scopes;
+
+        std::unordered_map<NodeId, SymbolId> m_resolvedSymbols;
+        std::unordered_map<NodeId, TypeId> m_resolvedTypes;
+        std::unordered_map<NodeId, ScopeId> m_nodeScopes;
 };
