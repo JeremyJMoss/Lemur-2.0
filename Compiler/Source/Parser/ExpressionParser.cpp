@@ -11,9 +11,11 @@ const std::regex ExpressionParser::s_RE_STRING_REPL( ( R"(\\\")" ) );
 
 std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parseExpression() 
 {
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
     
     auto maybeLeft = parseUnary();
     if ( !maybeLeft ) return std::unexpected( maybeLeft.error() );
@@ -21,7 +23,11 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
     while ( true ) 
     {
-        auto currentToken = m_utils.peek();
+        auto current = m_tokenStream.peek();
+
+        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        }
 
         if ( current.checkMatches( TokenKind::Keyword, std::vector<TokenKeyword> { TokenKeyword::To, TokenKeyword::Until } ) ) 
         {
@@ -34,32 +40,29 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
         if ( nextPrecedence <= m_precedence ) break;
 
-        if (!m_utils.peek().checkTypeMatches(TokenKind::Symbol)){
+        if (!m_tokenStream.peek().checkTypeMatches(TokenKind::Symbol)){
             return std::unexpected( 
                 CompilerError(
                     "Missing binary operator in expression.",
                     ErrorSeverity::Error,
-                    m_utils.peek().getLocation(),
+                    m_tokenStream.peek().getLocation(),
                     ErrorCategory::Syntax
                 )
             );
         }
 
-        auto operator = m_utils.consume( TokenKind::Symbol );
-
-        const std::string& op = operator.getValue();
+        auto op = m_tokenStream.consume().getValue();
         
         auto maybeRight = parseUnary();
         if ( !maybeRight ) return std::unexpected( maybeRight.error() );
 
         auto right = std::move( maybeRight.value() );
 
+        right->location = {front.getLocation().start, right->location.end, front.getLocation().fileId};
+
         left = std::make_unique<BinaryOperation>( std::move( left ), op, std::move( right ) );
 
-        auto maybeEndToken = m_utils.peekBack();
-        if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-        left->location = m_utils.getLocation( front, maybeEndToken.value() );
+        left->location = {front.getLocation().start, right->location.end, front.getLocation().fileId };
     }
 
     return left;
@@ -75,12 +78,13 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
      // Parse the chain of postfix operations
      while ( true ) 
      {
-        auto maybeNextToken = m_utils.peek();
-        if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
+        auto current = m_tokenStream.peek();
 
-        const Token& next = maybeNextToken.value();
+        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        }
         
-        if ( next.checkValueMatches( TokenSymbol::LParens ) ) 
+        if ( current.checkValueMatches( TokenSymbol::LParens ) ) 
         {
             // Function call
             auto maybeParams = parseFunctionCallParams();
@@ -88,10 +92,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
             expr = std::make_unique<FunctionCall>( std::move( expr ), std::move( maybeParams.value() ) );
 
-            auto maybeEndToken = m_utils.peekBack();
-            if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-            expr->location = m_utils.getLocation( next, maybeEndToken.value() );
+            expr->location = {current.getLocation().start, expr->location.end, current.getLocation().fileId };
         }
         else 
         {
@@ -105,9 +106,11 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
 std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parsePrimaryLiteral() 
 {
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
 
     // Handle parenthesized expressions
     if ( front.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) 
@@ -115,16 +118,17 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
         // Peek ahead for function expression pattern
         // We need to look for the pattern '):' after parameters
 
-        std::size_t pos = m_utils.getCurrentPosition();
+        std::size_t currentPeekOffset = 0;
         int parenthesisCount = 0;
         bool isFunction = false;
 
-        const auto& tokens = m_utils.getTokens();
-
-        Token token;
-        while ( pos < tokens.size() ) 
+        while ( true ) 
         {
-            token = tokens.at( pos );
+            auto token = m_tokenStream.peek(currentPeekOffset);
+
+            if ( token.checkTypeMatches( TokenKind::EndOfFile )) {
+                return std::unexpected( UnexpectedEndOfInputError( token.getLocation() ) );
+            }
 
             if ( token.checkTypeMatches( TokenKind::Symbol ) ) 
             {
@@ -138,8 +142,8 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
                     {
                         return std::unexpected(
                             CompilerError(
-                                ErrorSeverity::Error,
                                 "Unexpected closing parenthesis", 
+                                ErrorSeverity::Error,
                                 token.getLocation(),
                                 ErrorCategory::Syntax
                             )
@@ -153,16 +157,16 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
                 }
             }
             
-            pos++;
+            currentPeekOffset++;
         }
 
         if ( parenthesisCount > 0 ) 
         {
             return std::unexpected(
                 CompilerError(
-                    ErrorSeverity::Error,
                     "Unclosed parenthesis in expression", 
-                    tokens.at( pos - 1 ).getLocation(),
+                    ErrorSeverity::Error,
+                    m_tokenStream.peek(currentPeekOffset).getLocation(),
                     ErrorCategory::Syntax
                 )
             );
@@ -174,13 +178,13 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
         } 
         else 
         {
-            auto maybeOpenParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::LParens );
+            auto maybeOpenParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
             if ( !maybeOpenParens ) return std::unexpected( maybeOpenParens.error() );
 
             auto maybeExpression = parseExpression();
             if ( !maybeExpression ) return std::unexpected( maybeExpression.error() );
 
-            auto maybeCloseParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::RParens );
+            auto maybeCloseParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RParens );
             if ( !maybeCloseParens ) return std::unexpected( maybeCloseParens.error() );
 
             return std::move( maybeExpression.value() );
@@ -190,16 +194,15 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
     if ( front.checkTypeMatches( TokenKind::Identifier ) ) 
     {
         
-        auto maybeNextToken = m_utils.peek( 1 );
+        auto next = m_tokenStream.peek( 1 );
 
-        if ( maybeNextToken )
-        {
-            if ( maybeNextToken.value().checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) return parseFunctionCall();
+        if ( next.checkTypeMatches( TokenKind::EndOfFile ) ) {
+            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
         }
 
-        auto maybeIdToken = m_utils.consume( TokenKind::Identifier );
-        if ( !maybeIdToken ) return std::unexpected( maybeIdToken.error() );
-        const Token& idToken = maybeIdToken.value();
+        if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) return parseFunctionCall();
+
+        auto idToken = m_tokenStream.consume();
 
         auto id = std::make_unique<Identifier>( idToken.getValue() );
         id->location = m_utils.getLocation( idToken );
@@ -228,14 +231,11 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
  */
 std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 {
-    auto maybeToken = m_utils.peek();
-    if ( !maybeToken ) 
-    {
-        Logger::trace( "EOF reached while expecting a literal" );
-        return std::unexpected( maybeToken.error() );
-    }
+    auto current = m_tokenStream.peek();
 
-    const Token& current = maybeToken.value();
+    if ( current.checkTypeMatches( TokenKind::EndOfFile ) ) {
+        return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+    }
 
     const std::array attrs = {
         Attribute{ "Value", current.getValue() },
@@ -250,10 +250,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto maybeFloatToken = m_utils.consume( TokenKind::Float );
-        if ( !maybeFloatToken ) return std::unexpected( maybeFloatToken.error() );
-
-        const Token& floatToken = maybeFloatToken.value();
+        auto floatToken = m_tokenStream.consume();
 
         return std::stof( floatToken.getValue() );
     }
@@ -266,10 +263,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto maybeIntToken = m_utils.consume( TokenKind::Integer );
-        if ( !maybeIntToken ) return std::unexpected( maybeIntToken.error() );
-
-        const Token& intToken = maybeIntToken.value();
+        auto intToken = m_tokenStream.consume();
 
         return std::stoi( intToken.getValue() );
     }
@@ -282,10 +276,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto maybeBoolToken = m_utils.consume( TokenKind::Boolean );
-        if ( !maybeBoolToken ) return std::unexpected( maybeBoolToken.error() );
-
-        const Token& boolToken = maybeBoolToken.value();
+        auto boolToken = m_tokenStream.consume();
 
         return boolToken.getValue() == "true";
     }
@@ -305,8 +296,8 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
         {
             return std::unexpected(
                 CompilerError(
-                    ErrorSeverity::Error,
                     "'char' literal must not be empty",
+                    ErrorSeverity::Error,
                     current.getLocation(),
                     ErrorCategory::Syntax
                 )
@@ -321,8 +312,8 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             {
                 return std::unexpected( 
                     CompilerError(
-                        ErrorSeverity::Error,
                         "Invalid escape sequence in 'char'", 
+                        ErrorSeverity::Error,
                         current.getLocation(),
                         ErrorCategory::Syntax
                     )
@@ -341,8 +332,8 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
                 default: 
                     return std::unexpected( 
                         CompilerError(
-                            ErrorSeverity::Error,
                             "Unknown escape sequence in 'char'",
+                            ErrorSeverity::Error,
                             current.getLocation(),
                             ErrorCategory::Syntax
                         )
@@ -355,8 +346,8 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             {
                 return std::unexpected(
                     CompilerError(
-                        ErrorSeverity::Error,
                         "'char' literal must be a single character", 
+                        ErrorSeverity::Error,
                         current.getLocation(),
                         ErrorCategory::Syntax
                     )
@@ -371,9 +362,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto maybeCharToken = m_utils.consume( TokenKind::Char );
-
-        if ( !maybeCharToken ) return std::unexpected( maybeCharToken.error() );
+        auto charToken = m_tokenStream.consume();
 
         return resultChar;
     }
@@ -387,10 +376,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto maybeStrToken = m_utils.consume( TokenKind::String );
-        if ( !maybeStrToken ) return std::unexpected( maybeStrToken.error() );
-
-        const Token& strToken = maybeStrToken.value();
+        auto strToken = m_tokenStream.consume();
 
         std::string raw = strToken.getValue();
         raw = raw.substr(1, raw.length() - 2);
@@ -406,8 +392,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto maybeKeyword = m_utils.consume( TokenKind::Keyword );
-        if ( !maybeKeyword ) return std::unexpected( maybeKeyword.error() );
+        auto keyword = m_tokenStream.consume();
 
         return std::monostate{};
     }

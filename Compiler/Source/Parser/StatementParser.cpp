@@ -326,30 +326,34 @@ std::expected<std::unique_ptr<Return>, ErrorVariant> StatementParser::parseRetur
 {
     Logger::debug( "Parsing return statement" );
 
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
 
-    auto maybeReturnKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::Return );
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
+
+    auto maybeReturnKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Return );
     if ( !maybeReturnKeyword ) return std::unexpected( maybeReturnKeyword.error() );
 
-    auto maybeNextToken = m_utils.peek();
-    if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
-    const Token& next = maybeNextToken.value();
+    auto next = m_tokenStream.peek();
+
+    if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+    }
 
     std::unique_ptr<Expression> value;
 
     Logger::trace( "Checking for return value expression" );
 
     // bare  `return ;`
-    if (! ( next.checkMatches( TokenKind::Symbol, TokenSymbol::SemiColon ) ) ) {
+    if ( !next.checkMatches( TokenKind::Symbol, TokenSymbol::SemiColon ) ) {
         auto maybeValue = m_exprParser->parseExpression();
         if ( !maybeValue ) 
         {
             return std::unexpected( 
                 CompilerError(
-                    ErrorSeverity::Error,
                     "Unable to parse return statement. Malformed expression statement after return keyword",
+                    ErrorSeverity::Error,
                     next.getLocation(),
                     ErrorCategory::Syntax
                 )
@@ -358,19 +362,20 @@ std::expected<std::unique_ptr<Return>, ErrorVariant> StatementParser::parseRetur
         value = std::move( maybeValue.value() );
     }
 
+    bool hasReturn = value != nullptr;
+
     Logger::trace( "Parsed return value expression" );
 
     auto ret = std::make_unique<Return>( std::move( value ) );
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
+    auto endLocation = hasReturn ? ret->value->location.end : front.getLocation().end;
 
-    ret->location = m_utils.getLocation( front, maybeEndToken.value() );
+    ret->location = {front.getLocation().start, endLocation, front.getLocation().fileId };
 
     Logger::debug( 
         "Constructed return statement", 
         std::to_array<Attribute>({ 
-            { "HasValue", ( value ? "true" : "false" ) } 
+            { "HasValue", ( hasReturn ? "true" : "false" ) } 
         })
     );
 
