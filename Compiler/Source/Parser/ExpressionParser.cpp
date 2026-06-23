@@ -1,5 +1,5 @@
 #include "Parser/ExpressionParser.hpp"
-#include "AST/BinaryOperation.hpp"
+#include "AST/BinaryExpression.hpp"
 #include "AST/Unary.hpp"
 #include <array>
 
@@ -60,7 +60,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
         right->location = {front.getLocation().start, right->location.end, front.getLocation().fileId};
 
-        left = std::make_unique<BinaryOperation>( std::move( left ), op, std::move( right ) );
+        left = std::make_unique<BinaryExpression>( std::move( left ), op, std::move( right ) );
 
         left->location = {front.getLocation().start, left->location.end, front.getLocation().fileId };
     }
@@ -605,15 +605,15 @@ std::expected<std::unique_ptr<FunctionLiteral>, ErrorVariant> ExpressionParser::
         auto maybeFirstAngle = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Greater );
         if ( !maybeFirstAngle ) return std::unexpected( maybeFirstAngle.error() );
 
-        current = m_tokenStream.peek();
+        auto next = m_tokenStream.peek();
 
-        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
         }
 
         // check if the > is directly preceded by another >
-        if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::Greater ) && current.getLocation().start.line == current.getLocation().start.line 
-            && current.getLocation().start.column == current.getLocation().start.column + 1 ) 
+        if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::Greater ) && next.getLocation().start.line == current.getLocation().start.line 
+            && next.getLocation().start.column == current.getLocation().start.column + 1 ) 
         {
             auto maybeSecondAngle = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Greater );
             if ( !maybeSecondAngle ) return std::unexpected( maybeSecondAngle.error() );               

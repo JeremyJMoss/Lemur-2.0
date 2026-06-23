@@ -69,13 +69,17 @@ std::expected<std::unique_ptr<Parameter>, ErrorVariant> ParameterParser::parsePa
 
     auto idToken = m_tokenStream.consume();
 
+    auto identifier = std::make_unique<Identifier>(idToken.getValue());
+
+    identifier->location = m_utils.getLocation(idToken);
+
     auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
     auto maybeParsedType = m_typeParser.parseType();
     if ( !maybeParsedType ) return std::unexpected( maybeParsedType.error() );
 
-    auto param = std::make_unique<Parameter>( idToken.getValue(), std::move( maybeParsedType.value() ) );
+    auto param = std::make_unique<Parameter>( std::move(identifier), std::move( maybeParsedType.value() ) );
     
     param->location = { front.getLocation().start, param->paramType->location.end, front.getLocation().fileId };
 

@@ -14,7 +14,7 @@
 #include "AST/VariableDeclaration.hpp"
 #include "AST/FunctionDeclaration.hpp"
 #include "AST/FunctionLiteral.hpp"
-#include "AST/BinaryOperation.hpp"
+#include "AST/BinaryExpression.hpp"
 #include "AST/IfConditional.hpp"
 #include "AST/Range.hpp"
 #include "AST/ForLoop.hpp"

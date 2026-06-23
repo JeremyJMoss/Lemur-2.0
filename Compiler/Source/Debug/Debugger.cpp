@@ -56,9 +56,14 @@ void Debugger::printIdentifier( const Identifier* identifier, std::ostream& out,
 void Debugger::printParameter( const Parameter* param, std::ostream& out, std::size_t indent, bool hasTrailingComma ) const
 {
     startBlock( out, indent );
-    out << indentStr( indent + 1 ) << "\"name\": \"" << param->name << "\"," << std::endl;
-    out << indentStr( indent + 1 ) << "\"type\": " << std::endl;
-    printAST( param->paramType.get(), out, indent + 2, false );
+    out << indentStr( indent + 1 ) << "\"id\": \"" << param->id << "\"," << std::endl;
+    out << indentStr( indent + 1 ) << "\"type\": \"Parameter\"," << std::endl;
+    out << indentStr( indent + 1 ) << "\"identifier\": " << std::endl;
+    printAST( param->identifier.get(), out, indent + 2, true );
+    out << indentStr( indent + 1 ) << "\"paramType\": " << std::endl;
+    printAST( param->paramType.get(), out, indent + 2, true );
+    out << indentStr( indent + 1 ) << "\"defaultValue\": " << std::endl;
+    printAST( param->defaultValue.get(), out, indent + 2, false );
     endBlock( out, indent, hasTrailingComma );
 }
 
@@ -97,7 +102,7 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
             auto inferredType = static_cast<const ParsedInferredType*>( type );
             startBlock( out, indent );
             out << indentStr( indent + 1 ) << "\"id\": \"" << inferredType->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"Inferred\"," << std::endl;
+            out << indentStr( indent + 1 ) << "\"type\": \"Inferred\"" << std::endl;
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -385,9 +390,9 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             break;
         }
 
-        case ASTNodeType::BinaryOperation: 
+        case ASTNodeType::BinaryExpression: 
         {
-            auto* bin = static_cast<const BinaryOperation*>( node );
+            auto* bin = static_cast<const BinaryExpression*>( node );
             startBlock( out, indent );
             out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
             out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;

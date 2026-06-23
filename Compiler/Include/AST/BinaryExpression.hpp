@@ -25,21 +25,21 @@ enum class BinaryOperators
     Remainder             // "%"
 };
 
-/* === BinaryOperation === */
+/* === BinaryExpression === */
 
-struct BinaryOperation : Expression 
+struct BinaryExpression : Expression 
 {
     BinaryOperators op;
     std::unique_ptr<Expression> left;
     std::unique_ptr<Expression> right;
 
-    explicit BinaryOperation( 
+    explicit BinaryExpression( 
         std::unique_ptr<Expression>&& left, 
         const std::string& oper,
         std::unique_ptr<Expression>&& right 
     );
 
-    ASTNodeType type() const override { return ASTNodeType::BinaryOperation; }
+    ASTNodeType type() const override { return ASTNodeType::BinaryExpression; }
 
     private:
         static BinaryOperators parseOperator( const std::string& op );

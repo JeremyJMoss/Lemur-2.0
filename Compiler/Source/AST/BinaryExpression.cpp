@@ -2,20 +2,20 @@
 #include <memory>
 #include <unordered_map>
 #include <exception>
-#include "AST/BinaryOperation.hpp"
+#include "AST/BinaryExpression.hpp"
 
-BinaryOperation::BinaryOperation( 
+BinaryExpression::BinaryExpression( 
     std::unique_ptr<Expression>&& left, 
     const std::string& oper, 
     std::unique_ptr<Expression>&& right 
 ) 
 {
     this->left = std::move( left );
-    op = BinaryOperation::parseOperator( oper );
+    op = BinaryExpression::parseOperator( oper );
     this->right = std::move( right );
 }
 
-BinaryOperators BinaryOperation::parseOperator( const std::string& op ) 
+BinaryOperators BinaryExpression::parseOperator( const std::string& op ) 
 {
     const std::unordered_map<std::string, BinaryOperators> op_map = {
         {"+",  BinaryOperators::Plus},

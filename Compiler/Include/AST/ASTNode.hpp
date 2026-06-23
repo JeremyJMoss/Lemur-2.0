@@ -21,7 +21,7 @@ enum class ASTNodeType
     Declaration,
     Assignment,
     FunctionLiteral,
-    BinaryOperation,
+    BinaryExpression,
     IfConditional,
     ForLoop,
     Range,
@@ -30,7 +30,8 @@ enum class ASTNodeType
     ParsedType,
     FunctionCall,
     FunctionDeclaration,
-    VariableDeclaration
+    VariableDeclaration,
+    Parameter
 };
 
 /* === Base AST Node === */
@@ -79,7 +80,7 @@ inline const std::string toString( const ASTNodeType& type )
         case ASTNodeType::Declaration:          return "Declaration";
         case ASTNodeType::Assignment:           return "Assignment";
         case ASTNodeType::FunctionLiteral:      return "Function Literal";
-        case ASTNodeType::BinaryOperation:      return "Binary Operation";
+        case ASTNodeType::BinaryExpression:      return "Binary Expression";
         case ASTNodeType::IfConditional:        return "If Conditional";
         case ASTNodeType::ForLoop:              return "For Loop";
         case ASTNodeType::Range:                return "Range";

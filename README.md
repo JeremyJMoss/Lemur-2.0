@@ -14,7 +14,7 @@ Lemur2/
 |   |   |   ├── AllASTTypes.hpp
 |   |   |   ├── Assignment.hpp
 |   |   |   ├── ASTNode.hpp
-|   |   |   ├── BinaryOperation.hpp
+|   |   |   ├── BinaryExpression.hpp
 |   |   |   ├── Block.hpp
 |   |   |   ├── Break.hpp
 |   |   |   ├── Continue.hpp
@@ -78,7 +78,7 @@ Lemur2/
 │   │   └── LanguageConfig.hpp
 │   ├── Source/ # Source code directory
 │   │   ├── AST/
-│   │   |   ├── BinaryOperation.cpp
+│   │   |   ├── BinaryExpression.cpp
 │   │   |   └── Unary.cpp
 │   │   ├── Debug/
 │   │   |   └── Debugger.cpp
