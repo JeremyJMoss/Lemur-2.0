@@ -42,7 +42,7 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
 
     auto identifier = std::make_unique<Identifier>( idToken.getValue() );
 
-    identifier->location = m_utils.getLocation( idToken );
+    identifier->location = SourceRange::getLocation( idToken );
 
     auto maybeParameters = m_paramParser.parseFunctionParameters();
     if ( !maybeParameters ) return std::unexpected( maybeParameters.error() );
@@ -168,7 +168,7 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
 
     auto block = std::make_unique<Block>( std::move( body ) );
 
-    block->location = m_utils.getLocation( front, current );
+    block->location = SourceRange::getLocation( front, current );
 
     Logger::debug( 
         "Parsing statements inside block successful",
@@ -228,7 +228,7 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
     );
 
     auto identifier = std::make_unique<Identifier>( idToken.getValue() );
-    identifier->location = m_utils.getLocation( frontToken, idToken );
+    identifier->location = SourceRange::getLocation( frontToken, idToken );
 
     auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );

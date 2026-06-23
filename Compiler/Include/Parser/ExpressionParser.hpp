@@ -10,7 +10,6 @@
 #include "AST/FunctionCall.hpp"
 #include "AST/Literal.hpp"
 #include "Errors/ErrorReporter.hpp"
-#include "Parser/ParserUtils.hpp"
 #include "Parser/TypeParser.hpp"
 #include "Parser/ParameterParser.hpp"
 #include "Parser/StatementParser.hpp"
@@ -22,11 +21,10 @@ class ExpressionParser{
     public:
         ExpressionParser( 
             TokenStream& tStream,
-            ParserUtils& utils,
             TypeParser& typeParser,
             ParameterParser& paramParser
         ) 
-        : m_tokenStream( tStream ), m_utils( utils ), m_typeParser( typeParser ), m_paramParser( paramParser ) {}
+        : m_tokenStream( tStream ), m_typeParser( typeParser ), m_paramParser( paramParser ) {}
 
         void setStatementParser( StatementParser* stmtParser ) { m_stmtParser = stmtParser; }
 
@@ -42,7 +40,6 @@ class ExpressionParser{
         static const std::regex s_RE_STRING_REPL;
 
         TokenStream& m_tokenStream;
-        ParserUtils& m_utils;
         TypeParser& m_typeParser;
         ParameterParser& m_paramParser;
         StatementParser* m_stmtParser = nullptr;
@@ -61,4 +58,6 @@ class ExpressionParser{
         std::expected<std::unique_ptr<FunctionCall>, ErrorVariant> parseFunctionCall();
 
         std::expected<std::unique_ptr<FunctionLiteral>, ErrorVariant> parseFunctionLiteral();
+
+        std::size_t getPrecedence( TokenSymbol op );
 };

@@ -136,7 +136,7 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
         if ( !maybeBreak ) return std::unexpected( maybeBreak.error() );
 
         auto stmt = std::make_unique<Break>();
-        stmt->location = m_utils.getLocation( token );
+        stmt->location = SourceRange::getLocation( token );
 
         auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
@@ -151,7 +151,7 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
         if ( !maybeContinue ) return std::unexpected( maybeContinue.error() );
 
         auto stmt = std::make_unique<Continue>();
-        stmt->location = m_utils.getLocation( token );
+        stmt->location = SourceRange::getLocation( token );
 
         auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
@@ -206,7 +206,7 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseIdentifierS
         auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
         if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
-        stmt->location = m_utils.getLocation( token, maybeEndingNode.value() );
+        stmt->location = SourceRange::getLocation( token, maybeEndingNode.value() );
 
         return stmt;
     }
@@ -222,7 +222,7 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseIdentifierS
     auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
     if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
-    stmt->location = m_utils.getLocation( token, maybeEndingNode.value() );
+    stmt->location = SourceRange::getLocation( token, maybeEndingNode.value() );
 
     return stmt;
 }
@@ -238,7 +238,7 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseExpressionS
     auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
     if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
-    stmt->location = m_utils.getLocation( token, maybeEndingNode.value() );
+    stmt->location = SourceRange::getLocation( token, maybeEndingNode.value() );
 
     return stmt;
 }

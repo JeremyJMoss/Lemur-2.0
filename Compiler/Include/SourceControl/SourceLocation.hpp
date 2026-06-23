@@ -3,6 +3,8 @@
 #include <string>
 #include <cstddef>
 
+class Token;
+
 struct SourceLocation 
 {
     std::size_t line;
@@ -14,6 +16,10 @@ struct SourceLocation
 
 struct SourceRange 
 {
+    static SourceRange getLocation( const Token& startToken, const Token& endToken );
+
+    static SourceRange getLocation( const Token& token );
+
     SourceLocation start;
     SourceLocation end;
     std::size_t fileId;

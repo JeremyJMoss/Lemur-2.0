@@ -71,7 +71,7 @@ std::expected<std::unique_ptr<Parameter>, ErrorVariant> ParameterParser::parsePa
 
     auto identifier = std::make_unique<Identifier>(idToken.getValue());
 
-    identifier->location = m_utils.getLocation(idToken);
+    identifier->location = SourceRange::getLocation(idToken);
 
     auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );

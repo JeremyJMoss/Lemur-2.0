@@ -13,7 +13,6 @@
 #include "AST/AllASTTypes.hpp"
 #include "AST/ParsedType.hpp"
 #include "Errors/ErrorReporter.hpp"
-#include "Parser/ParserUtils.hpp"
 #include "Parser/TypeParser.hpp"
 #include "Parser/ExpressionParser.hpp"
 #include "Parser/StatementParser.hpp"
@@ -30,10 +29,10 @@ class Parser
         Parser( ErrorReporter& errReporter )
             : m_errReporter( errReporter ),
             m_tokenStream(),
-            m_typeParser( m_tokenStream, m_utils ),
-            m_paramParser( m_tokenStream, m_utils, m_typeParser ),
-            m_stmtParser( *this, m_tokenStream, m_utils, m_errReporter, m_typeParser, m_paramParser ),
-            m_exprParser( m_tokenStream, m_utils, m_typeParser, m_paramParser ) {
+            m_typeParser( m_tokenStream),
+            m_paramParser( m_tokenStream, m_typeParser ),
+            m_stmtParser( *this, m_tokenStream, m_errReporter, m_typeParser, m_paramParser ),
+            m_exprParser( m_tokenStream, m_typeParser, m_paramParser ) {
                 m_stmtParser.setExpressionParser( &m_exprParser );
                 m_exprParser.setStatementParser( &m_stmtParser );
             }
@@ -45,7 +44,6 @@ class Parser
     private:
         ErrorReporter& m_errReporter;
         std::vector<std::unique_ptr<Statement>> m_statements;
-        ParserUtils m_utils;
         TokenStream m_tokenStream;
         TypeParser m_typeParser;
         ParameterParser m_paramParser;

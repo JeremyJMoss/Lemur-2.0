@@ -2,7 +2,6 @@
 
 #include <expected>
 #include <memory>
-#include "Parser/ParserUtils.hpp"
 #include "Errors/ErrorReporter.hpp"
 #include "AST/ParsedType.hpp"
 #include "Tokens/TokenStream.hpp"
@@ -11,8 +10,8 @@ class Parser;
 
 class TypeParser{
     public:
-        TypeParser( TokenStream& tStream, ParserUtils& utils )
-            :  m_tokenStream( tStream ), m_utils( utils ) {}
+        TypeParser( TokenStream& tStream )
+            :  m_tokenStream( tStream ) {}
             
         std::expected<std::unique_ptr<ParsedType>, ErrorVariant> parseType();
 
@@ -22,5 +21,4 @@ class TypeParser{
 
     private:
         TokenStream& m_tokenStream;
-        ParserUtils& m_utils;
 };

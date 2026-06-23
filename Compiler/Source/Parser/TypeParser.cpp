@@ -133,7 +133,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         
         auto inferType = std::make_unique<ParsedInferredType>();
 
-        inferType->location = m_utils.getLocation( frontToken, maybeInfer.value() );
+        inferType->location = SourceRange::getLocation( frontToken, maybeInfer.value() );
 
         return inferType;
     }
@@ -164,7 +164,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseNamedT
 
     auto identifier = std::make_unique<Identifier>( idToken.getValue() );
 
-    identifier->location = m_utils.getLocation(idToken);
+    identifier->location = SourceRange::getLocation(idToken);
 
     auto namedType = std::make_unique<ParsedNamedType>( std::move( identifier ) );
 
