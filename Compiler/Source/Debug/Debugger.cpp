@@ -420,15 +420,15 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
             out << indentStr( indent + 1 ) << "\"callee\": " << std::endl;
             printAST( callExpr->callee.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"params\": [";
-            if ( !callExpr->params.empty() ) 
+            out << indentStr( indent + 1 ) << "\"arguments\": [";
+            if ( !callExpr->arguments.empty() ) 
             {
                 out << std::endl;
 
-                for ( std::size_t i = 0; i < callExpr->params.size(); ++i ) 
+                for ( std::size_t i = 0; i < callExpr->arguments.size(); ++i ) 
                 {
-                    printAST( callExpr->params[i].get(), out, 
-                        indent + 2, i != callExpr->params.size() - 1 );
+                    printAST( callExpr->arguments[i].get(), out, 
+                        indent + 2, i != callExpr->arguments.size() - 1 );
                 }
 
                 out << indentStr( indent + 1 );

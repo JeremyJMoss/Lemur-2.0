@@ -87,7 +87,7 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
         if ( current.checkValueMatches( TokenSymbol::LParens ) ) 
         {
             // Function call
-            auto maybeParams = parseFunctionCallParams();
+            auto maybeParams = parseFunctionCallArgs();
             if ( !maybeParams ) return std::unexpected( maybeParams.error() );
 
             auto exprLocation = expr->location.end;
@@ -510,7 +510,7 @@ std::expected<std::unique_ptr<Range>, ErrorVariant> ExpressionParser::parseRange
     return rngExp;
 }
 
-std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> ExpressionParser::parseFunctionCallParams() 
+std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> ExpressionParser::parseFunctionCallArgs() 
 {
     std::vector<std::unique_ptr<Expression>> params;
 
@@ -566,12 +566,12 @@ std::expected<std::unique_ptr<FunctionCall>, ErrorVariant> ExpressionParser::par
     auto identifier = std::make_unique<Identifier>( idToken.getValue() );
     identifier->location = m_utils.getLocation( idToken );
 
-    auto maybeFunctionCallParams = parseFunctionCallParams();
+    auto maybeFunctionCallParams = parseFunctionCallArgs();
     if ( !maybeFunctionCallParams ) return std::unexpected( maybeFunctionCallParams.error() );
 
     auto funCall = std::make_unique<FunctionCall>( std::move( identifier ), std::move( maybeFunctionCallParams.value() ) );
 
-    funCall->location = { front.getLocation().start, funCall->params.back()->location.end, front.getLocation().fileId };
+    funCall->location = { front.getLocation().start, funCall->arguments.back()->location.end, front.getLocation().fileId };
 
     return funCall;
 }

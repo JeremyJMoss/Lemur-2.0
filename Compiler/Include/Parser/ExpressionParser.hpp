@@ -56,7 +56,7 @@ class ExpressionParser{
 
         std::expected<std::unique_ptr<Expression>, ErrorVariant> parsePrimaryLiteral();
 
-        std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> parseFunctionCallParams();
+        std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> parseFunctionCallArgs();
 
         std::expected<std::unique_ptr<FunctionCall>, ErrorVariant> parseFunctionCall();
 
