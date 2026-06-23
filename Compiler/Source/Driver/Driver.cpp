@@ -17,8 +17,8 @@ void Driver::compileProgram( std::string& filePath )
         {    
             m_errReporter.report(
                 RuntimeError(
-                    ErrorSeverity::Fatal,
-                    maybeParsedFile.error()
+                    maybeParsedFile.error(),
+                    ErrorSeverity::Fatal
                 )
             );
         }
@@ -61,16 +61,16 @@ std::expected<void, std::string> Driver::parseFile( const std::string& filePath 
         "Parsing tokens for file"
     );
 
-    auto ast = m_parser.parse( compUnit );
+    m_parser.parse( compUnit );
     if ( m_errReporter.hasErrors() ) return std::unexpected( "Error(s) during parsing" );
 
     Debugger debugger = Debugger();
 
-    debugger.printASTTree(ast->statements);
+    debugger.printASTTree(compUnit->readStatements());
 
     Logger::debug( 
         "AST generated with " +
-        std::to_string( ast->statements.size() ) + 
+        std::to_string( compUnit->readStatements().size() ) + 
         " top-level statements"
     );
 

@@ -58,6 +58,8 @@ class CompilationUnit {
         void addToAST( std::unique_ptr<Statement> statement) { m_ast.addStatement(std::move(statement)); }
 
         std::span<const Token> readTokens() { return m_tokens.getReadOnlyTokens(); }
+
+        const std::vector<std::unique_ptr<Statement>>& readStatements() const { return m_ast.m_statements; };
     private:
         FileId m_fileId;
         ScopeId m_globalScope;

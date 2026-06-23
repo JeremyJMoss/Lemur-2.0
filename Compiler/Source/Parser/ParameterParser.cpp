@@ -2,7 +2,7 @@
 
 std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterParser::parseFunctionParameters() 
 {   
-    auto maybeFrontParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::LParens );
+    auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
     // Parse parameters: zero or more parameters separated by commas
@@ -10,14 +10,16 @@ std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterPa
 
     while ( true ) 
     {
-        auto maybeNextToken = m_utils.peek();
-        if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
-        const Token& next = maybeNextToken.value();
+        auto next = m_tokenStream.peek();
+
+        if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+        }
 
         if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
         {
             // End of parameters list
-            auto maybeBackParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::RParens );
+            auto maybeBackParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RParens );
             if ( !maybeBackParens ) return std::unexpected( maybeBackParens.error() );
             break;
         }
@@ -28,17 +30,15 @@ std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterPa
         parameters.emplace_back( std::move( maybeParameter.value() ) );
 
         // After param, expect either ',' or ')'
-        auto maybeSeparatorToken = m_utils.peek();
-        if ( !maybeSeparatorToken ) return std::unexpected( maybeSeparatorToken.error() );
-        const Token& separator = maybeSeparatorToken.value();
+        auto seperator = m_tokenStream.peek();
 
-        if ( separator.checkMatches( TokenKind::Symbol, TokenSymbol::Comma ) ) 
+        if ( seperator.checkMatches( TokenKind::Symbol, TokenSymbol::Comma ) ) 
         {
-            auto maybeCommaToken = m_utils.expect( TokenKind::Symbol, TokenSymbol::Comma );
+            auto maybeCommaToken = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Comma );
             if ( !maybeCommaToken ) return std::unexpected( maybeCommaToken.error() );
             continue;
         } 
-        else if ( separator.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
+        else if ( seperator.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
         {
             // will be handled next loop iteration
             continue;
@@ -47,9 +47,9 @@ std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterPa
         {
             return std::unexpected(
                 CompilerError(
+                    "Expected ',' or ')' after parameter, got '" + seperator.getValue() + "'", 
                     ErrorSeverity::Error,
-                    "Expected ',' or ')' after parameter, got '" + separator.getValue() + "'", 
-                    separator.getLocation(),
+                    seperator.getLocation(),
                     ErrorCategory::Syntax
                 )
             );
@@ -61,22 +61,23 @@ std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterPa
 
 std::expected<std::unique_ptr<Parameter>, ErrorVariant> ParameterParser::parseParameter() 
 {
-    auto maybeIdToken = m_utils.consume( TokenKind::Identifier );
-    if ( !maybeIdToken ) return std::unexpected( maybeIdToken.error() );
-    const Token& idToken = maybeIdToken.value();
+    auto front = m_tokenStream.peek();
 
-    auto maybeColon = m_utils.expect( TokenKind::Symbol, TokenSymbol::Colon );
+    if ( !front.checkTypeMatches( TokenKind::Identifier )) {
+        return std::unexpected( UnexpectedTypeError( TokenKind::Identifier, front.getType(), front.getLocation() ) );
+    }
+
+    auto idToken = m_tokenStream.consume();
+
+    auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
     auto maybeParsedType = m_typeParser.parseType();
     if ( !maybeParsedType ) return std::unexpected( maybeParsedType.error() );
 
     auto param = std::make_unique<Parameter>( idToken.getValue(), std::move( maybeParsedType.value() ) );
-
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
     
-    param->location = m_utils.getLocation( idToken, maybeEndToken.value() );
+    param->location = { front.getLocation().start, param->paramType->location.end, front.getLocation().fileId };
 
     return param;
 }

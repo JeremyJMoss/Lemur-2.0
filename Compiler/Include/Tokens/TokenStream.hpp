@@ -13,6 +13,7 @@ class TokenStream {
         Token peek( const std::size_t offset = 0 ) const;
         Token consume();
         void initializeTokenStream( std::span<const Token> tokens ) { m_tokens = tokens; }
+        void recoverFromError(); 
 
         std::expected<Token, ErrorVariant> expect( TokenKind expectedType, TokenSymbol expectedValue );
         std::expected<Token, ErrorVariant> expect( TokenKind expectedType, TokenKeyword expectedValue );

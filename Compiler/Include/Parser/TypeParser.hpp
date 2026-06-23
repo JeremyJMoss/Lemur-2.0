@@ -16,6 +16,8 @@ class TypeParser{
             
         std::expected<std::unique_ptr<ParsedType>, ErrorVariant> parseType();
 
+        std::expected<std::unique_ptr<ParsedType>, ErrorVariant> parseNamedType();
+
         std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> parseParameterTypes();
 
     private:

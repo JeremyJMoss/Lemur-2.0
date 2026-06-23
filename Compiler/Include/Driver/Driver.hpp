@@ -17,7 +17,7 @@ class Driver
                   m_srcManager, 
                   m_errReporter 
               ),
-              m_parser( m_errReporter, m_compilationUnits ) {}
+              m_parser( m_errReporter ) {}
 
         void compileProgram( std::string& filePath );
 

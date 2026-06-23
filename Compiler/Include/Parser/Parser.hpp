@@ -27,9 +27,8 @@ using fileId = std::size_t;
 class Parser 
 {
     public:
-        Parser( ErrorReporter& errReporter, std::unordered_map<fileId, CompilationUnit>& compilationUnits )
+        Parser( ErrorReporter& errReporter )
             : m_errReporter( errReporter ),
-            m_compilationUnits( compilationUnits ),
             m_tokenStream(),
             m_typeParser( m_tokenStream, m_utils ),
             m_paramParser( m_tokenStream, m_utils, m_typeParser ),
@@ -45,7 +44,6 @@ class Parser
 
     private:
         ErrorReporter& m_errReporter;
-        std::unordered_map<fileId, CompilationUnit>& m_compilationUnits;
         std::vector<std::unique_ptr<Statement>> m_statements;
         ParserUtils m_utils;
         TokenStream m_tokenStream;

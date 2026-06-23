@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <tuple>
+#include <variant>
 #include "Tokens/Token.hpp"
 #include "AST/ASTNode.hpp"
 #include "SourceControl/SourceLocation.hpp"

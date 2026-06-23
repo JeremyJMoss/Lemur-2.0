@@ -19,8 +19,6 @@ class ParserUtils
     public:
         std::size_t getCurrentPosition() { return m_position; }
 
-        void recoverFromError();
-
         static SourceRange getLocation( const Token& startToken, const Token& endToken );
 
         static SourceRange getLocation( const Token& token );
@@ -35,8 +33,4 @@ class ParserUtils
     private:
         std::size_t m_position;
         std::vector<Token> m_tokens;
-
-        bool isTerminatingToken( const Token& token ) const;
-        bool isEndBrace( const Token& token ) const;
-        bool isFrontBrace( const Token& token ) const;
 };

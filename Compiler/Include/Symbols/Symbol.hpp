@@ -41,9 +41,9 @@ struct Symbol
         const SymbolType& kind,
         TypeId typeId
     ) : m_id( InvalidSymbolId ), 
+        m_typeId( typeId ),
         m_name( std::move( name ) ), 
-        m_kind( kind ),
-        m_typeId( typeId ) {}
+        m_kind( kind ) {}
         
 };
 

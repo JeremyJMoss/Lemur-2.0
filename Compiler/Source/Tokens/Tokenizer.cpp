@@ -39,8 +39,8 @@ std::unique_ptr<CompilationUnit> Tokenizer::tokenizeFile( const std::string& fil
     if ( !fileStream.is_open() ) 
     {
         m_errReporter.report( RuntimeError(
-                ErrorSeverity::Fatal,
-                "Error opening .lmur file"
+                "Error opening .lmur file",
+                ErrorSeverity::Fatal
             ) 
         );
         return nullptr;
@@ -188,10 +188,10 @@ void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<Compilatio
                         compUnit->getFileId()
                     };
 
-                    m_errReporter.report( CompilerError( 
-                            ErrorSeverity::Error,
+                    m_errReporter.report( CompilerError(
                             "Unexpected token at line " + std::to_string( m_lineNum ) + 
                             " position " + std::to_string( pos ) + ": '" + line[ pos ] + "'",
+                            ErrorSeverity::Error,
                             errorLocation,
                             ErrorCategory::Lexical
                         ) 
@@ -246,8 +246,8 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
     }
 
     m_errReporter.report( CompilerError( 
-            ErrorSeverity::Fatal,
             errorMessage,
+            ErrorSeverity::Fatal,
             errorLocation,
             ErrorCategory::Lexical
         ) 
@@ -287,5 +287,11 @@ TokenKind Tokenizer::getTokenType( const std::string& value )
     else if ( m_SYMBOLS.find( value ) != m_SYMBOLS.end() )   return TokenKind::Symbol;
     
     return TokenKind::Identifier;
+}
+
+void Tokenizer::clearPartialToken() 
+{
+    m_inToken = false;
+    m_partialToken.clear();
 }
 

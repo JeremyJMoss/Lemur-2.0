@@ -153,7 +153,7 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
 
             Logger::trace( "Recovering from error inside block" );
 
-            m_utils.recoverFromError();
+            m_tokenStream.recoverFromError();
 
             current = m_tokenStream.peek();
             continue;
@@ -268,8 +268,8 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
 
     auto current = m_tokenStream.peek();
 
-    if (!current.checkTypeMatches(TokenKind::Identifier)) {
-        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, current.getType(), current.getLocation()));
+    if (current.checkTypeMatches(TokenKind::EndOfFile)) {
+        return std::unexpected(UnexpectedEndOfInputError( current.getLocation() ));
     }
 
     std::unique_ptr<Expression> initialiser;
@@ -295,14 +295,14 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         }
     }
 
+    auto endLocation = initialiser != nullptr ? initialiser->location.end : varType->location.end;
+
     auto decl = std::make_unique<VariableDeclaration>( 
         std::move( identifier ), 
         std::move( varType ), 
         locked, 
         std::move( initialiser ) 
     );
-
-    auto endLocation = initialiser != nullptr ? initialiser->location.end : varType->location.end;
 
     decl->location = {frontToken.getLocation().start, endLocation, frontToken.getLocation().fileId };
 
@@ -365,7 +365,7 @@ std::expected<std::unique_ptr<Return>, ErrorVariant> StatementParser::parseRetur
 
     auto endLocation = hasReturn ? ret->value->location.end : front.getLocation().end;
 
-    ret->location = {front.getLocation().start, endLocation, front.getLocation().fileId };
+    ret->location = { front.getLocation().start, endLocation, front.getLocation().fileId };
 
     Logger::debug( 
         "Constructed return statement", 
@@ -382,12 +382,13 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
     std::string stmtType = justElse ? "else" : "if";
     Logger::debug( "Parsing " + stmtType + " statement" );
 
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
 
-    auto maybeKeyword = m_utils.consume( TokenKind::Keyword );
-    if ( !maybeKeyword ) return std::unexpected( maybeKeyword.error() );
+    if ( !front.checkTypeMatches( TokenKind::Keyword )) {
+        return std::unexpected( UnexpectedTypeError( TokenKind::Keyword, front.getType(), front.getLocation() ) );
+    }
+
+    auto keyword = m_tokenStream.consume();
 
     std::unique_ptr<Expression> condition;
 
@@ -398,22 +399,14 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
 
         bool hasFrontParenthesis = false;
         // Except optional parenthesis around if statement condition
-        auto maybeFrontParenthesis = m_utils.expect( TokenKind::Symbol, TokenSymbol::LParens );
+        auto maybeFrontParenthesis = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
         if ( maybeFrontParenthesis ) hasFrontParenthesis = true;
 
         auto maybeCondition = m_exprParser->parseExpression();
         if ( !maybeCondition ) 
         {
-            auto maybeIssueToken = m_utils.peekBack();
-            if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
             return std::unexpected( 
-                CompilerError(
-                    ErrorSeverity::Error,
-                    "Conditional statement missing condition",
-                    maybeIssueToken.value().getLocation(),
-                    ErrorCategory::Syntax
-                )
+                maybeCondition.error()
             );
         }
 
@@ -423,19 +416,11 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
         {
             Logger::debug( "Detected optional parentheses around conditional expression" );
 
-            auto maybeClosingParenthesis = m_utils.expect( TokenKind::Symbol, TokenSymbol::RParens );
+            auto maybeClosingParenthesis = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RParens );
             if ( !maybeClosingParenthesis )
             {
-                auto maybeIssueToken = m_utils.peekBack();
-                if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
                 return std::unexpected(
-                    CompilerError(
-                        ErrorSeverity::Error,
-                        "Missing closing parenthesis for conditional statement",
-                        maybeIssueToken.value().getLocation(),
-                        ErrorCategory::Syntax
-                    )
+                    maybeClosingParenthesis.error()
                 );
             }
         }
@@ -447,38 +432,34 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
     auto maybeBody = parseBlock();
     if ( !maybeBody )
     {
-        auto maybeIssueToken = m_utils.peekBack();
-        if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
         return std::unexpected(
-            CompilerError(
-                ErrorSeverity::Error,
-                "Cannot have conditional statement without a body",
-                maybeIssueToken.value().getLocation(),
-                ErrorCategory::Syntax
-            )
+            maybeBody.error()
         );
     }
 
     std::unique_ptr<IfConditional> elseStatement;
 
-    auto maybeAfterToken = m_utils.peek();
-    if ( !maybeAfterToken ) return std::unexpected( maybeAfterToken.error() );
-    const Token& after = maybeAfterToken.value();
+    auto next = m_tokenStream.peek();
+
+    if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+    }
     
-    if ( after.checkMatches( TokenKind::Keyword, TokenKeyword::Else ) ) 
+    if ( next.checkMatches( TokenKind::Keyword, TokenKeyword::Else ) ) 
     {
         Logger::trace( "Detected 'else', checking for 'if' to parse else-if or else body" );
 
-        auto maybeNextToken = m_utils.peek();
-        if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
-        const Token& next = maybeNextToken.value();
+        next = m_tokenStream.peek();
+
+        if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+        }
 
         if ( next.checkMatches( TokenKind::Keyword, TokenKeyword::If ) ) 
         {
             Logger::trace( "Detected else-if branch, calling parseIfConditional recursively" );
 
-            auto maybeIf = m_utils.expect( TokenKind::Keyword, TokenKeyword::If );
+            auto maybeIf = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::If );
             if ( !maybeIf ) return std::unexpected( maybeIf.error() );
 
             auto maybeElseStatement = parseIfConditional();
@@ -494,8 +475,7 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
         }
     }
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
+    auto endLocation = elseStatement == nullptr ? maybeBody.value()->location.end : elseStatement->location.end;
 
     auto ifStmt = std::make_unique<IfConditional>( 
         std::move( condition ), 
@@ -503,7 +483,7 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
         std::move( maybeBody.value() ) 
     );
 
-    ifStmt->location = m_utils.getLocation( front, maybeEndToken.value() );
+    ifStmt->location = { front.getLocation().start, endLocation, front.getLocation().fileId };
 
     Logger::debug( "Successfully parsed " + stmtType + " statement" );
 
@@ -514,14 +494,10 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
 {
     Logger::debug( "Parsing for loop statement" );
 
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
-
-    auto maybeForKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::For );
+    auto maybeForKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::For );
     if ( !maybeForKeyword ) return std::unexpected( maybeForKeyword.error() );
 
-    auto maybeFrontParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::LParens );
+    auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
     Logger::trace( "Parsing loop variable Declaration" );
@@ -529,7 +505,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
     auto maybeLoopVar = parseVariableDeclaration();
     if ( !maybeLoopVar ) return std::unexpected( maybeLoopVar.error() );
 
-    auto maybeInKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::In );
+    auto maybeInKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::In );
     if ( !maybeInKeyword ) return std::unexpected( maybeInKeyword.error() );
 
     Logger::trace( "Parsing iterable expression for loop" );
@@ -537,44 +513,35 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
     auto maybeIterable = m_exprParser->parseExpression();
     if ( !maybeIterable )
     {
-        auto maybeIssueToken = m_utils.peekBack();
-        if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
         return std::unexpected(
-            CompilerError(
-                ErrorSeverity::Error,
-                "Malformed or missing iterable for loop statement",
-                maybeIssueToken.value().getLocation(),
-                ErrorCategory::Syntax
-            )
+            maybeIterable.error()
         );
     } 
 
     std::unique_ptr<Expression> step;
     std::unique_ptr<Expression> where;
 
-    auto maybeCurrentToken = m_utils.peek();
-    if ( !maybeCurrentToken ) return std::unexpected( maybeCurrentToken.error() );
-    const Token& current = maybeCurrentToken.value();
+    auto current = m_tokenStream.peek();
+
+    if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+    }
 
     if ( current.checkMatches( TokenKind::Keyword, TokenKeyword::Step ) ) 
     {
         Logger::trace( "Parsing 'step' expression in for loop" );
 
-        auto maybeStepKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::Step );
+        auto maybeStepKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Step );
         if ( !maybeStepKeyword ) return std::unexpected( maybeStepKeyword.error() );
 
         auto maybeStep = m_exprParser->parseExpression();
         if ( !maybeStep )
         {
-            auto maybeIssueToken = m_utils.peekBack();
-            if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
             m_errReporter.report(
                 CompilerError(
-                    ErrorSeverity::Error,
                     "Malformed or missing step statement inside loop parameters",
-                    maybeIssueToken.value().getLocation(),
+                    ErrorSeverity::Error,
+                    maybeStepKeyword.value().getLocation(),
                     ErrorCategory::Syntax
                 )
             );
@@ -584,28 +551,27 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
             step = std::move( maybeStep.value() );
         }
 
-        auto maybeNextToken = m_utils.peek();
-        if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
-        const Token& next = maybeNextToken.value();
+        current = m_tokenStream.peek();
 
-        if ( next.checkMatches( TokenKind::Keyword, TokenKeyword::Where ) ) 
+        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        }
+
+        if ( current.checkMatches( TokenKind::Keyword, TokenKeyword::Where ) ) 
         {
             Logger::trace( "Parsing optional 'where' clause in for loop" );
 
-            auto maybeWhereKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::Where );
+            auto maybeWhereKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Where );
             if ( !maybeWhereKeyword ) return std::unexpected( maybeWhereKeyword.error() );
 
             auto maybeWhere = m_exprParser->parseExpression();
             if ( !maybeWhere )
             {
-                auto maybeIssueToken = m_utils.peekBack();
-                if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
                 m_errReporter.report(
                     CompilerError(
-                        ErrorSeverity::Error,
                         "Malformed or missing where statement inside loop parameters",
-                        maybeIssueToken.value().getLocation(),
+                        ErrorSeverity::Error,
+                        maybeWhereKeyword.value().getLocation(),
                         ErrorCategory::Syntax
                     )
                 );
@@ -620,20 +586,17 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
     {
         Logger::trace( "Parsing 'where' clause in for loop without step" );
 
-        auto maybeWhereKeyword = m_utils.expect( TokenKind::Keyword, TokenKeyword::Where );
+        auto maybeWhereKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Where );
         if ( !maybeWhereKeyword ) return std::unexpected( maybeWhereKeyword.error() );
 
         auto maybeWhere = m_exprParser->parseExpression();
         if ( !maybeWhere )
         {
-            auto maybeIssueToken = m_utils.peekBack();
-            if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
             m_errReporter.report(
                 CompilerError(
-                    ErrorSeverity::Error,
                     "Malformed or missing where statement inside loop parameters",
-                    maybeIssueToken.value().getLocation(),
+                    ErrorSeverity::Error,
+                    maybeWhereKeyword.value().getLocation(),
                     ErrorCategory::Syntax
                 )
             );
@@ -644,7 +607,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
         }
     }
 
-    auto maybeClosingParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::RParens );
+    auto maybeClosingParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RParens );
     if ( !maybeClosingParens ) return std::unexpected( maybeClosingParens.error() );
 
     Logger::trace( "Parsing for loop body block" );
@@ -652,21 +615,10 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
     auto maybeBody = parseBlock();
     if ( !maybeBody )
     {
-        auto maybeIssueToken = m_utils.peekBack();
-        if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
         return std::unexpected(
-            CompilerError(
-                ErrorSeverity::Error,
-                "Cannot have loop without a body",
-                maybeIssueToken.value().getLocation(),
-                ErrorCategory::Syntax
-            )
+            maybeBody.error()
         );
     }
-
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
 
     auto forLoop = std::make_unique<ForLoop>( 
         std::move( maybeLoopVar.value() ), 
@@ -676,7 +628,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
         std::move( maybeBody.value() ) 
     );
 
-    forLoop->location = m_utils.getLocation( front, maybeEndToken.value() );
+    forLoop->location = { maybeForKeyword.value().getLocation().start, forLoop->body->location.end, forLoop->body->location.fileId };
 
     Logger::debug( "Successfully parsed for loop statement" );
 

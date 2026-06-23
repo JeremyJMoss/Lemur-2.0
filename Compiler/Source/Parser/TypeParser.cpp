@@ -3,10 +3,10 @@
 std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType() 
 {
     auto frontToken = m_tokenStream.peek();
+
     if ( frontToken.checkTypeMatches( TokenKind::EndOfFile) ) {
         return std::unexpected( UnexpectedEndOfInputError( frontToken.getLocation() ) );
     }
-    
 
     if ( frontToken.checkMatches( TokenKind::Keyword, TokenKeyword::Fn ) ) {
         auto maybeFunctionKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Fn );
@@ -137,6 +137,14 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
 
         return inferType;
     }
+    else if ( frontToken.checkTypeMatches( TokenKind::Identifier ) ) 
+    {
+        auto maybeNamedType = parseNamedType();
+        if ( !maybeNamedType ) return std::unexpected( maybeNamedType.error() );
+        auto namedType = std::move( maybeNamedType.value() );
+
+        return namedType;   
+    } 
     else 
     {
         return std::unexpected(
@@ -148,6 +156,21 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
             ) 
         );
     }   
+}
+
+std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseNamedType() 
+{
+    auto idToken = m_tokenStream.consume();
+
+    auto identifier = std::make_unique<Identifier>( idToken.getValue() );
+
+    identifier->location = m_utils.getLocation(idToken);
+
+    auto namedType = std::make_unique<ParsedNamedType>( std::move( identifier ) );
+
+    namedType->location = namedType->identifier->location;
+        
+    return namedType;
 }
 
 std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser::parseParameterTypes() 

@@ -49,7 +49,7 @@ void Parser::parseNextStatement( std::unique_ptr<CompilationUnit>& compUnit )
             maybeStatement.error()
         );
 
-        m_utils.recoverFromError();
+        m_tokenStream.recoverFromError();
         return;
     }
 
@@ -63,7 +63,6 @@ void Parser::parseNextStatement( std::unique_ptr<CompilationUnit>& compUnit )
 
 std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::createStatement( const Token& token ) 
 {
-
     // setting up array for debugging purposes
     const std::array attrs = {
         Attribute{ "Value", "'" + token.getValue() + "'" },
@@ -175,19 +174,18 @@ std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseKeywordStat
 
 std::expected<std::unique_ptr<Statement>, ErrorVariant> Parser::parseIdentifierStatement( const Token& token )
 {
+    auto next = m_tokenStream.peek(1);
     // Look ahead to see if this is a declaration like: x : int = ...
-    if( m_tokenStream.peek( 1 ).checkTypeMatches(TokenKind::EndOfFile)) {
+    if( next.checkTypeMatches(TokenKind::EndOfFile)) {
         return std::unexpected(
             CompilerError(
                 "Unexpected end of input",
                 ErrorSeverity::Fatal,
-                m_tokenStream.peek(1).getLocation(),
+                next.getLocation(),
                 ErrorCategory::Syntax
             )
         );
     };
-
-    const Token& next = m_tokenStream.consume();
 
     if ( next.checkValueMatches( TokenSymbol::Colon ) ) 
     {

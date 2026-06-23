@@ -6,12 +6,16 @@
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
+#include <memory>
 #include "Tokens/Token.hpp"
 #include "SourceControl/SourceLocation.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Errors/ErrorReporter.hpp"
+#include "Driver/CompilationUnit.hpp"
 
 using FileId = std::size_t;
+
+class CompilationUnit;
 
 class Tokenizer 
 {

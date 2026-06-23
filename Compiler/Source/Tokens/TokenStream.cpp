@@ -30,9 +30,7 @@ Token TokenStream::peek( const std::size_t offset ) const
  */
 Token TokenStream::consume()
 {
-    m_pos++;
-
-    return m_tokens[m_pos];
+    return m_tokens[m_pos++];
 }
 
 void TokenStream::reset()
@@ -51,44 +49,39 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
         })
     );
 
-    auto token = peek();
+    auto peekedToken = peek();
 
-    if ( token.checkTypeMatches( TokenKind::EndOfFile ) ) 
+    if ( peekedToken.checkTypeMatches( TokenKind::EndOfFile ) ) 
     {
-        return std::unexpected( UnexpectedEndOfInputError( token.getLocation() ) );
+        return std::unexpected( UnexpectedEndOfInputError( peekedToken.getLocation() ) );
     }
 
-    if ( !token.checkTypeMatches( expectedType ) ) {
+    if ( !peekedToken.checkTypeMatches( expectedType ) ) {
         Logger::trace(
             "Expect mismatch",
             std::to_array<Attribute>({
                 { "ExpectedType", "'" + toString( expectedType ) + "'" },
-                { "Type", "'" + toString( nextToken.getType() ) + "'" }
+                { "Type", "'" + toString( peekedToken.getType() ) + "'" }
             })
         );
 
         return std::unexpected(
-            UnexpectedTypeError( expectedType, token.getType(), token.getLocation() )
+            UnexpectedTypeError( expectedType, peekedToken.getType(), peekedToken.getLocation() )
         );
     }
 
-    if ( !token.checkValueMatches( expectedValue ) ) {
+    if ( !peekedToken.checkValueMatches( expectedValue ) ) {
 
         Logger::trace(
             "Expect mismatch. Token type matched but value mismatch.",
             std::to_array<Attribute>({ 
                 { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + nextToken.getValue() + "'" }
+                { "Value", "'" + peekedToken.getValue() + "'" }
             })
         );
 
         return std::unexpected(
-            CompilerError(
-                ErrorSeverity::Error,
-                "Expected '" + toString( expectedValue ) + "', got '" + nextToken.getValue() + "'",
-                nextToken.getLocation(),
-                ErrorCategory::Syntax
-            )
+            UnexpectedValueError( expectedValue, peekedToken.getSymbol(), peekedToken.getLocation())
         );
     }
 
@@ -127,7 +120,7 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
             "Expect mismatch",
             std::to_array<Attribute>({
                 { "ExpectedType", "'" + toString( expectedType ) + "'" },
-                { "Type", "'" + toString( nextToken.getType() ) + "'" }
+                { "Type", "'" + toString( peekedToken.getType() ) + "'" }
             })
         );
 
@@ -142,12 +135,12 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
             "Expect mismatch. Token type matched but value mismatch.",
             std::to_array<Attribute>({ 
                 { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + nextToken.getValue() + "'" }
+                { "Value", "'" + peekedToken.getValue() + "'" }
             })
         );
 
         return std::unexpected(
-            UnexpectedValueError( expectedValue, peekedToken.getValue(), peekedToken.getLocation() )
+            UnexpectedValueError( expectedValue, peekedToken.getKeyword(), peekedToken.getLocation() )
         );
     }
 
@@ -162,4 +155,76 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
     );
 
     return token;
+}
+
+void TokenStream::recoverFromError() 
+{
+    // setting up array for debugging purposes
+    const std::array posAttr = {
+        Attribute{ "Position", std::to_string( m_pos ) } 
+    };
+
+    Logger::trace( 
+        "Error recovery started", 
+        posAttr
+    );
+
+    int braceDepth = 0;
+
+    while ( true ) 
+    {
+        auto token = peek();
+
+        if ( token.checkTypeMatches( TokenKind::EndOfFile ) )
+        {
+            Logger::trace( 
+                "Reached end of file", 
+                posAttr
+            );
+            return; // EOF reached
+        }
+        else if ( token.checkMatches( TokenKind::Symbol, TokenSymbol::LBrace ) ) 
+        {
+            braceDepth++;
+        } 
+        else if ( token.checkMatches( TokenKind::Symbol, TokenSymbol::RBrace ) ) 
+        {
+            if ( braceDepth == 0 ) 
+            {
+                // Unmatched '}' -> probably a good sync point
+                m_pos++;
+                break;
+            }
+            braceDepth--;
+        }
+
+        // setting up array for debugging purposes
+        const std::array attrs = {
+            Attribute{ "Value", "'" + token.getValue() + "'" },
+            Attribute{ "Position", std::to_string( m_pos ) },
+            Attribute{ "Location", token.getLocation().toString() }
+        };
+
+        if ( braceDepth == 0 && token.checkMatches( TokenKind::Symbol, TokenSymbol::SemiColon ) ) 
+        {
+            Logger::trace( 
+                "Sync token found", 
+                attrs
+            );
+            m_pos++;
+            break;
+        }
+
+        Logger::trace(
+            "Skipping token", 
+            attrs
+        );
+
+        m_pos++;
+    }
+
+    Logger::trace( 
+        "Resumed parsing", 
+        posAttr
+    );
 }

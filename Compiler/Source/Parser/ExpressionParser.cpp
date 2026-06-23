@@ -90,9 +90,11 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
             auto maybeParams = parseFunctionCallParams();
             if ( !maybeParams ) return std::unexpected( maybeParams.error() );
 
+            auto exprLocation = expr->location.end;
+
             expr = std::make_unique<FunctionCall>( std::move( expr ), std::move( maybeParams.value() ) );
 
-            expr->location = {current.getLocation().start, expr->location.end, current.getLocation().fileId };
+            expr->location = {current.getLocation().start, exprLocation, current.getLocation().fileId };
         }
         else 
         {
@@ -409,14 +411,16 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 
 std::expected<std::unique_ptr<Assignment>, ErrorVariant> ExpressionParser::parseAssignment() 
 {
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
 
     auto maybeLExpression = parsePostFixExpression();
     if ( !maybeLExpression ) return std::unexpected( maybeLExpression.error() );
 
-    auto maybeAssign = m_utils.expect( TokenKind::Symbol, TokenSymbol::Assign );
+    auto maybeAssign = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Assign );
     if ( !maybeAssign ) return std::unexpected( maybeAssign.error() );
 
     auto maybeRExpression = parseExpression();
@@ -424,49 +428,29 @@ std::expected<std::unique_ptr<Assignment>, ErrorVariant> ExpressionParser::parse
 
     auto assign = std::make_unique<Assignment>( std::move( maybeLExpression.value() ), std::move( maybeRExpression.value() ) );
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-    assign->location = m_utils.getLocation( front, maybeEndToken.value() );
+    assign->location = {front.getLocation().start, assign->value->location.end, front.getLocation().fileId };
 
     return assign;
 }
 
 std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parseUnary() 
 {
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
+   
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
 
     if ( front.checkMatches( TokenKind::Symbol, std::vector<TokenSymbol> { TokenSymbol::Minus, TokenSymbol::Not } ) ) 
     {
-        auto maybeOperator = m_utils.consume( TokenKind::Symbol );
-        if ( !maybeOperator ) 
-        {
-            auto maybePrevToken = m_utils.peekBack();
-            if ( !maybePrevToken ) return std::unexpected( maybePrevToken.error() );
-
-            return std::unexpected( 
-                CompilerError(
-                    ErrorSeverity::Error,
-                    "Missing unary operator in expression.",
-                    maybePrevToken.value().getLocation(),
-                    ErrorCategory::Syntax
-                )
-            );
-        }
-
-        const std::string& op = maybeOperator.value().getValue();
+        auto op = m_tokenStream.consume().getValue();
 
         auto maybeUnary = parseUnary();
         if ( !maybeUnary ) return std::unexpected( maybeUnary.error() );
 
         auto unexp = std::make_unique<Unary>( std::move( maybeUnary.value() ), op );
 
-        auto maybeEndToken = m_utils.peekBack();
-        if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-        unexp->location = m_utils.getLocation( front, maybeEndToken.value() );
+        unexp->location = { front.getLocation().start, unexp->argument->location.end, front.getLocation().fileId };
 
         return unexp;
     }
@@ -479,9 +463,11 @@ std::expected<std::unique_ptr<Range>, ErrorVariant> ExpressionParser::parseRange
 {
     bool inclusive;
 
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
 
     if ( front.checkValueMatches( TokenKeyword::To ) ) 
     {
@@ -495,35 +481,23 @@ std::expected<std::unique_ptr<Range>, ErrorVariant> ExpressionParser::parseRange
     {
         return std::unexpected(
             CompilerError(
-                ErrorSeverity::Error,
                 "Expected either 'to' or 'until' got " + front.getValue(), 
+                ErrorSeverity::Error,
                 front.getLocation(),
                 ErrorCategory::Syntax
             ) 
         );
     }
 
-    auto maybeKeyword = m_utils.consume( TokenKind::Keyword );
-    if ( !maybeKeyword ) return std::unexpected( maybeKeyword.error() );
+    auto keyword = m_tokenStream.consume();
 
     auto maybeEnd = parseExpression();
     if ( !maybeEnd )
     {
-        auto maybeIssueToken = m_utils.peekBack();
-        if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
         return std::unexpected(
-            CompilerError(
-                ErrorSeverity:: Error,
-                "End of range is either malformed or missing",
-                maybeIssueToken.value().getLocation(),
-                ErrorCategory::Syntax
-            )
+            maybeEnd.error()
         );
     }
-
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
     
     auto rngExp = std::make_unique<Range>( 
         std::move( start ), 
@@ -531,7 +505,7 @@ std::expected<std::unique_ptr<Range>, ErrorVariant> ExpressionParser::parseRange
         inclusive 
     );
 
-    rngExp->location = m_utils.getLocation( front, maybeEndToken.value() );
+    rngExp->location = { front.getLocation().start, rngExp->end->location.end, front.getLocation().fileId };
 
     return rngExp;
 }
@@ -540,17 +514,19 @@ std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> Expression
 {
     std::vector<std::unique_ptr<Expression>> params;
 
-    auto maybeFrontParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::LParens );
+    auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
     while( true ) {
-        auto maybeCurrentToken = m_utils.peek();
-        if ( !maybeCurrentToken ) return std::unexpected( maybeCurrentToken.error() );
-        const Token& current = maybeCurrentToken.value();
+        auto current = m_tokenStream.peek();
+
+        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        }
 
         if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
         {
-            auto maybeClosingParens = m_utils.expect( TokenKind::Symbol, TokenSymbol::RParens );
+            auto maybeClosingParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RParens );
             if ( !maybeClosingParens ) return std::unexpected( maybeClosingParens.error() );
             break;
         }
@@ -560,14 +536,16 @@ std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> Expression
         
         params.emplace_back( std::move( maybeParameter.value() ) );
 
-        auto maybeNextToken = m_utils.peek();
-        if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
-        const Token& next = maybeNextToken.value();
+        auto next = m_tokenStream.peek();
+
+        if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+        }
 
         if (next.checkTypeMatches( TokenKind::Symbol ) ) 
         {
             if ( next.checkValueMatches( TokenSymbol::RParens ) ) continue;
-            auto maybeComma = m_utils.expect( TokenKind::Symbol, TokenSymbol::Comma );
+            auto maybeComma = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Comma );
             if ( !maybeComma ) return std::unexpected( maybeComma.error() );
         }
     }
@@ -577,9 +555,13 @@ std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> Expression
 
 std::expected<std::unique_ptr<FunctionCall>, ErrorVariant> ExpressionParser::parseFunctionCall() 
 {
-    auto maybeIdToken = m_utils.consume( TokenKind::Identifier );
-    if ( !maybeIdToken ) return std::unexpected( maybeIdToken.error() );
-    const Token& idToken = maybeIdToken.value();
+    auto front = m_tokenStream.peek();
+
+    if ( !front.checkTypeMatches( TokenKind::Identifier )) {
+        return std::unexpected( UnexpectedTypeError( TokenKind::Identifier, front.getType(), front.getLocation() ) );
+    }
+
+    auto idToken = m_tokenStream.consume();
 
     auto identifier = std::make_unique<Identifier>( idToken.getValue() );
     identifier->location = m_utils.getLocation( idToken );
@@ -589,56 +571,59 @@ std::expected<std::unique_ptr<FunctionCall>, ErrorVariant> ExpressionParser::par
 
     auto funCall = std::make_unique<FunctionCall>( std::move( identifier ), std::move( maybeFunctionCallParams.value() ) );
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-    funCall->location = m_utils.getLocation( idToken, maybeEndToken.value() );
+    funCall->location = { front.getLocation().start, funCall->params.back()->location.end, front.getLocation().fileId };
 
     return funCall;
 }
 
 std::expected<std::unique_ptr<FunctionLiteral>, ErrorVariant> ExpressionParser::parseFunctionLiteral() 
 {
-    auto maybeFrontToken = m_utils.peek();
-    if ( !maybeFrontToken ) return std::unexpected( maybeFrontToken.error() );
-    const Token& front = maybeFrontToken.value();
+    auto front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
 
     auto maybeParameters = m_paramParser.parseFunctionParameters();
     if ( !maybeParameters ) return std::unexpected( maybeParameters.error() );
 
-    auto maybeColon = m_utils.expect( TokenKind::Symbol, TokenSymbol::Colon );
+    auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
     auto maybeReturnType = m_typeParser.parseType();
     if ( !maybeReturnType ) return std::unexpected( maybeReturnType.error() );
 
-    auto maybeCurrentToken = m_utils.peek();
-    if ( !maybeCurrentToken ) return std::unexpected( maybeCurrentToken.error() );
-    const Token& current = maybeCurrentToken.value();
+    auto current = m_tokenStream.peek();
+
+    if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+    }
 
     // after function expressions expect >> before body
     if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::Greater ) ) 
     {
-        auto maybeFirstAngle = m_utils.expect( TokenKind::Symbol, TokenSymbol::Greater );
+        auto maybeFirstAngle = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Greater );
         if ( !maybeFirstAngle ) return std::unexpected( maybeFirstAngle.error() );
 
-        auto maybeNextToken = m_utils.peek();
-        if ( !maybeNextToken ) return std::unexpected( maybeNextToken.error() );
-        const Token& next = maybeNextToken.value();
+        current = m_tokenStream.peek();
+
+        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        }
 
         // check if the > is directly preceded by another >
-        if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::Greater ) && next.getLocation().start.line == current.getLocation().start.line 
-            && next.getLocation().start.column == current.getLocation().start.column + 1 ) 
+        if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::Greater ) && current.getLocation().start.line == current.getLocation().start.line 
+            && current.getLocation().start.column == current.getLocation().start.column + 1 ) 
         {
-            auto maybeSecondAngle = m_utils.expect( TokenKind::Symbol, TokenSymbol::Greater );
+            auto maybeSecondAngle = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Greater );
             if ( !maybeSecondAngle ) return std::unexpected( maybeSecondAngle.error() );               
         } 
         else 
         {
             return std::unexpected( 
                 CompilerError(
-                    ErrorSeverity::Error,
                     "Expected '>>' after return value in function expression", 
+                    ErrorSeverity::Error,
                     current.getLocation(),
                     ErrorCategory::Syntax
                 )
@@ -649,8 +634,8 @@ std::expected<std::unique_ptr<FunctionLiteral>, ErrorVariant> ExpressionParser::
     {
         return std::unexpected( 
             CompilerError(
-                ErrorSeverity::Error,
                 "Expected '>>' after return value in function expression", 
+                ErrorSeverity::Error,
                 current.getLocation(),
                 ErrorCategory::Syntax
             )
@@ -660,14 +645,11 @@ std::expected<std::unique_ptr<FunctionLiteral>, ErrorVariant> ExpressionParser::
     auto maybeBody = m_stmtParser->parseBlock();
     if ( !maybeBody )
     {
-        auto maybeIssueToken = m_utils.peekBack();
-        if ( !maybeIssueToken ) return std::unexpected( maybeIssueToken.error() );
-
         return std::unexpected(
             CompilerError(
                 "Function Expressions must have function body",
                 ErrorSeverity::Error,
-                maybeIssueToken.value().getLocation(),
+                current.getLocation(),
                 ErrorCategory::Syntax
             )
         );
@@ -679,16 +661,13 @@ std::expected<std::unique_ptr<FunctionLiteral>, ErrorVariant> ExpressionParser::
         std::move( maybeBody.value() ) 
     );
 
-    auto maybeEndToken = m_utils.peekBack();
-    if ( !maybeEndToken ) return std::unexpected( maybeEndToken.error() );
-
-    funExpr->location = m_utils.getLocation( front, maybeEndToken.value() );
+    funExpr->location = { front.getLocation().start, funExpr->body->location.end, front.getLocation().fileId };
 
     return funExpr;
 }
 
 std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parseInitialiser() {
-    auto maybeAssignToken = m_utils.expect( TokenKind::Symbol, TokenSymbol::Assign );
+    auto maybeAssignToken = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Assign );
     if ( !maybeAssignToken ) return std::unexpected( maybeAssignToken.error() );
 
     auto maybeExpression = parseExpression();
