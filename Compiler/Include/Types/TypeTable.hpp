@@ -6,15 +6,13 @@ using TypeId = std::size_t;
 class TypeTable {
     public:
         TypeId add(Type type) {
-            type.setId(types.size());
+            TypeId id = types.size();
+
+            type.setId(id);
 
             types.push_back(std::move(type));
 
-            return type.m_id;
-        }
-
-        Type& get(TypeId id) {
-            return types[id];
+            return id;
         }
 
         const Type& get(TypeId id) const {

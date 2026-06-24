@@ -7,9 +7,11 @@ class TokenTable
 {
     public:
         TokenId add(Token token) {
+            TokenId id = token.getId();
+            
             m_tokens.push_back(std::move(token));
 
-            return token.getId();
+            return id;
         }
 
         Token& get(TokenId id) {

@@ -8,13 +8,13 @@
  * @return std::expected<Token, ErrorVariant> Token in the position from the current position in the token list specified 
  * by peekIndex returns Error otherwise if could not retrieve token
  */
-Token TokenStream::peek( const std::size_t offset ) const
+const Token& TokenStream::peek( const std::size_t offset ) const
 {
     size_t index = m_pos + offset;
 
     // clamp to EOF instead of failing
     if (index >= m_tokens.size())
-        return m_tokens.back(); // EOF
+        return m_tokens[m_tokens.size() - 1]; // EOF
 
     return m_tokens[index];
 }
@@ -28,8 +28,11 @@ Token TokenStream::peek( const std::size_t offset ) const
  * @throws std::runtime_error If reached end of input tokens
  * @throws ParseError If expected type does not match type of current token
  */
-Token TokenStream::consume()
+const Token& TokenStream::consume()
 {
+    if (m_pos >= m_tokens.size())
+        return m_tokens[m_tokens.size() - 1];
+
     return m_tokens[m_pos++];
 }
 
@@ -39,7 +42,7 @@ void TokenStream::reset()
     m_tokens = {};
 }
 
-std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, TokenSymbol expectedValue )
+std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::expect( TokenKind expectedType, TokenSymbol expectedValue )
 {
     Logger::trace(
         "Expecting token",
@@ -85,7 +88,7 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
         );
     }
 
-    auto token = consume();
+    const Token& token = consume();
 
     Logger::trace(
         "Expect succeeded",
@@ -95,10 +98,10 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
         })
     );
 
-    return token;
+    return std::cref(token);
 }
 
-std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, TokenKeyword expectedValue )
+std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::expect( TokenKind expectedType, TokenKeyword expectedValue )
 {
     Logger::trace(
         "Expecting token",
@@ -144,7 +147,7 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
         );
     }
 
-    auto token = consume();
+    const Token& token = consume();
 
     Logger::trace(
         "Expect succeeded",
@@ -154,7 +157,7 @@ std::expected<Token, ErrorVariant> TokenStream::expect( TokenKind expectedType, 
         })
     );
 
-    return token;
+    return std::cref(token);
 }
 
 void TokenStream::recoverFromError() 

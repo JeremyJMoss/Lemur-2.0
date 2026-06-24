@@ -23,7 +23,7 @@ enum class TypeOrigin {
     UserDefined
 };
 
-using typeId = std::size_t;
+using TypeId = std::size_t;
 constexpr TypeId InvalidTypeId = static_cast<std::size_t>(-1);
 
 using TypeData = std::variant<
@@ -36,7 +36,7 @@ using TypeData = std::variant<
 
 struct Type
 {
-    typeId m_id;
+    TypeId m_id;
     TypeKind m_kind;
     std::size_t m_size;
     TypeOrigin m_origin;

@@ -68,11 +68,9 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
         })
     );
 
-    auto block = std::make_unique<Block>( std::vector<std::unique_ptr<Statement>>{} );
     auto maybeBody = parseBlock();
     if ( !maybeBody ) return std::unexpected( maybeBody.error() );
-    
-    block = std::move( maybeBody.value() );
+    auto block = std::move( maybeBody.value() );
 
     Logger::trace(
         "Function body parsed"
@@ -86,7 +84,7 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
         true
     );
 
-    funDec->location = { front.getLocation().start, block->location.end, front.getLocation().fileId};
+    funDec->location = { front.getLocation().start, funDec->body->location.end, front.getLocation().fileId};
 
     Logger::debug(
         "Function declaration parsed successfully",
@@ -136,7 +134,7 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
             Logger::trace(
                 "Block closed", 
                 std::to_array<Attribute>({ 
-                    { "EndToken", maybeClosingBrace.value().getLocation().toString() } 
+                    { "EndToken", maybeClosingBrace.value().get().getLocation().toString() } 
                 })
             );
 
@@ -249,7 +247,7 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
             CompilerError(
                 "Could not parse type. Converted to inferred type.",
                 ErrorSeverity::Warning,
-                maybeColon.value().getLocation(),
+                maybeColon.value().get().getLocation(),
                 ErrorCategory::Syntax
             )
         );
@@ -541,7 +539,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
                 CompilerError(
                     "Malformed or missing step statement inside loop parameters",
                     ErrorSeverity::Error,
-                    maybeStepKeyword.value().getLocation(),
+                    maybeStepKeyword.value().get().getLocation(),
                     ErrorCategory::Syntax
                 )
             );
@@ -571,7 +569,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
                     CompilerError(
                         "Malformed or missing where statement inside loop parameters",
                         ErrorSeverity::Error,
-                        maybeWhereKeyword.value().getLocation(),
+                        maybeWhereKeyword.value().get().getLocation(),
                         ErrorCategory::Syntax
                     )
                 );
@@ -596,7 +594,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
                 CompilerError(
                     "Malformed or missing where statement inside loop parameters",
                     ErrorSeverity::Error,
-                    maybeWhereKeyword.value().getLocation(),
+                    maybeWhereKeyword.value().get().getLocation(),
                     ErrorCategory::Syntax
                 )
             );
@@ -628,7 +626,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
         std::move( maybeBody.value() ) 
     );
 
-    forLoop->location = { maybeForKeyword.value().getLocation().start, forLoop->body->location.end, forLoop->body->location.fileId };
+    forLoop->location = { maybeForKeyword.value().get().getLocation().start, forLoop->body->location.end, forLoop->body->location.fileId };
 
     Logger::debug( "Successfully parsed for loop statement" );
 

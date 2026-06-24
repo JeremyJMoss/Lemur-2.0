@@ -15,11 +15,13 @@ class SymbolTable
 {
     public:
         SymbolId add(Symbol symbol) {
-            symbol.setId( symbols.size() );
+            SymbolId id = symbols.size();
+
+            symbol.setId( id );
 
             symbols.push_back(std::move(symbol));
 
-            return symbol.m_id;
+            return id;
         }
 
         Symbol& get(SymbolId id) {

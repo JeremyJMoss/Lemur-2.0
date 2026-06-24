@@ -2,6 +2,7 @@
 
 #include <span>
 #include <expected>
+#include <memory>
 #include "Tokens/Token.hpp"
 #include "Errors/Errors.hpp"
 
@@ -10,13 +11,13 @@ class TokenStream {
         TokenStream()
             : m_tokens({}), m_pos(0) {}
 
-        Token peek( const std::size_t offset = 0 ) const;
-        Token consume();
+        const Token& peek( const std::size_t offset = 0 ) const;
+        const Token& consume();
         void initializeTokenStream( std::span<const Token> tokens ) { m_tokens = tokens; }
         void recoverFromError(); 
 
-        std::expected<Token, ErrorVariant> expect( TokenKind expectedType, TokenSymbol expectedValue );
-        std::expected<Token, ErrorVariant> expect( TokenKind expectedType, TokenKeyword expectedValue );
+        std::expected<std::reference_wrapper<const Token>, ErrorVariant> expect( TokenKind expectedType, TokenSymbol expectedValue );
+        std::expected<std::reference_wrapper<const Token>, ErrorVariant> expect( TokenKind expectedType, TokenKeyword expectedValue );
         
         void reset();
 
