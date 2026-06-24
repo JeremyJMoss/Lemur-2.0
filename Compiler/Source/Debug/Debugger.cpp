@@ -3,9 +3,10 @@
 
 void Debugger::printASTTree( const std::vector<std::unique_ptr<Statement>>& statements ) const
 {
-    std::ofstream outFile("ast_output.json");
+    std::ofstream outFile("ast_output.json", std::ios::out | std::ios::binary);
+    outFile.rdbuf()->pubsetbuf(nullptr, 1 << 20); // 1MB buffer
 
-    outFile << "[" << std::endl;
+    outFile << "[" << '\n';
 
     for ( std::size_t i = 0; i < statements.size(); ++i ) 
     {
@@ -13,56 +14,78 @@ void Debugger::printASTTree( const std::vector<std::unique_ptr<Statement>>& stat
             1, i != statements.size() - 1 );
     }
 
-    outFile << "]" << std::endl;
+    outFile << "]" << '\n';
 
     outFile.close();
 }
 
-std::string Debugger::indentStr( std::size_t indent ) const
+void Debugger::writeIndent(std::ostream& out, std::size_t indent) const
 {
-    return std::string( indent * 2, ' ' );
+    static const char spaces[] =
+        "                                                                "; // 64 spaces
+
+    std::size_t count = indent * 2;
+    while (count > sizeof(spaces) - 1)
+    {
+        out.write(spaces, sizeof(spaces) - 1);
+        count -= sizeof(spaces) - 1;
+    }
+    out.write(spaces, count);
 }
 
 void Debugger::startBlock( std::ostream& out, std::size_t indent ) const
 {
-    out << indentStr( indent ) << "{" << std::endl;
+    writeIndent( out, indent ); 
+    out << "{" << '\n';
 }
 
 void Debugger::endBlock( std::ostream& out, std::size_t indent, bool hasTrailingComma ) const
 {
-    out << indentStr( indent ) << "}"; 
+    writeIndent( out, indent );
+    out << "}"; 
     if ( hasTrailingComma ) out << ",";
-    out << std::endl;
+    out << '\n';
 }
 
 void Debugger::printLiteral( const Literal* literal, std::ostream& out, std::size_t indent, bool hasTrailingComma ) const
 {
     startBlock( out, indent );
-    out << indentStr( indent + 1 ) << "\"id\": \"" << literal->id << "\"," << std::endl;
-    out << indentStr( indent + 1 ) << "\"type\": \"Literal\"," << std::endl;
-    out << indentStr( indent + 1 ) << "\"value\": " << toString( literal->value ) << std::endl;
+    writeIndent( out, indent + 1 );
+    out << "\"id\": \"" << literal->id << "\"," << '\n';
+    writeIndent( out, indent + 1 );
+    out << "\"type\": \"Literal\"," << '\n';
+    writeIndent( out, indent + 1 );
+    out << "\"value\": " << toString( literal->value ) << '\n';
     endBlock( out, indent, hasTrailingComma );
 }
 
 void Debugger::printIdentifier( const Identifier* identifier, std::ostream& out, std::size_t indent, bool hasTrailingComma ) const
 {
     startBlock( out, indent );
-    out << indentStr( indent + 1 ) << "\"id\": \"" << identifier->id << "\"," << std::endl;
-    out << indentStr( indent + 1 ) << "\"type\": \"Identifier\"," << std::endl;
-    out << indentStr( indent + 1 ) << "\"name\": \"" << identifier->name << "\"" << std::endl;
+    writeIndent( out, indent + 1 );
+    out << "\"id\": \"" << identifier->id << "\"," << '\n';
+    writeIndent( out, indent + 1 );
+    out << "\"type\": \"Identifier\"," << '\n';
+    writeIndent( out, indent + 1 ); 
+    out << "\"name\": \"" << identifier->name << "\"" << '\n';
     endBlock( out, indent, hasTrailingComma );
 }
 
 void Debugger::printParameter( const Parameter* param, std::ostream& out, std::size_t indent, bool hasTrailingComma ) const
 {
     startBlock( out, indent );
-    out << indentStr( indent + 1 ) << "\"id\": \"" << param->id << "\"," << std::endl;
-    out << indentStr( indent + 1 ) << "\"type\": \"Parameter\"," << std::endl;
-    out << indentStr( indent + 1 ) << "\"identifier\": " << std::endl;
+    writeIndent( out, indent + 1 );
+    out << "\"id\": \"" << param->id << "\"," << '\n';
+    writeIndent( out, indent + 1 );
+    out << "\"type\": \"Parameter\"," << '\n';
+    writeIndent( out, indent + 1 );
+    out << "\"identifier\": " << '\n';
     printAST( param->identifier.get(), out, indent + 2, true );
-    out << indentStr( indent + 1 ) << "\"paramType\": " << std::endl;
+    writeIndent( out, indent + 1 );
+    out << "\"paramType\": " << '\n';
     printAST( param->paramType.get(), out, indent + 2, true );
-    out << indentStr( indent + 1 ) << "\"defaultValue\": " << std::endl;
+    writeIndent( out, indent + 1 );
+    out << "\"defaultValue\": " << '\n';
     printAST( param->defaultValue.get(), out, indent + 2, false );
     endBlock( out, indent, hasTrailingComma );
 }
@@ -75,14 +98,18 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
         {
             auto functionType = static_cast<const ParsedFunctionType*>( type );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << functionType->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" + toString( functionType->kind ) + "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"returnType\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << functionType->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" + toString( functionType->kind ) + "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"returnType\": " << '\n';
             printAST( functionType->returnType.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"parameters\": [";
+            writeIndent( out, indent + 1 );
+            out << "\"parameters\": [";
             if ( !functionType->parameters.empty() ) 
             {
-                out << std::endl;
+                out << '\n';
 
                 for ( std::size_t i = 0; i < functionType->parameters.size(); ++i ) 
                 {
@@ -90,9 +117,9 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
                         indent + 2, i != functionType->parameters.size() - 1 );
                 }
 
-                out << indentStr( indent + 1 );
+                writeIndent( out, indent + 1 );
             }
-            out << "]" << std::endl;
+            out << "]" << '\n';
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -101,8 +128,10 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
         {
             auto inferredType = static_cast<const ParsedInferredType*>( type );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << inferredType->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"Inferred\"" << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << inferredType->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"Inferred\"" << '\n';
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -111,10 +140,14 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
         {
             auto ownershipType = static_cast<const ParsedOwnershipType*>( type );
             startBlock(out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << ownershipType->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" + toString( ownershipType->kind ) + "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"ownership\": \"" << toString( ownershipType->ownership ) + "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"inner\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << ownershipType->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" + toString( ownershipType->kind ) + "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"ownership\": \"" << toString( ownershipType->ownership ) + "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"inner\": " << '\n';
             printAST( ownershipType->inner.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -124,11 +157,15 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
         {
             auto arrayType = static_cast<const ParsedArrayType*>( type );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << arrayType->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"Array\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"elementType\":" << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << arrayType->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"Array\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"elementType\":" << '\n';
             printAST( arrayType->elementType.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"arraySize\":" << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"arraySize\":" << '\n';
             printAST( arrayType->size.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -138,9 +175,12 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
         {
             auto namedType = static_cast<const ParsedNamedType*>( type );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << namedType->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"Named\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"identifier\":" << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << namedType->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"Named\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"identifier\":" << '\n';
             printAST( namedType->identifier.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -148,7 +188,8 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
 
         default: 
         {
-            out << indentStr( indent ) << "\"Unknown Type Reference\"\n";
+            writeIndent( out, indent );
+            out << "\"Unknown Type Reference\"\n";
             break;
         }
     }
@@ -158,7 +199,8 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
 {
     if ( !node ) 
     {
-        out << indentStr( indent ) << "null\n";
+        writeIndent( out, indent );
+        out << "null\n";
         return;
     }
 
@@ -168,9 +210,12 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto expstmt = static_cast<const ExpressionStatement*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"expression\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"expression\": " << '\n';
             printAST( expstmt->expression.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -192,19 +237,22 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto block = static_cast<const Block*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"statements\": [";
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"statements\": [";
             if ( !block->statements.empty() ) 
             {
-                out << std::endl;
+                out << '\n';
                 for ( std::size_t i = 0; i < block->statements.size(); ++i ) 
                 {
                     printAST( block->statements[i].get(), out, indent + 2, i != block->statements.size() - 1 );
                 }
-                out << indentStr( indent + 1 );
+                writeIndent( out, indent + 1 );
             }
-            out << "]" << std::endl;
+            out << "]" << '\n';
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -212,8 +260,10 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         case ASTNodeType::Break: 
         {
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"" << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"" << '\n';
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -221,8 +271,10 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         case ASTNodeType::Continue: 
         {
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"" << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"" << '\n';
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -231,9 +283,12 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto ret = static_cast<const Return*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"value\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"value\": " << '\n';
             printAST( ret->value.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -243,10 +298,14 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto un = static_cast<const Unary*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"op\": \"" << toString( un->op ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"argument\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"op\": \"" << toString( un->op ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"argument\": " << '\n';
             printAST( un->argument.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -256,14 +315,20 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto decl = static_cast<const VariableDeclaration*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"locked\": " << ( decl->locked ? "true," : "false," ) << std::endl;
-            out << indentStr( indent + 1 ) << "\"varType\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"locked\": " << ( decl->locked ? "true," : "false," ) << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"varType\": " << '\n';
             printAST( decl->varType.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"identifier\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"identifier\": " << '\n';
             printAST( decl->identifier.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"initialiser\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"initialiser\": " << '\n';
             printAST( decl->initialiser.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -273,11 +338,15 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto assign = static_cast<const Assignment*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"identifier\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"identifier\": " << '\n';
             printAST( assign->identifier.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"value\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"value\": " << '\n';
             printAST( assign->value.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -287,14 +356,18 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto func = static_cast<const FunctionDeclaration*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"returnType\": " << std::endl; 
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"returnType\": " << '\n'; 
             printAST( func->returnType.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"parameters\": [";
+            writeIndent( out, indent + 1 );
+            out << "\"parameters\": [";
             if ( !func->parameters.empty() ) 
             {
-                out << std::endl;
+                out << '\n';
 
                 for ( std::size_t i = 0; i < func->parameters.size(); ++i ) 
                 {
@@ -302,10 +375,11 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
                         indent + 2, i != func->parameters.size() - 1 );
                 }
 
-                out << indentStr( indent + 1 );
+                writeIndent( out, indent + 1 );
             }
-            out << "]," << std::endl;
-            out << indentStr( indent + 1 ) << "\"body\": " << std::endl;
+            out << "]," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"body\": " << '\n';
             printAST( func->body.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -315,14 +389,18 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto func = static_cast<const FunctionLiteral*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"returnType\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"returnType\": " << '\n';
             printAST( func->returnType.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"parameters\": [";
+            writeIndent( out, indent + 1 );
+            out << "\"parameters\": [";
             if ( !func->parameters.empty() ) 
             {
-                out << std::endl;
+                out << '\n';
 
                 for ( std::size_t i = 0; i < func->parameters.size(); ++i ) 
                 {
@@ -330,10 +408,11 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
                         indent + 2, i != func->parameters.size() - 1 );
                 }
 
-                out << indentStr( indent + 1 );
+                writeIndent( out, indent + 1 );
             }
-            out << "]," << std::endl;
-            out << indentStr( indent + 1 ) << "\"body\": " << std::endl;
+            out << "]," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"body\": " << '\n';
             printAST( func->body.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -343,13 +422,18 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto ifs = static_cast<const IfConditional*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"condition\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"condition\": " << '\n';
             printAST( ifs->condition.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"then\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"then\": " << '\n';
             printAST( ifs->then.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"else\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"else\": " << '\n';
             printAST( ifs->elseStatement.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -359,13 +443,18 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto rng = static_cast<const Range*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"start\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"start\": " << '\n';
             printAST( rng->start.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"end\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"end\": " << '\n';
             printAST( rng->end.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"inclusive\": " << ( rng->inclusive ? "true" : "false" ) << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"inclusive\": " << ( rng->inclusive ? "true" : "false" ) << '\n';
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -374,17 +463,24 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto forl = static_cast<const ForLoop*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"loopVar\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"loopVar\": " << '\n';
             printAST( forl->loopVar.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"iterable\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"iterable\": " << '\n';
             printAST( forl->iterable.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"step\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"step\": " << '\n';
             printAST( forl->step.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"condition\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"condition\": " << '\n';
             printAST( forl->condition.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"body\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"body\": " << '\n';
             printAST( forl->body.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -394,12 +490,17 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto* bin = static_cast<const BinaryExpression*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"op\": \"" << toString( bin->op ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"left\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"op\": \"" << toString( bin->op ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"left\": " << '\n';
             printAST( bin->left.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"right\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"right\": " << '\n';
             printAST( bin->right.get(), out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
@@ -416,14 +517,18 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
         {
             auto callExpr = static_cast<const FunctionCall*>( node );
             startBlock( out, indent );
-            out << indentStr( indent + 1 ) << "\"id\": \"" << node->id << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"type\": \"" << toString( node->type() ) << "\"," << std::endl;
-            out << indentStr( indent + 1 ) << "\"callee\": " << std::endl;
+            writeIndent( out, indent + 1 );
+            out << "\"id\": \"" << node->id << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
+            writeIndent( out, indent + 1 );
+            out << "\"callee\": " << '\n';
             printAST( callExpr->callee.get(), out, indent + 2, true );
-            out << indentStr( indent + 1 ) << "\"arguments\": [";
+            writeIndent( out, indent + 1 );
+            out << "\"arguments\": [";
             if ( !callExpr->arguments.empty() ) 
             {
-                out << std::endl;
+                out << '\n';
 
                 for ( std::size_t i = 0; i < callExpr->arguments.size(); ++i ) 
                 {
@@ -431,16 +536,17 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
                         indent + 2, i != callExpr->arguments.size() - 1 );
                 }
 
-                out << indentStr( indent + 1 );
+                writeIndent( out, indent + 1 );
             }
-            out << "]" << std::endl;
+            out << "]" << '\n';
             endBlock( out, indent, hasTrailingComma );
             break;
         }
 
         default: 
         {
-            out << indentStr( indent ) << "\"Unknown AST Node\"\n";
+            writeIndent( out, indent );
+            out << "\"Unknown AST Node\"\n";
             break;
         }
     }

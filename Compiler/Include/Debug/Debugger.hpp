@@ -14,7 +14,7 @@ class Debugger {
     public:
         void printASTTree( const std::vector<std::unique_ptr<Statement>>& statements ) const;
     private:
-        std::string indentStr( std::size_t indent ) const;
+        void writeIndent( std::ostream& out, std::size_t indent ) const;
 
         void printAST( const ASTNode* node, std::ostream& out, std::size_t indent = 0, bool hasTrailingComma = false ) const;
 

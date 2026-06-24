@@ -64,9 +64,9 @@ std::expected<void, std::string> Driver::parseFile( const std::string& filePath 
     m_parser.parse( compUnit );
     if ( m_errReporter.hasErrors() ) return std::unexpected( "Error(s) during parsing" );
 
-    Debugger debugger = Debugger();
+    // Debugger debugger = Debugger();
 
-    debugger.printASTTree(compUnit->readStatements());
+    // debugger.printASTTree(compUnit->readStatements());
 
     Logger::debug( 
         "AST generated with " +
