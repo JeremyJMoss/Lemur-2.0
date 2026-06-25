@@ -7,6 +7,7 @@
 #include "Types/TypeTable.hpp"
 #include "Scopes/ScopeTable.hpp"
 #include "Tokens/TokenTable.hpp"
+#include "DataStructures/Arena.hpp"
 
 using NodeId = std::size_t;
 using SymbolId = std::size_t;
@@ -17,6 +18,12 @@ using TokenId = std::size_t;
 
 class CompilationUnit {
     public:
+        CompilationUnit( FileId fileId ) : m_fileId( fileId ) {
+            ScopeId scopeId = createScope(InvalidScopeId, ScopeOwnerKind::Global );
+            m_globalScope = scopeId;
+            m_currentScope = scopeId;
+        }
+
         TokenId addToken( Token token ) {
             return m_tokens.add(std::move(token));
         }
@@ -44,12 +51,7 @@ class CompilationUnit {
         void bindScope( NodeId nodeId, ScopeId scopeId ) {
             m_nodeScopes.emplace(nodeId, scopeId);
         }
-
-        CompilationUnit( FileId fileId ) : m_fileId( fileId ) {
-            ScopeId scopeId = createScope(InvalidScopeId, ScopeOwnerKind::Global );
-            m_globalScope = scopeId;
-            m_currentScope = scopeId;
-        }
+        
 
         FileId getFileId() { return m_fileId; }
 
@@ -65,6 +67,7 @@ class CompilationUnit {
         ScopeId m_globalScope;
         ScopeId m_currentScope;
 
+        Arena m_arena;
         TokenTable m_tokens;
         AST m_ast;
         SymbolTable m_symbols;
