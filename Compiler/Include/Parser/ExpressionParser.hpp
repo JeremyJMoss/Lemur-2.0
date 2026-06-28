@@ -28,7 +28,7 @@ class ExpressionParser{
 
         void setStatementParser( StatementParser* stmtParser ) { m_stmtParser = stmtParser; }
 
-        std::expected<std::unique_ptr<Expression>, ErrorVariant> parseExpression();
+        std::expected<std::unique_ptr<Expression>, ErrorVariant> parseExpression( std::size_t min_precedence = 0);
 
         std::expected<std::unique_ptr<Expression>, ErrorVariant> parsePostFixExpression();
 
@@ -43,7 +43,6 @@ class ExpressionParser{
         TypeParser& m_typeParser;
         ParameterParser& m_paramParser;
         StatementParser* m_stmtParser = nullptr;
-        std::size_t m_precedence = 0;
 
         std::expected<LiteralValue, ErrorVariant> getLiteralValue();
 

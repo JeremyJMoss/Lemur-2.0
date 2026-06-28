@@ -22,14 +22,14 @@ In Lemur, **values** are stored directly on the stack. They are fast to allocate
 
 To ensure memory safety and fine-grained control over value semantics, Lemur introduces five core keywords for handling pointers and references. These keywords define both ownership behavior and access permissions.
 
-#### 1. `own` — Exclusive Ownership
+#### 1. `owned` — Exclusive Ownership
 
 * **Semantics**: The variable has full, unique ownership of a heap-allocated value.
 * **Reassignment**: The pointer itself cannot be reassigned.
 * **Mutation**: Can mutate the value it points to.
 * **Use Case**: When the variable is solely responsible for managing the lifetime of the resource.
 
-#### 2. `share` — Shared Ownership
+#### 2. `shared` — Shared Ownership
 
 * **Semantics**: The variable shares ownership with others via reference counting.
 * **Reassignment**: The pointer cannot be reassigned.
@@ -43,14 +43,14 @@ To ensure memory safety and fine-grained control over value semantics, Lemur int
 * **Mutation**: Cannot mutate the value unless upgraded to `share`.
 * **Use Case**: For observers, caches, or cyclic references where ownership would be unsafe.
 
-#### 4. `view` — Immutable Borrow
+#### 4. `rref` — Immutable Borrow
 
 * **Semantics**: A read-only, non-owning reference.
 * **Reassignment**: Not rebindable.
 * **Mutation**: Not allowed.
 * **Use Case**: Safe read-only access without affecting ownership.
 
-#### 5. `mut` — Mutable Borrow
+#### 5. `wref` — Mutable Borrow
 
 * **Semantics**: A temporary, exclusive borrow with write access.
 * **Reassignment**: Not rebindable.
@@ -59,13 +59,13 @@ To ensure memory safety and fine-grained control over value semantics, Lemur int
 
 ### Summary Table
 
-| Keyword | Ownership | Rebindable | Mutable | Extends Pointer Lifetime |
-| ------- | --------- | ---------- | ------- | ------------------------ |
-| `own`   | ✅        | ❌         | ✅      | ✅                       |
-| `share` | ✅        | ❌         | ✅      | ✅                       |
-| `weak`  | ❌        | ❌         | ❌      | ❌                       |
-| `view`  | ❌        | ❌         | ❌      | ❌                       |
-| `mut`   | ❌        | ❌         | ✅      | ❌                       |
+| Keyword  | Ownership | Rebindable | Mutable | Extends Pointer Lifetime |
+| -------  | --------- | ---------- | ------- | ------------------------ |
+| `owned`  | ✅        | ❌         | ✅      | ✅                       |
+| `shared` | ✅        | ❌         | ✅      | ✅                       |
+| `weak`   | ❌        | ❌         | ❌      | ❌                       |
+| `rref`   | ❌        | ❌         | ❌      | ❌                       |
+| `wref`   | ❌        | ❌         | ✅      | ❌                       |
 
 ### Ownership Flow Decision Tree
 
@@ -77,13 +77,13 @@ Do you want full ownership of the data?
 │   └── Should ownership be shared?
 │       ├── Yes
 │       │   └── Should this reference extend the lifetime?
-│       │       ├── Yes → Use `share`
+│       │       ├── Yes → Use `shared`
 │       │       └── No  → Use `weak`
-│       └── No  → Use `own`
+│       └── No  → Use `owned`
 └── No (you want to borrow/reference existing data)
     └── Should the referenced value be mutable?
-        ├── Yes → Use `mut`
-        └── No  → Use `view`
+        ├── Yes → Use `wref`
+        └── No  → Use `rref`
 ```
 
 ---
@@ -92,28 +92,25 @@ Do you want full ownership of the data?
 
 * References are **non-nullable** on initialization and **non-rebindable**.
 
-* All pointer types (`own`, `share`, `weak`, `view`, `mut`) are initialized to `null` by default unless assigned—preventing accidental garbage access.
+* All pointer types (`owned`, `shared`, `weak`, `rref`, `wref`) are initialized to `null` by default unless assigned—preventing accidental garbage access.
 
 * These keywords wrap types in pointer-like constructs with defined semantics:
 
-  * `own`: Unique heap ownership.
-  * `share`: Shared heap ownership with reference counting.
+  * `owned`: Unique heap ownership.
+  * `shared`: Shared heap ownership with reference counting.
   * `weak`: Non-owning reference that can be upgraded to `share` (throws a runtime error if the original is deallocated).
-  * `view`: Immutable, read-only reference.
-  * `mut`: Exclusive, mutable borrow.
+  * `rref`: Immutable, read-only reference.
+  * `wref`: Exclusive, mutable borrow.
 
-* **Mutability requires `mut`**. `view` is strictly read-only and cannot be cast to `mut`.
-
-* **Complex types** (e.g., arrays, strings, structs) default to `own`.
+* **Mutability requires `wref`**. `rref` is strictly read-only and cannot be cast to `wref`.
 
 ---
 
 ## Memory & Lifetime
 
 * **Heap-allocated data** is automatically freed:
-
   * `own` types are freed when they go out of scope.
-  * `share` types are freed when the reference count drops to zero.
+  * `shared` types are freed when the reference count drops to zero.
 
 * **Primitive types** (e.g., `int`, `bool`, `float`, `char`) are always stack-allocated and copied by default.
 
@@ -125,16 +122,13 @@ Do you want full ownership of the data?
 
 ```lemur
 x: int = 5;                        // stack-allocated int
-y: own int = 5;                    // heap-allocated int with exclusive ownership
-z: share int = 5;                  // shared heap allocation
+y: owned int = 5;                  // heap-allocated int with exclusive ownership
+z: shared int = 5;                 // shared heap allocation
 
-a: view int = y;                   // immutable borrow
-b: mut int = borrow_mut(z);       // mutable borrow (exclusive at runtime)
+a: rref int = y;                   // immutable borrow
+b: wref int = y;                   // mutable borrow
 
 c: weak int = z;                   // weak reference to z
-d: mut int = y;                    // mutable borrow from unique owner
-
-e: atomic int = 6;                 // thread-safe shared integer
 ```
 
 ---

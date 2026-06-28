@@ -72,11 +72,11 @@
 
 /* === Ownership Modifiers === */
 
-<ownership-modifier> ::= "own" | "share" | "view" | "mut" | "weak"
+<ownership-modifier> ::= "owned" | "shared" | "rref" | "wref" | "weak"
 
 /* === Types === */
 
-<type> ::= "int" | "float" | "bool" | "char" | "string" | <custom-type> | "infer" | <function-type>
+<type> ::= "int" | "float" | "bool" | "char" | "string" | "infer" | <function-type>
 
 <type-wrapped> ::= [<ownership-modifier>] <type>
 

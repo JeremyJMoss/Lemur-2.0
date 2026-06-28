@@ -68,7 +68,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         return typeFunc;
     } 
     else if ( frontToken.checkMatches( TokenKind::Keyword, std::vector<TokenKeyword> 
-        { TokenKeyword::View, TokenKeyword::Mut, TokenKeyword::Own, TokenKeyword::Share, TokenKeyword::Weak, TokenKeyword::Atomic } 
+        { TokenKeyword::Rref, TokenKeyword::Wref, TokenKeyword::Owned, TokenKeyword::Shared, TokenKeyword::Weak } 
     ) ) 
     {
         auto peekToken = m_tokenStream.peek();
@@ -81,25 +81,21 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         
         OwnershipKind kind;
         
-        if ( ownershipKeyword == "view" ) 
+        if ( ownershipKeyword == "rref" ) 
         {
-            kind = OwnershipKind::View;
+            kind = OwnershipKind::Rref;
         } 
-        else if ( ownershipKeyword == "mut" ) 
+        else if ( ownershipKeyword == "wref" ) 
         {
-            kind = OwnershipKind::Mut;
+            kind = OwnershipKind::Wref;
         } 
-        else if ( ownershipKeyword == "own" ) 
+        else if ( ownershipKeyword == "owned" ) 
         {
-            kind = OwnershipKind::Own;
+            kind = OwnershipKind::Owned;
         } 
-        else if ( ownershipKeyword == "share" ) 
+        else if ( ownershipKeyword == "shared" ) 
         {
-            kind = OwnershipKind::Share;
-        } 
-        else if ( ownershipKeyword == "atomic" ) 
-        {
-            kind = OwnershipKind::Atomic;
+            kind = OwnershipKind::Shared;
         } 
         else if ( ownershipKeyword == "weak" ) 
         {

@@ -57,7 +57,7 @@ size_t ExpressionParser::getPrecedence( TokenSymbol op )
 
 /* === Public Member Methods === */
 
-std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parseExpression() 
+std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parseExpression(std::size_t min_precedence) 
 {
     auto front = m_tokenStream.peek();
 
@@ -86,22 +86,11 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
         std::size_t nextPrecedence = getPrecedence( current.getSymbol() );
 
-        if ( nextPrecedence <= m_precedence ) break;
-
-        if (!m_tokenStream.peek().checkTypeMatches(TokenKind::Symbol)){
-            return std::unexpected( 
-                CompilerError(
-                    "Missing binary operator in expression.",
-                    ErrorSeverity::Error,
-                    m_tokenStream.peek().getLocation(),
-                    ErrorCategory::Syntax
-                )
-            );
-        }
+        if ( nextPrecedence <= min_precedence ) break;
 
         auto op = m_tokenStream.consume().getValue();
         
-        auto maybeRight = parseUnary();
+        auto maybeRight = parseExpression( nextPrecedence + 1 );
         if ( !maybeRight ) return std::unexpected( maybeRight.error() );
 
         auto right = std::move( maybeRight.value() );
@@ -243,14 +232,15 @@ std::expected<std::unique_ptr<Expression>, ErrorVariant> ExpressionParser::parse
 
     if ( front.checkTypeMatches( TokenKind::Identifier ) ) 
     {
-        
         auto next = m_tokenStream.peek( 1 );
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile ) ) {
             return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
         }
 
-        if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) return parseFunctionCall();
+        if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) {
+            return parseFunctionCall();
+        }
 
         auto idToken = m_tokenStream.consume();
 
@@ -603,6 +593,8 @@ std::expected<std::vector<std::unique_ptr<Expression>>, ErrorVariant> Expression
 
 std::expected<std::unique_ptr<FunctionCall>, ErrorVariant> ExpressionParser::parseFunctionCall() 
 {
+    Logger::debug( "Parsing function call" );
+
     auto front = m_tokenStream.peek();
 
     if ( !front.checkTypeMatches( TokenKind::Identifier )) {
@@ -620,6 +612,14 @@ std::expected<std::unique_ptr<FunctionCall>, ErrorVariant> ExpressionParser::par
     auto funCall = std::make_unique<FunctionCall>( std::move( identifier ), std::move( maybeFunctionCallParams.value() ) );
 
     funCall->location = { front.getLocation().start, funCall->arguments.back()->location.end, front.getLocation().fileId };
+
+    Logger::debug( 
+        "Parsed function call",
+        std::to_array<Attribute>({
+            { "Function Identifier", idToken.getValue() },
+            { "Argument Count", std::to_string(funCall->arguments.size()) }
+        }) 
+    );
 
     return funCall;
 }

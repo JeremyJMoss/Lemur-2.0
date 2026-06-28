@@ -47,12 +47,11 @@ class Tokenizer
             { "continue",  TokenKeyword::Continue },
             { "infer",     TokenKeyword::Infer },
             { "null",      TokenKeyword::Null },
-            { "mut",       TokenKeyword::Mut },
-            { "own",       TokenKeyword::Own },
-            { "share",     TokenKeyword::Share },
-            { "view",      TokenKeyword::View },
+            { "wref",      TokenKeyword::Wref },
+            { "owned",     TokenKeyword::Owned },
+            { "shared",    TokenKeyword::Shared },
+            { "rref",      TokenKeyword::Rref },
             { "weak",      TokenKeyword::Weak },
-            { "atomic",    TokenKeyword::Atomic },
             { "in",        TokenKeyword::In },
         };
 

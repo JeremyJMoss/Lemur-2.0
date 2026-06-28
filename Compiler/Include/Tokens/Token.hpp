@@ -129,12 +129,11 @@ enum class TokenKeyword
     Where,
     Break, 
     Continue,
-    Mut,
-    Own,
-    Share,
-    View,
+    Wref,
+    Owned,
+    Shared,
+    Rref,
     Weak,
-    Atomic,
     In
 };
 
@@ -161,12 +160,11 @@ inline std::string toString( const TokenKeyword& keyword )
         case TokenKeyword::Where:      return "where";
         case TokenKeyword::Break:      return "break";
         case TokenKeyword::Continue:   return "continue";
-        case TokenKeyword::Mut:        return "mut";
-        case TokenKeyword::Own:        return "own";
-        case TokenKeyword::Share:      return "share";
-        case TokenKeyword::View:       return "view";
+        case TokenKeyword::Wref:       return "wref";
+        case TokenKeyword::Owned:      return "owned";
+        case TokenKeyword::Shared:     return "shared";
+        case TokenKeyword::Rref:       return "rref";
         case TokenKeyword::Weak:       return "weak";
-        case TokenKeyword::Atomic:     return "atomic";
         case TokenKeyword::In:         return "In";
         default:                       return "Invalid Keyword";
     }
