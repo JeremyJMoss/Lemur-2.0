@@ -40,7 +40,9 @@ struct BinaryExpression : Expression
     op( parseOperator(oper) ), 
     right( right ) {};
 
-    ASTNodeType type() const override { return ASTNodeType::BinaryExpression; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
     
     static BinaryOperators parseOperator( const std::string& op );
 };

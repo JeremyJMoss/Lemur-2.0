@@ -10,5 +10,7 @@ struct Break : Statement
 {
     Break() = default;
 
-    ASTNodeType type() const override { return ASTNodeType::Break; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

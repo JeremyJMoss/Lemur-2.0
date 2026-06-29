@@ -41,7 +41,7 @@ struct ASTNode
     const NodeId id;
     SourceRange location;
     virtual ~ASTNode() = default;
-    virtual void accept(ASTVisitor& v) const = 0;
+    virtual void accept( ASTVisitor& v ) const = 0;
     ASTNode(): id(nextId++) {}
 };
 

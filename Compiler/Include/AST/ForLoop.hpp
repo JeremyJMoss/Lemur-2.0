@@ -26,5 +26,7 @@ struct ForLoop : Statement
         step( step ), condition( where ), 
         body( body ) {}
 
-    ASTNodeType type() const override { return ASTNodeType::ForLoop; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

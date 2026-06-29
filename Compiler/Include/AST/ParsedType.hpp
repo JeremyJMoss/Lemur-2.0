@@ -22,7 +22,9 @@ struct ParsedType : ASTNode {
     virtual ~ParsedType() = default;
     ParsedType( const ParsedTypeKind kind ) : kind( kind ) {}
 
-    ASTNodeType type() const override { return ASTNodeType::ParsedType; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };
 
 struct ParsedInferredType: ParsedType {

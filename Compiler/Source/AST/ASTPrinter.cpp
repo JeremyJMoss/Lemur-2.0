@@ -1,5 +1,6 @@
 #include "AST/ASTPrinter.hpp"
 #include <regex>
+#include <fstream>
 
 void ASTPrinter::writeIndent() const {
     static const char spaces[] =
@@ -21,8 +22,25 @@ void ASTPrinter::startBlock() const {
 
 void ASTPrinter::endBlock() const {
     writeIndent();
-    *m_out << "}"; 
-    if ( hasTrailingComma ) *m_out << ",";
+    *m_out << "}";
+}
+
+void ASTPrinter::increaseIndent() {
+    m_indent++;
+}
+
+void ASTPrinter::decreaseIndent() {
+    m_indent--;
+}
+
+void ASTPrinter::writeField(const std::string& label, const std::string& value, bool hasComma = true ) {
+    writeIndent();
+
+    *m_out << '"' << label << "\": \"" << value << '"';
+
+    if ( hasComma )
+        *m_out << ',';
+
     *m_out << '\n';
 }
 
@@ -95,33 +113,76 @@ std::string ASTPrinter::getLiteralValue( const LiteralValue& value ) const
 
 void ASTPrinter::visit( const Literal& literal ) {
     startBlock();
-    writeIndent();
-    *m_out << "\"id\": \"" << literal.id << "\"," << '\n';
-    m_indent++;
-    writeIndent();
-    *m_out << "\"type\": \"Literal\"," << '\n';
-    writeIndent();
-    m_indent--;
-    *m_out << "\"value\": " << getLiteralValue( literal.value ) << '\n';
+    increaseIndent();
+    writeField("id", literal.value);
+    writeField("type", "Literal");
+    writeField("value", getLiteralValue( literal.value ), false);
+    decreaseIndent();
     endBlock();
 }
 
 void ASTPrinter::visit( const Assignment& assignment ) {
     startBlock();
-    m_indent++;
-    writeIndent();
-    *m_out << "\"id\": \"" << assignment.id << "\",\n";
-    writeIndent();
-    *m_out << "\"type\": \"Assignment\",\n";
+    increaseIndent();
+    writeField( "id", assignment.id );\
+    writeField( "type", "Assignment" );
     writeIndent();
     *m_out << "\"identifier\":\n";
-    m_indent++;
-    assignment.identifier->accept(*this);
-    m_indent--;
+    increaseIndent();
+    assignment.identifier->accept( *this );
+    decreaseIndent();
+    *m_out << ",\n";
     writeIndent();
     *m_out << "\"value\":\n";
-    m_indent++;
+    increaseIndent();
     assignment.value->accept(*this);
-    m_indent--;
+    decreaseIndent();
+    decreaseIndent();
     endBlock();
+}
+
+void ASTPrinter::visit( const Identifier& identifier ) {
+    startBlock();
+    increaseIndent();
+    writeField( "id", identifier.id );
+    writeField( "type", "Identifier" );
+    writeField( "name", identifier.name, false );
+    decreaseIndent();
+    endBlock();
+}
+
+void ASTPrinter::visit( const ExpressionStatement& expressionStmt ) {
+    startBlock();
+    increaseIndent();
+    writeField( "id", expressionStmt.id );
+    writeField( "type", "Expression Statement" );
+    writeIndent();
+    *m_out << "\"expression\": \n";
+    increaseIndent();
+    expressionStmt.expression->accept(*this);
+    decreaseIndent();
+    decreaseIndent();
+    endBlock();
+}
+
+void ASTPrinter::print( const std::vector<const Statement*>& statements )
+{
+    std::ofstream outFile("ast_output.json", std::ios::out | std::ios::binary);
+    outFile.rdbuf()->pubsetbuf(nullptr, 1 << 20); // 1MB buffer
+
+    m_out = &outFile;
+
+    *m_out << "[\n";
+
+    for ( std::size_t i = 0; i < statements.size(); ++i ) 
+    {
+        if (i != 0) {
+            *m_out << ",\n";
+        }
+        statements[i]->accept(*this);
+    }
+
+    *m_out << "\n]\n";
+
+    outFile.close();
 }

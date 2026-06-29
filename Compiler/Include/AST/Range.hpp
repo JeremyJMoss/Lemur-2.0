@@ -18,5 +18,7 @@ struct Range : Expression
     ) : start( start ), end( end ), 
         inclusive( incl ) {};
 
-        ASTNodeType type() const override { return ASTNodeType::Range; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

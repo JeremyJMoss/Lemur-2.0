@@ -12,5 +12,7 @@ struct Identifier : Expression
     const std::string name;
     explicit Identifier( const std::string& value ) : name( std::move( value ) ) {}
     
-    ASTNodeType type() const override { return ASTNodeType::Identifier; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

@@ -25,5 +25,7 @@ struct VariableDeclaration : Declaration
         locked( lock ), 
         initialiser( initialiserStmt ) {};
 
-    ASTNodeType type() const override { return ASTNodeType::VariableDeclaration; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

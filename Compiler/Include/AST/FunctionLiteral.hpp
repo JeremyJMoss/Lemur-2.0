@@ -23,5 +23,7 @@ struct FunctionLiteral : Expression
         parameters( std::move( params ) ), 
         body( block ) {};
 
-    ASTNodeType type() const override { return ASTNodeType::FunctionLiteral; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

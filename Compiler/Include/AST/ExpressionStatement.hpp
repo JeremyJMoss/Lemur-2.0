@@ -12,5 +12,7 @@ struct ExpressionStatement : Statement
     explicit ExpressionStatement( const Expression* expr ) 
         : expression( expr ) {}
 
-    ASTNodeType type() const override { return ASTNodeType::ExpressionStatement; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

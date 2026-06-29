@@ -21,5 +21,7 @@ struct Parameter : ASTNode
         paramType( type ), 
         defaultValue( defaultValue ) {}
 
-    ASTNodeType type() const override { return ASTNodeType::Parameter; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

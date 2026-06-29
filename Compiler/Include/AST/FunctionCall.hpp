@@ -16,5 +16,7 @@ struct FunctionCall : Expression
     explicit FunctionCall( const Expression* callee, std::vector<const Expression*> args )
         : callee( callee ), arguments( std::move( args ) ) {};
 
-    ASTNodeType type() const override { return ASTNodeType::FunctionCall; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

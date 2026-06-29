@@ -16,5 +16,7 @@ struct Block : Statement
     explicit Block( std::vector<const Statement*> statements ) 
         : statements( std::move( statements ) ) {}
 
-    ASTNodeType type() const override { return ASTNodeType::Block; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

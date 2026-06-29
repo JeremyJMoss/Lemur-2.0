@@ -14,6 +14,8 @@ struct Assignment : Expression
 
     explicit Assignment( Expression* id, Expression* val )
     : identifier( id ), value( val ) {};
-
-    ASTNodeType type() const override { return ASTNodeType::Assignment; }
+    
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

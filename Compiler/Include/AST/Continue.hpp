@@ -10,5 +10,7 @@ struct Continue : Statement
 {
     Continue() = default;
 
-    ASTNodeType type() const override { return ASTNodeType::Continue; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

@@ -13,5 +13,7 @@ struct Return : Statement
     explicit Return( const Expression* val ) 
         : value( val ) {}
 
-    ASTNodeType type() const override { return ASTNodeType::Return; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

@@ -21,5 +21,7 @@ struct IfConditional : Statement
         elseStatement( elseStatement ), 
         then( body ) {};
 
-    ASTNodeType type() const override { return ASTNodeType::IfConditional; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };

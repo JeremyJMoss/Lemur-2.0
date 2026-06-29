@@ -23,7 +23,9 @@ struct Unary : Expression
     explicit Unary( const Expression* arg, const std::string& oper )
         : argument( arg ), op( parseUnaryOperator(oper) ) {}
 
-    ASTNodeType type() const override { return ASTNodeType::Unary; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 
     static UnaryOperator parseUnaryOperator( const std::string& op );
 };

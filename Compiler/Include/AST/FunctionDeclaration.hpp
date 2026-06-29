@@ -31,5 +31,7 @@ struct FunctionDeclaration : Declaration
         body( body ), 
         hasImplementation( functionHasBody ) {};
 
-    ASTNodeType type() const override { return ASTNodeType::FunctionDeclaration; }
+    void accept(ASTVisitor& v) const override { 
+        return v.visit(*this);
+    }
 };
