@@ -36,12 +36,6 @@ const Token& TokenStream::consume()
     return m_tokens[m_pos++];
 }
 
-void TokenStream::reset()
-{
-    m_pos = 0;
-    m_tokens = {};
-}
-
 std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::expect( TokenKind expectedType, TokenSymbol expectedValue )
 {
     Logger::trace(

@@ -1,12 +1,11 @@
 #include "Parser/ParameterParser.hpp"
 
-std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterParser::parseFunctionParameters() 
-{   
+std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunctionParameters() {    
     auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
     // Parse parameters: zero or more parameters separated by commas
-    std::vector<std::unique_ptr<Parameter>> parameters;
+    std::vector<Parameter*> parameters;
 
     while ( true ) 
     {
@@ -27,7 +26,7 @@ std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterPa
         auto maybeParameter = parseParameter();
         if ( !maybeParameter ) return std::unexpected( maybeParameter.error() );
 
-        parameters.emplace_back( std::move( maybeParameter.value() ) );
+        parameters.emplace_back( maybeParameter.value() );
 
         // After param, expect either ',' or ')'
         auto seperator = m_tokenStream.peek();
@@ -59,7 +58,7 @@ std::expected<std::vector<std::unique_ptr<Parameter>>, ErrorVariant> ParameterPa
     return parameters;
 }
 
-std::expected<std::unique_ptr<Parameter>, ErrorVariant> ParameterParser::parseParameter() 
+std::expected<Parameter*, ErrorVariant> ParameterParser::parseParameter() 
 {
     auto front = m_tokenStream.peek();
 
@@ -69,7 +68,7 @@ std::expected<std::unique_ptr<Parameter>, ErrorVariant> ParameterParser::parsePa
 
     auto idToken = m_tokenStream.consume();
 
-    auto identifier = std::make_unique<Identifier>(idToken.getValue());
+    auto identifier = m_compUnit.allocate<Identifier>(idToken.getValue());
 
     identifier->location = SourceRange::getLocation(idToken);
 
@@ -79,7 +78,7 @@ std::expected<std::unique_ptr<Parameter>, ErrorVariant> ParameterParser::parsePa
     auto maybeParsedType = m_typeParser.parseType();
     if ( !maybeParsedType ) return std::unexpected( maybeParsedType.error() );
 
-    auto param = std::make_unique<Parameter>( std::move(identifier), std::move( maybeParsedType.value() ) );
+    auto param = m_compUnit.allocate<Parameter>( identifier, maybeParsedType.value() );
     
     param->location = { front.getLocation().start, param->paramType->location.end, front.getLocation().fileId };
 

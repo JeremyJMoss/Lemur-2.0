@@ -3,7 +3,6 @@
 /* === Imports === */
 
 #include <vector>
-#include <memory>
 #include "AST/ASTNode.hpp"
 
 /* === Forward Declarations === */
@@ -12,9 +11,9 @@
 
 struct Block : Statement 
 {
-    std::vector<std::unique_ptr<Statement>> statements;
+    std::vector<const Statement*> statements;
 
-    explicit Block( std::vector<std::unique_ptr<Statement>>&& statements ) 
+    explicit Block( std::vector<const Statement*> statements ) 
         : statements( std::move( statements ) ) {}
 
     ASTNodeType type() const override { return ASTNodeType::Block; }

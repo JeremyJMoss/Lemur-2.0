@@ -2,7 +2,6 @@
 
 /* === Imports === */
 
-#include <memory>
 #include "AST/ASTNode.hpp"
 #include "AST/ParsedType.hpp"
 #include "AST/Identifier.hpp"
@@ -11,18 +10,20 @@
 
 struct VariableDeclaration : Declaration 
 {
-    std::unique_ptr<Identifier> identifier;
-    std::unique_ptr<ParsedType> varType;
+    const Identifier* identifier;
+    const ParsedType* varType;
     bool locked;
-    std::unique_ptr<Expression> initialiser;
+    const Expression* initialiser;
 
     explicit VariableDeclaration( 
-        std::unique_ptr<Identifier>&& id, 
-        std::unique_ptr<ParsedType>&& type, 
+        const Identifier* id, 
+        const ParsedType* type, 
         bool lock, 
-        std::unique_ptr<Expression>&& initialiserStmt
-    ) : identifier( std::move( id ) ), varType( std::move( type ) ), 
-        locked( lock ), initialiser( std::move( initialiserStmt ) ) {};
+        const Expression* initialiserStmt
+    ) : identifier( id ), 
+        varType( type ), 
+        locked( lock ), 
+        initialiser( initialiserStmt ) {};
 
     ASTNodeType type() const override { return ASTNodeType::VariableDeclaration; }
 };

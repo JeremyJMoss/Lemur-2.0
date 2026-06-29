@@ -2,7 +2,6 @@
 
 /* === Imports === */
 
-#include <memory>
 #include "AST/ASTNode.hpp"
 #include "AST/Identifier.hpp"
 
@@ -10,11 +9,11 @@
 
 struct Assignment : Expression 
 {
-    std::unique_ptr<Expression> identifier;
-    std::unique_ptr<Expression> value;
+    const Expression* identifier;
+    const Expression* value;
 
-    explicit Assignment( std::unique_ptr<Expression>&& id, std::unique_ptr<Expression>&& val )
-    : identifier( std::move( id ) ), value( std::move ( val ) ) {};
+    explicit Assignment( Expression* id, Expression* val )
+    : identifier( id ), value( val ) {};
 
     ASTNodeType type() const override { return ASTNodeType::Assignment; }
 };

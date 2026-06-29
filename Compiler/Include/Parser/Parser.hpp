@@ -2,22 +2,20 @@
 
 /* === Imports === */
 
-#include <string>
-#include <vector>
-#include <memory>
 #include <iostream>
-#include <regex>
-#include <algorithm>
 #include <expected>
 #include "Tokens/Token.hpp"
 #include "AST/AllASTTypes.hpp"
 #include "AST/ParsedType.hpp"
-#include "Errors/ErrorReporter.hpp"
 #include "Parser/TypeParser.hpp"
 #include "Parser/ExpressionParser.hpp"
 #include "Parser/StatementParser.hpp"
-#include "Driver/CompilationUnit.hpp"
 #include "Tokens/TokenStream.hpp"
+
+/* === Forward Declarations === */
+
+class CompilationUnit;
+class ErrorReporter;
 
 /* === Parser === */
 
@@ -26,35 +24,36 @@ using fileId = std::size_t;
 class Parser 
 {
     public:
-        Parser( ErrorReporter& errReporter )
-            : m_errReporter( errReporter ),
-            m_tokenStream(),
-            m_typeParser( m_tokenStream),
-            m_paramParser( m_tokenStream, m_typeParser ),
-            m_stmtParser( *this, m_tokenStream, m_errReporter, m_typeParser, m_paramParser ),
-            m_exprParser( m_tokenStream, m_typeParser, m_paramParser ) {
+        Parser( CompilationUnit& compUnit, ErrorReporter& errReporter )
+            : m_compUnit( compUnit ),
+            m_errReporter( errReporter ),
+            m_tokenStream( m_compUnit.readTokens() ),
+            m_typeParser( m_compUnit, m_tokenStream ),
+            m_paramParser( m_compUnit, m_tokenStream, m_typeParser ),
+            m_stmtParser( *this, m_compUnit, m_tokenStream, m_errReporter, m_typeParser, m_paramParser ),
+            m_exprParser( m_compUnit, m_tokenStream, m_typeParser, m_paramParser ) {
                 m_stmtParser.setExpressionParser( &m_exprParser );
                 m_exprParser.setStatementParser( &m_stmtParser );
             }
         
-        void parse( std::unique_ptr<CompilationUnit>& compUnit );
+        void parse();
 
-        std::expected<std::unique_ptr<Statement>, ErrorVariant> createStatement( const Token& token );
+        std::expected<Statement*, ErrorVariant> createStatement( const Token& token );
 
     private:
+        CompilationUnit& m_compUnit;
         ErrorReporter& m_errReporter;
-        std::vector<std::unique_ptr<Statement>> m_statements;
         TokenStream m_tokenStream;
         TypeParser m_typeParser;
         ParameterParser m_paramParser;
         StatementParser m_stmtParser;
         ExpressionParser m_exprParser;
 
-        void parseNextStatement( std::unique_ptr<CompilationUnit>& compUnit );
+        void parseNextStatement();
 
-        std::expected<std::unique_ptr<Statement>, ErrorVariant> parseKeywordStatement( const Token& token );
+        std::expected<Statement*, ErrorVariant> parseKeywordStatement( const Token& token );
 
-        std::expected<std::unique_ptr<Statement>, ErrorVariant> parseIdentifierStatement( const Token& token );
+        std::expected<Statement*, ErrorVariant> parseIdentifierStatement( const Token& token );
 
-        std::expected<std::unique_ptr<Statement>, ErrorVariant> parseExpressionStatement( const Token& token );
+        std::expected<Statement*, ErrorVariant> parseExpressionStatement( const Token& token );
 };

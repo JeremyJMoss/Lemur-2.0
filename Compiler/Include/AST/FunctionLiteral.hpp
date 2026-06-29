@@ -2,7 +2,6 @@
 
 /* === Imports === */
 
-#include <memory>
 #include <vector>
 #include "AST/ParsedType.hpp"
 #include "AST/Parameter.hpp"
@@ -12,16 +11,17 @@
 
 struct FunctionLiteral : Expression 
 {
-    std::unique_ptr<ParsedType> returnType;
-    std::vector<std::unique_ptr<Parameter>> parameters;
-    std::unique_ptr<Block> body;
+    const ParsedType* returnType;
+    std::vector<const Parameter*> parameters;
+    const Block* body;
 
     explicit FunctionLiteral( 
-        std::unique_ptr<ParsedType>&& retType, 
-        std::vector<std::unique_ptr<Parameter>>&& params, 
-        std::unique_ptr<Block>&& block 
-    ) : returnType( std::move( retType ) ), parameters( std::move( params ) ), 
-        body( std::move( block ) ) {};
+        const ParsedType* retType, 
+        std::vector<const Parameter*> params, 
+        const Block* block 
+    ) : returnType( retType ), 
+        parameters( std::move( params ) ), 
+        body( block ) {};
 
     ASTNodeType type() const override { return ASTNodeType::FunctionLiteral; }
 };

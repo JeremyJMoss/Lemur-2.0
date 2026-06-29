@@ -149,7 +149,7 @@ class SourceManager
             return line;
         }
 
-        std::string getFileName( FileId fileId ) 
+        std::string getFilePath( FileId fileId ) 
         {
             return files.at( fileId ).getFilePath().string();
         }

@@ -11,7 +11,7 @@ void ErrorReporter::printErrorDiagnostic(
     std::size_t endLine   = range.end.line;
     std::size_t startCol  = range.start.column;
     std::size_t endCol    = range.end.column;
-    const std::string& fileName = m_srcManager.getFileName( range.fileId );
+    const std::string& filePath = m_srcManager.getFilePath( range.fileId );
     
     std::vector<std::tuple<std::string, std::size_t>> lines;
 
@@ -23,7 +23,7 @@ void ErrorReporter::printErrorDiagnostic(
     std::string lineNumberWidth = std::to_string( endLine );
     std::size_t width = lineNumberWidth.length();
 
-    std::cerr << toString( severity ) << ": " << fileName << " " << "at line " << startLine << ", column " << ( startCol + 1 ) << ": " << message << std::endl;
+    std::cerr << toString( severity ) << ": " << filePath << " " << "at line " << startLine << ", column " << ( startCol + 1 ) << ": " << message << std::endl;
 
     for ( const std::tuple<std::string, std::size_t>& line : lines ) 
     {
@@ -68,7 +68,7 @@ void ErrorReporter::printErrorDiagnostic(
     std::size_t endLine   = compErr.range.end.line;
     std::size_t startCol  = compErr.range.start.column;
     std::size_t endCol    = compErr.range.end.column;
-    const std::string& fileName = m_srcManager.getFileName( compErr.range.fileId );
+    const std::string& filePath = m_srcManager.getFilePath( compErr.range.fileId );
     
     std::vector<std::tuple<std::string, std::size_t>> lines;
 
@@ -82,7 +82,7 @@ void ErrorReporter::printErrorDiagnostic(
 
     std::cerr << toString( compErr.category ) << " " << 
         toString( compErr.severity ) << ": " << 
-        fileName << " at line " << startLine << 
+        filePath << " at line " << startLine << 
         ", column " << (startCol + 1) << ": " << 
         compErr.message << std::endl;
 

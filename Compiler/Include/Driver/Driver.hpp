@@ -7,26 +7,23 @@
 #include "Parser/Parser.hpp"
 #include "Driver/CompilationUnit.hpp"
 
+using FileId = std::size_t;
+
 class Driver 
 {
     public:
         Driver()
             : m_srcManager(), 
-              m_errReporter( m_srcManager ),
-              m_tokenizer( 
-                  m_srcManager, 
-                  m_errReporter 
-              ),
-              m_parser( m_errReporter ) {}
+              m_errReporter( m_srcManager ) {}
 
         void compileProgram( std::string& filePath );
 
-        std::expected<void, std::string> parseFile( const std::string& filePath );
+        void tokenizeCompilationUnit( CompilationUnit& compUnit );
+
+        void parseCompilationUnit( CompilationUnit& compUnit );
 
     private:
         SourceManager m_srcManager;
         ErrorReporter m_errReporter;
-        std::unordered_map<size_t, CompilationUnit> m_compilationUnits;
-        Tokenizer m_tokenizer;
-        Parser m_parser;
+        std::unordered_map<FileId, CompilationUnit> m_compilationUnits;
 };

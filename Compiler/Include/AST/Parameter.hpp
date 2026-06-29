@@ -2,8 +2,6 @@
 
 /* === Imports === */
 
-#include <string>
-#include <memory>
 #include "AST/ParsedType.hpp"
 #include "AST/ASTNode.hpp"
 
@@ -11,17 +9,17 @@
 
 struct Parameter : ASTNode
 {
-    std::unique_ptr<Identifier> identifier;
-    std::unique_ptr<ParsedType> paramType;
-    std::unique_ptr<Expression> defaultValue;
+    const Identifier* identifier;
+    const ParsedType* paramType;
+    const Expression* defaultValue;
 
     Parameter( 
-        std::unique_ptr<Identifier> name, 
-        std::unique_ptr<ParsedType>&& type, 
-        std::unique_ptr<Expression>&& defaultValue = nullptr
-    ) : identifier( std::move( name ) ), 
-        paramType( std::move( type ) ), 
-        defaultValue( std::move( defaultValue ) ) {}
+        const Identifier* name, 
+        const ParsedType* type, 
+        const Expression* defaultValue = nullptr
+    ) : identifier( name ), 
+        paramType( type ), 
+        defaultValue( defaultValue ) {}
 
     ASTNodeType type() const override { return ASTNodeType::Parameter; }
 };

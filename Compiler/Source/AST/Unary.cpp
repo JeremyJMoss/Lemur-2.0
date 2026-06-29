@@ -1,12 +1,6 @@
 #include <string>
-#include <memory>
+#include <stdexcept>
 #include "AST/Unary.hpp"
-
-Unary::Unary( std::unique_ptr<Expression>&& arg, const std::string& oper ) 
-{
-    argument = std::move( arg );
-    op = parseUnaryOperator( oper );
-}
 
 UnaryOperator Unary::parseUnaryOperator( const std::string& op ) 
 {

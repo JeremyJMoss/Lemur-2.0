@@ -24,37 +24,7 @@ const std::regex Tokenizer::s_RE_CHAR(
     R"(^'([^']*)'$)"
 );
 
-void Tokenizer::resetState() 
-{
-    m_lineNum = 0;
-    m_partialToken.clear();
-    m_inToken = false;
-}
-
-std::unique_ptr<CompilationUnit> Tokenizer::tokenizeFile( const std::string& filePath ) 
-{
-    resetState();
-    std::ifstream fileStream( filePath );
-
-    if ( !fileStream.is_open() ) 
-    {
-        m_errReporter.report( RuntimeError(
-                "Error opening .lmur file",
-                ErrorSeverity::Fatal
-            ) 
-        );
-        return nullptr;
-    }
-
-    FileId fileId = m_srcManager.addFile(filePath);
-    auto compUnit = std::make_unique<CompilationUnit>( fileId );
-    
-    tokenizeStream( fileStream, compUnit );
-
-    return compUnit;
-}
-
-void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<CompilationUnit>& compUnit, bool onlyHeader ) 
+void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader ) 
 {
     std::string line;
     std::size_t pos;
@@ -72,6 +42,8 @@ void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<Compilatio
         pos = 0;
 
         if ( !std::getline( stream, line ) ) break;
+
+        m_lastLineLength = line.length();
 
         while ( pos < line.length() ) 
         {
@@ -117,7 +89,7 @@ void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<Compilatio
                     {
                         appendPartialToken( value, m_lineNum, pos + match.length() );
                         auto newToken = Token( TokenKind::String,  m_partialToken.getValue(), m_partialToken.getLocation() );
-                        compUnit->addToken(newToken);
+                        m_compUnit.addToken(newToken);
                         if (onlyHeader) headerTokens++;
                         clearPartialToken();
                     } 
@@ -151,7 +123,7 @@ void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<Compilatio
                 SourceRange range = { 
                     { m_lineNum, pos }, 
                     { m_lineNum, pos + match.length() },
-                    compUnit->getFileId()
+                    m_compUnit.getFileId()
                 };
 
                 TokenKind type = getTokenType( value );
@@ -160,18 +132,18 @@ void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<Compilatio
                 {
                     TokenKeyword kw = m_KEYWORDS.at( value );
                     auto newToken = Token( type, kw, value, range );
-                    compUnit->addToken(newToken);
+                    m_compUnit.addToken(newToken);
                 }
                 else if ( type == TokenKind::Symbol )
                 {
                     TokenSymbol symbol = m_SYMBOLS.at( value );
                     auto newToken = Token( type, symbol, value, range );
-                    compUnit->addToken(newToken);
+                    m_compUnit.addToken(newToken);
                 }
                 else
                 {
                     auto newToken = Token( type, value, range );
-                    compUnit->addToken(newToken);
+                    m_compUnit.addToken(newToken);
                 }
 
                 if ( onlyHeader ) headerTokens++;
@@ -185,7 +157,7 @@ void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<Compilatio
                     SourceRange errorLocation = {
                         { m_lineNum, pos },
                         { m_lineNum, pos + match.length() },
-                        compUnit->getFileId()
+                        m_compUnit.getFileId()
                     };
 
                     m_errReporter.report( CompilerError(
@@ -206,13 +178,13 @@ void Tokenizer::tokenizeStream( std::istream& stream, std::unique_ptr<Compilatio
     SourceRange eofLocation = {
         { m_lineNum, pos },
         { m_lineNum, pos },
-        compUnit->getFileId()
+        m_compUnit.getFileId()
     };
 
     auto newToken = Token( TokenKind::EndOfFile, "", eofLocation );
-    compUnit->addToken(newToken);
+    m_compUnit.addToken(newToken);
 
-    checkIssueWithOutput(compUnit->getFileId());
+    checkIssueWithOutput(m_compUnit.getFileId());
 }
 
 
@@ -221,15 +193,13 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
     if ( !m_inToken ) return;
 
     std::size_t startLine = m_partialToken.getLocation().start.line;
-
-    std::string lineStr = m_srcManager.getLine( fileId, startLine );
-    std::size_t endColumn = lineStr.size();
     
     SourceRange errorLocation = {
         m_partialToken.getLocation().start,
-        { startLine, endColumn },
+        { startLine, m_lastLineLength },
         fileId
     };
+    
     std::string errorMessage = "";
 
     if ( m_partialToken.getType() == TokenKind::String ) 

@@ -1,19 +1,7 @@
 #include <string>
-#include <memory>
 #include <unordered_map>
-#include <exception>
+#include <stdexcept>
 #include "AST/BinaryExpression.hpp"
-
-BinaryExpression::BinaryExpression( 
-    std::unique_ptr<Expression>&& left, 
-    const std::string& oper, 
-    std::unique_ptr<Expression>&& right 
-) 
-{
-    this->left = std::move( left );
-    op = BinaryExpression::parseOperator( oper );
-    this->right = std::move( right );
-}
 
 BinaryOperators BinaryExpression::parseOperator( const std::string& op ) 
 {

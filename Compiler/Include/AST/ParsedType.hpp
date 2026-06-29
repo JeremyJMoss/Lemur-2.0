@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <memory>
 #include "AST/ASTNode.hpp"
 #include "AST/Identifier.hpp"
 #include "Utils/OwnershipKind.hpp"
@@ -18,10 +17,10 @@ enum class ParsedTypeKind
 };
 
 struct ParsedType : ASTNode {
-    ParsedTypeKind kind;
+    const ParsedTypeKind kind;
 
     virtual ~ParsedType() = default;
-    ParsedType( ParsedTypeKind kind ) : kind( kind ) {}
+    ParsedType( const ParsedTypeKind kind ) : kind( kind ) {}
 
     ASTNodeType type() const override { return ASTNodeType::ParsedType; }
 };
@@ -31,38 +30,43 @@ struct ParsedInferredType: ParsedType {
 };
 
 struct ParsedNamedType : ParsedType {
-    std::unique_ptr<Identifier> identifier;
+    const Identifier* identifier;
 
-    ParsedNamedType( std::unique_ptr<Identifier>&& identifier )
-        : ParsedType( ParsedTypeKind::Named ), identifier( std::move(identifier) ) {}
+    ParsedNamedType( const Identifier* identifier )
+        : ParsedType( ParsedTypeKind::Named ), identifier( identifier ) {}
 };
 
 struct ParsedFunctionType : ParsedType {
-    std::vector<std::unique_ptr<ParsedType>> parameters;
-    std::unique_ptr<ParsedType> returnType;
+    std::vector<const ParsedType*> parameters;
+    const ParsedType* returnType;
 
-    ParsedFunctionType( std::vector<std::unique_ptr<ParsedType>>&& parameters, std::unique_ptr<ParsedType>&& returnType )
-        : ParsedType( ParsedTypeKind::Function ), parameters( std::move( parameters ) ), returnType( std::move( returnType ) ) {}
+    ParsedFunctionType( std::vector<const ParsedType*> parameters, const ParsedType* returnType )
+        : ParsedType( ParsedTypeKind::Function ), 
+        parameters( std::move( parameters ) ), 
+        returnType( returnType ) {}
 };
 
 struct ParsedArrayType : ParsedType {
-    std::unique_ptr<ParsedType> elementType;
-    std::unique_ptr<Expression> size;
+    const ParsedType* elementType;
+    const Expression* size;
 
-    ParsedArrayType( std::unique_ptr<ParsedType>&& elementType, std::unique_ptr<Expression> size )
-        : ParsedType( ParsedTypeKind::Array ), elementType( std::move( elementType ) ), size( std::move( size ) ) {}
+    ParsedArrayType( const ParsedType* elementType, const Expression* size )
+        : ParsedType( ParsedTypeKind::Array ), 
+        elementType( elementType ), 
+        size( size ) {}
 };
 
 struct ParsedOwnershipType : ParsedType
 {
-    OwnershipKind ownership;
-    std::unique_ptr<ParsedType> inner;
+    const OwnershipKind ownership;
+    const ParsedType* inner;
 
-    ParsedOwnershipType( OwnershipKind ownership, std::unique_ptr<ParsedType>&& inner )
-        : ParsedType( ParsedTypeKind::Ownership ), ownership( ownership ), inner( std::move( inner ) ) {}
+    ParsedOwnershipType( const OwnershipKind ownership, const ParsedType* inner )
+        : ParsedType( ParsedTypeKind::Ownership ), 
+        ownership( ownership ), inner( inner ) {}
 };
 
-inline const std::string toString( const ParsedTypeKind& type ) 
+inline std::string toString( const ParsedTypeKind& type ) 
 {
     switch ( type ) 
     {

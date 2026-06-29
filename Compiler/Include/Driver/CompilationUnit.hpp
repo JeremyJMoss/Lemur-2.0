@@ -57,11 +57,18 @@ class CompilationUnit {
 
         size_t getTokenCount() { return m_tokens.count(); }
 
-        void addToAST( std::unique_ptr<Statement> statement) { m_ast.addStatement(std::move(statement)); }
+        void addToAST( Statement* statement) { m_ast.addStatement( statement ); }
 
         std::span<const Token> readTokens() { return m_tokens.getReadOnlyTokens(); }
 
-        const std::vector<std::unique_ptr<Statement>>& readStatements() const { return m_ast.m_statements; };
+        const std::vector<Statement*>& readStatements() const { return m_ast.m_statements; };
+
+        template<typename T, typename... Args>
+        T* allocate(Args&&... args) {
+            return m_arena.allocate<T>(std::forward<Args>(args)...);
+        }
+
+        void freeArena() { m_arena.reset(); }
     private:
         FileId m_fileId;
         ScopeId m_globalScope;

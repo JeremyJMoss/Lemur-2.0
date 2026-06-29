@@ -2,7 +2,6 @@
 
 /* === Imports === */
 
-#include <memory>
 #include <string>
 #include "AST/ASTNode.hpp"
 
@@ -18,15 +17,15 @@ enum class UnaryOperator
 
 struct Unary : Expression 
 {
-    std::unique_ptr<Expression> argument;
-    UnaryOperator op;
+    const Expression* argument;
+    const UnaryOperator op;
     
-    explicit Unary( std::unique_ptr<Expression>&& arg, const std::string& oper );
+    explicit Unary( const Expression* arg, const std::string& oper )
+        : argument( arg ), op( parseUnaryOperator(oper) ) {}
 
     ASTNodeType type() const override { return ASTNodeType::Unary; }
 
-    private:
-        UnaryOperator parseUnaryOperator( const std::string& op );
+    static UnaryOperator parseUnaryOperator( const std::string& op );
 };
 
 /* === Utiltity === */

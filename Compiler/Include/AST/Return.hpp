@@ -2,17 +2,16 @@
 
 /* === Imports === */
 
-#include <memory>
 #include "AST/ASTNode.hpp"
 
 /* === Return === */
 
 struct Return : Statement 
 {
-    std::unique_ptr<Expression> value;
+    const Expression* value;
 
-    explicit Return( std::unique_ptr<Expression>&& val ) 
-        : value( std::move( val ) ) {}
+    explicit Return( const Expression* val ) 
+        : value( val ) {}
 
     ASTNodeType type() const override { return ASTNodeType::Return; }
 };

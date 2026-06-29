@@ -3,7 +3,7 @@
 class Arena {
     public:
         template <typename T, typename... Args>
-        T* create( Args&&... args ) {
+        T* allocate( Args&&... args ) {
             std::size_t aligned = alignUp( m_offset, alignof(T) );
 
             if ( aligned + sizeof(T) > m_chunks.back().size() ) {

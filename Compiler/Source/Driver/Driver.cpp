@@ -7,66 +7,41 @@
 
 void Driver::compileProgram( std::string& filePath ) 
 {
-    try {
-        // Get entry point
-        Logger::debug( "Attempting to parse entry point file" );
+    // Get entry point
+    Logger::debug( "Attempting to parse entry point file" );
 
-        auto maybeParsedFile = parseFile( filePath );
+    FileId fileId = m_srcManager.addFile(filePath);
+    auto compUnit = std::make_unique<CompilationUnit>( fileId );
 
-        if ( !maybeParsedFile ) 
-        {    
-            m_errReporter.report(
-                RuntimeError(
-                    maybeParsedFile.error(),
-                    ErrorSeverity::Fatal
-                )
-            );
-        }
+    tokenizeCompilationUnit( *compUnit );
 
-        if ( m_errReporter.hasErrors() )
-        {
-            m_errReporter.printAllDiagnostics();
-
-            Logger::error( 
-                std::to_string( m_errReporter.getErrCount() ) + " " + 
-                maybeParsedFile.error() + ". Compilation terminated." 
-            );
-
-            return;
-        }
-
-        Logger::debug( "Parsed file" );
-    }
-    catch ( const FatalCompilerError& err )
+    if ( m_errReporter.hasErrors() )
     {
         m_errReporter.printAllDiagnostics();
+
         Logger::error( 
-            std::to_string( m_errReporter.getErrCount() ) + 
-            " error(s) detected. Compilation terminated." 
+            std::to_string( m_errReporter.getErrCount() ) + " lexing error(s) found. Compilation terminated." 
         );
+
+        return;
     }
-}
 
-std::expected<void, std::string> Driver::parseFile( const std::string& filePath )
-{
-    auto compUnit = m_tokenizer.tokenizeFile( filePath );
+    parseCompilationUnit( *compUnit );
 
-    Logger::debug( 
-        std::to_string( compUnit->getTokenCount() ) + " tokens generated"
-    );
+    if ( m_errReporter.hasErrors() )
+    {
+        m_errReporter.printAllDiagnostics();
 
-    if ( m_errReporter.hasErrors() ) return std::unexpected( "Error(s) during lexing" );
+        Logger::error( 
+            std::to_string( m_errReporter.getErrCount() ) + " parser error(s) found. Compilation terminated." 
+        );
 
-    Logger::debug( 
-        "Parsing tokens for file"
-    );
+        return;
+    }
 
-    m_parser.parse( compUnit );
-    if ( m_errReporter.hasErrors() ) return std::unexpected( "Error(s) during parsing" );
+    Debugger debugger = Debugger();
 
-    // Debugger debugger = Debugger();
-
-    // debugger.printASTTree(compUnit->readStatements());
+    debugger.printASTTree( compUnit->readStatements() );
 
     Logger::debug( 
         "AST generated with " +
@@ -74,5 +49,50 @@ std::expected<void, std::string> Driver::parseFile( const std::string& filePath 
         " top-level statements"
     );
 
-    return {};
+    Logger::debug( "Parsed file" );
+
+    // free all memory within Compilation Unit
+    compUnit->freeArena();
+}
+
+void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
+    const std::string& filePath = m_srcManager.getFilePath(compUnit.getFileId());
+    std::ifstream fileStream( filePath );
+
+    if ( !fileStream.is_open() ) 
+    {
+        m_errReporter.report( RuntimeError(
+                "Error opening .lmur file",
+                ErrorSeverity::Fatal
+            ) 
+        );
+        return;
+    }
+
+    Logger::debug( 
+        "Lexing tokens for file"
+    );
+
+    Tokenizer tokenizer = Tokenizer( compUnit, m_errReporter );
+
+    tokenizer.tokenizeStream( fileStream );
+
+    if ( m_errReporter.hasErrors() ) return;
+
+    Logger::trace( 
+        std::to_string( compUnit.getTokenCount() ) + " tokens generated"
+    );
+} 
+
+void Driver::parseCompilationUnit( CompilationUnit& compUnit ) {
+    
+    Logger::debug( 
+        "Parsing tokens for file"
+    );
+
+    Parser parser = Parser( compUnit, m_errReporter );
+
+    parser.parse();
+
+    if ( m_errReporter.hasErrors() ) return;
 }

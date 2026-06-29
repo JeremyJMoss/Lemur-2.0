@@ -2,7 +2,6 @@
 
 /* === Imports === */
 
-#include <memory>
 #include <vector>
 #include "AST/ASTNode.hpp"
 #include "AST/ParsedType.hpp"
@@ -14,20 +13,23 @@
 
 struct FunctionDeclaration : Declaration
 {
-    std::unique_ptr<Identifier> identifier;
-    std::unique_ptr<ParsedType> returnType;
-    std::vector<std::unique_ptr<Parameter>> parameters;
-    std::unique_ptr<Block> body;
+    const Identifier* identifier;
+    const ParsedType* returnType;
+    std::vector<const Parameter*> parameters;
+    const Block* body;
     bool hasImplementation;
 
     explicit FunctionDeclaration(
-        std::unique_ptr<Identifier>&& _identifier, 
-        std::unique_ptr<ParsedType>&& _returnType, 
-        std::vector<std::unique_ptr<Parameter>>&& _parameters, 
-        std::unique_ptr<Block>&& _body,
+        const Identifier* identifier, 
+        const ParsedType* returnType, 
+        std::vector<const Parameter*> parameters, 
+        const Block* body,
         bool functionHasBody = true
-    ) : identifier( std::move( _identifier ) ), returnType( std::move( _returnType ) ), 
-        parameters( std::move( _parameters ) ), body( std::move( _body ) ), hasImplementation( functionHasBody ) {};
+    ) : identifier( identifier ), 
+        returnType( returnType ), 
+        parameters( std::move( parameters ) ), 
+        body( body ), 
+        hasImplementation( functionHasBody ) {};
 
     ASTNodeType type() const override { return ASTNodeType::FunctionDeclaration; }
 };

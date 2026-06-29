@@ -9,7 +9,7 @@
 
 struct Identifier : Expression 
 {
-    std::string name;
+    const std::string name;
     explicit Identifier( const std::string& value ) : name( std::move( value ) ) {}
     
     ASTNodeType type() const override { return ASTNodeType::Identifier; }

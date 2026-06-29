@@ -1,12 +1,8 @@
 #pragma once
-#include <vector>
 #include <string>
 #include <regex>
 #include <unordered_set>
 #include <unordered_map>
-#include <fstream>
-#include <sstream>
-#include <memory>
 #include "Tokens/Token.hpp"
 #include "SourceControl/SourceLocation.hpp"
 #include "SourceControl/SourceManager.hpp"
@@ -20,8 +16,9 @@ class CompilationUnit;
 class Tokenizer 
 {
     public:
-        Tokenizer( SourceManager& sm, ErrorReporter& errReporter ) : m_srcManager( sm ), m_errReporter( errReporter ) {}
-        std::unique_ptr<CompilationUnit> tokenizeFile( const std::string& filePath );
+        Tokenizer( CompilationUnit& compUnit, ErrorReporter& errReporter ) 
+            : m_compUnit( compUnit ), m_errReporter( errReporter ) {}
+        void tokenizeStream( std::istream& stream, bool onlyHeader = false );
         void checkIssueWithOutput( FileId fileId );
 
     private:
@@ -89,15 +86,14 @@ class Tokenizer
         };
 
         Token m_partialToken = {};
-        SourceManager& m_srcManager;
+        CompilationUnit& m_compUnit;
         ErrorReporter& m_errReporter;
         bool m_inToken = false;
         std::size_t m_lineNum = 0;
+        std::size_t m_lastLineLength = 0;
         void setPartialToken( TokenKind type, const std::string& value, std::size_t start_line, std::size_t start_pos );
         void appendPartialToken( const std::string& amendment, std::size_t line, std::size_t pos );
         void clearPartialToken();
-        void resetState();
         bool matchRegex( const std::string& input, std::size_t pos, std::smatch& match, const std::regex& tokenPattern );
         TokenKind getTokenType( const std::string& value );
-        void tokenizeStream( std::istream& stream, std::unique_ptr<CompilationUnit>& compUnit, bool onlyHeader = false );
 };

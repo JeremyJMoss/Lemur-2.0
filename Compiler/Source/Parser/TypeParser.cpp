@@ -1,6 +1,7 @@
 #include "Parser/TypeParser.hpp"
+#include "Driver/CompilationUnit.hpp"
 
-std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType() 
+std::expected<ParsedType*, ErrorVariant> TypeParser::parseType() 
 {
     auto frontToken = m_tokenStream.peek();
 
@@ -17,22 +18,22 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
             return std::unexpected( UnexpectedEndOfInputError( currentToken.getLocation() ) );
         }
 
-        std::vector<std::unique_ptr<ParsedType>> params;
-        std::unique_ptr<ParsedType> returnType;
+        std::vector<ParsedType*> params;
+        ParsedType* returnType = nullptr;
 
         if ( currentToken.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) 
         {
             auto maybeParams = parseParameterTypes();
             if ( !maybeParams ) return std::unexpected( maybeParams.error() );
 
-            params = std::move( maybeParams.value() );
+            params = maybeParams.value();
 
             auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
             if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
             auto maybeReturnType = parseType();
             if ( !maybeReturnType ) return std::unexpected( maybeReturnType.error() );
-            returnType = std::move( maybeReturnType.value() );
+            returnType = maybeReturnType.value();
         } 
         else if ( currentToken.checkMatches( TokenKind::Symbol, TokenSymbol::Colon ) ) 
         {
@@ -41,11 +42,11 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
 
             auto maybeReturnType = parseType();
             if ( !maybeReturnType ) return std::unexpected( maybeReturnType.error() );
-            returnType = std::move( maybeReturnType.value() );
+            returnType = maybeReturnType.value();
         } 
         else if ( currentToken.checkMatches( TokenKind::Symbol, TokenSymbol::Assign ) )
         {
-            returnType = std::make_unique<ParsedInferredType>();
+            returnType = m_compUnit.allocate<ParsedInferredType>();
 
             returnType->location = currentToken.getLocation();
         } 
@@ -61,7 +62,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
             );
         }
 
-        auto typeFunc = std::make_unique<ParsedFunctionType>( std::move( params ), std::move( returnType ) );
+        auto typeFunc = m_compUnit.allocate<ParsedFunctionType>( params, returnType );
 
         typeFunc->location = { frontToken.getLocation().start, typeFunc->returnType->location.end, frontToken.getLocation().fileId };
         
@@ -116,9 +117,9 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         auto maybeReferenceVal = parseType();
         if ( !maybeReferenceVal ) return std::unexpected( maybeReferenceVal.error() );
 
-        auto reference = std::make_unique<ParsedOwnershipType>( kind, std::move( maybeReferenceVal.value() ) );
+        auto reference = m_compUnit.allocate<ParsedOwnershipType>( kind, std::move( maybeReferenceVal.value() ) );
 
-        reference->location = {frontToken.getLocation().start, reference->inner->location.end, frontToken.getLocation().fileId};
+        reference->location = { frontToken.getLocation().start, reference->inner->location.end, frontToken.getLocation().fileId };
 
         return reference;
     } 
@@ -127,7 +128,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
         auto maybeInfer = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Infer );
         if ( !maybeInfer ) return std::unexpected( maybeInfer.error() );
         
-        auto inferType = std::make_unique<ParsedInferredType>();
+        auto inferType = m_compUnit.allocate<ParsedInferredType>();
 
         inferType->location = SourceRange::getLocation( frontToken, maybeInfer.value() );
 
@@ -137,9 +138,7 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
     {
         auto maybeNamedType = parseNamedType();
         if ( !maybeNamedType ) return std::unexpected( maybeNamedType.error() );
-        auto namedType = std::move( maybeNamedType.value() );
-
-        return namedType;   
+        return maybeNamedType.value();
     } 
     else 
     {
@@ -154,27 +153,27 @@ std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseType()
     }   
 }
 
-std::expected<std::unique_ptr<ParsedType>, ErrorVariant> TypeParser::parseNamedType() 
+std::expected<ParsedType*, ErrorVariant> TypeParser::parseNamedType() 
 {
     auto idToken = m_tokenStream.consume();
 
-    auto identifier = std::make_unique<Identifier>( idToken.getValue() );
+    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
 
     identifier->location = SourceRange::getLocation(idToken);
 
-    auto namedType = std::make_unique<ParsedNamedType>( std::move( identifier ) );
+    auto namedType = m_compUnit.allocate<ParsedNamedType>( identifier );
 
     namedType->location = namedType->identifier->location;
         
     return namedType;
 }
 
-std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser::parseParameterTypes() 
+std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameterTypes() 
 {
     auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
-    std::vector<std::unique_ptr<ParsedType>> types;
+    std::vector<ParsedType*> types;
 
     while( true ) 
     {
@@ -206,7 +205,7 @@ std::expected<std::vector<std::unique_ptr<ParsedType>>, ErrorVariant> TypeParser
         auto maybeParsedType = parseType();
         if (!maybeParsedType ) return std::unexpected( maybeParsedType.error() );
 
-        types.emplace_back( std::move( maybeParsedType.value() ) );
+        types.emplace_back( maybeParsedType.value() );
 
         auto next = m_tokenStream.peek();
 

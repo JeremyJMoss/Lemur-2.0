@@ -1,7 +1,7 @@
 #include <fstream>
 #include "Debug/Debugger.hpp"
 
-void Debugger::printASTTree( const std::vector<std::unique_ptr<Statement>>& statements ) const
+void Debugger::printASTTree( const std::vector<Statement*>& statements ) const
 {
     std::ofstream outFile("ast_output.json", std::ios::out | std::ios::binary);
     outFile.rdbuf()->pubsetbuf(nullptr, 1 << 20); // 1MB buffer
@@ -10,7 +10,7 @@ void Debugger::printASTTree( const std::vector<std::unique_ptr<Statement>>& stat
 
     for ( std::size_t i = 0; i < statements.size(); ++i ) 
     {
-        printAST( statements[i].get(), outFile, 
+        printAST( statements[i], outFile, 
             1, i != statements.size() - 1 );
     }
 
@@ -19,33 +19,7 @@ void Debugger::printASTTree( const std::vector<std::unique_ptr<Statement>>& stat
     outFile.close();
 }
 
-void Debugger::writeIndent(std::ostream& out, std::size_t indent) const
-{
-    static const char spaces[] =
-        "                                                                "; // 64 spaces
 
-    std::size_t count = indent * 2;
-    while (count > sizeof(spaces) - 1)
-    {
-        out.write(spaces, sizeof(spaces) - 1);
-        count -= sizeof(spaces) - 1;
-    }
-    out.write(spaces, count);
-}
-
-void Debugger::startBlock( std::ostream& out, std::size_t indent ) const
-{
-    writeIndent( out, indent ); 
-    out << "{" << '\n';
-}
-
-void Debugger::endBlock( std::ostream& out, std::size_t indent, bool hasTrailingComma ) const
-{
-    writeIndent( out, indent );
-    out << "}"; 
-    if ( hasTrailingComma ) out << ",";
-    out << '\n';
-}
 
 void Debugger::printLiteral( const Literal* literal, std::ostream& out, std::size_t indent, bool hasTrailingComma ) const
 {
@@ -80,13 +54,13 @@ void Debugger::printParameter( const Parameter* param, std::ostream& out, std::s
     out << "\"type\": \"Parameter\"," << '\n';
     writeIndent( out, indent + 1 );
     out << "\"identifier\": " << '\n';
-    printAST( param->identifier.get(), out, indent + 2, true );
+    printAST( param->identifier, out, indent + 2, true );
     writeIndent( out, indent + 1 );
     out << "\"paramType\": " << '\n';
-    printAST( param->paramType.get(), out, indent + 2, true );
+    printAST( param->paramType, out, indent + 2, true );
     writeIndent( out, indent + 1 );
     out << "\"defaultValue\": " << '\n';
-    printAST( param->defaultValue.get(), out, indent + 2, false );
+    printAST( param->defaultValue, out, indent + 2, false );
     endBlock( out, indent, hasTrailingComma );
 }
 
@@ -104,7 +78,7 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
             out << "\"type\": \"" + toString( functionType->kind ) + "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"returnType\": " << '\n';
-            printAST( functionType->returnType.get(), out, indent + 2, true );
+            printAST( functionType->returnType, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"parameters\": [";
             if ( !functionType->parameters.empty() ) 
@@ -113,7 +87,7 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
 
                 for ( std::size_t i = 0; i < functionType->parameters.size(); ++i ) 
                 {
-                    printAST( functionType->parameters[i].get(), out, 
+                    printAST( functionType->parameters[i], out, 
                         indent + 2, i != functionType->parameters.size() - 1 );
                 }
 
@@ -148,7 +122,7 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
             out << "\"ownership\": \"" << toString( ownershipType->ownership ) + "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"inner\": " << '\n';
-            printAST( ownershipType->inner.get(), out, indent + 2 );
+            printAST( ownershipType->inner, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -163,10 +137,10 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
             out << "\"type\": \"Array\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"elementType\":" << '\n';
-            printAST( arrayType->elementType.get(), out, indent + 2, true );
+            printAST( arrayType->elementType, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"arraySize\":" << '\n';
-            printAST( arrayType->size.get(), out, indent + 2 );
+            printAST( arrayType->size, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -181,7 +155,7 @@ void Debugger::printParsedType( const ParsedType* type, std::ostream& out, std::
             out << "\"type\": \"Named\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"identifier\":" << '\n';
-            printAST( namedType->identifier.get(), out, indent + 2 );
+            printAST( namedType->identifier, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -216,7 +190,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"expression\": " << '\n';
-            printAST( expstmt->expression.get(), out, indent + 2 );
+            printAST( expstmt->expression, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -248,7 +222,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
                 out << '\n';
                 for ( std::size_t i = 0; i < block->statements.size(); ++i ) 
                 {
-                    printAST( block->statements[i].get(), out, indent + 2, i != block->statements.size() - 1 );
+                    printAST( block->statements[i], out, indent + 2, i != block->statements.size() - 1 );
                 }
                 writeIndent( out, indent + 1 );
             }
@@ -289,7 +263,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"value\": " << '\n';
-            printAST( ret->value.get(), out, indent + 2 );
+            printAST( ret->value, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -306,7 +280,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"op\": \"" << toString( un->op ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"argument\": " << '\n';
-            printAST( un->argument.get(), out, indent + 2 );
+            printAST( un->argument, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -323,13 +297,13 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"locked\": " << ( decl->locked ? "true," : "false," ) << '\n';
             writeIndent( out, indent + 1 );
             out << "\"varType\": " << '\n';
-            printAST( decl->varType.get(), out, indent + 2, true );
+            printAST( decl->varType, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"identifier\": " << '\n';
-            printAST( decl->identifier.get(), out, indent + 2, true );
+            printAST( decl->identifier, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"initialiser\": " << '\n';
-            printAST( decl->initialiser.get(), out, indent + 2 );
+            printAST( decl->initialiser, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -344,10 +318,10 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"identifier\": " << '\n';
-            printAST( assign->identifier.get(), out, indent + 2, true );
+            printAST( assign->identifier, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"value\": " << '\n';
-            printAST( assign->value.get(), out, indent + 2 );
+            printAST( assign->value, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -362,7 +336,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"returnType\": " << '\n'; 
-            printAST( func->returnType.get(), out, indent + 2, true );
+            printAST( func->returnType, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"parameters\": [";
             if ( !func->parameters.empty() ) 
@@ -371,7 +345,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
 
                 for ( std::size_t i = 0; i < func->parameters.size(); ++i ) 
                 {
-                    printParameter( func->parameters[i].get(), out, 
+                    printParameter( func->parameters[i], out, 
                         indent + 2, i != func->parameters.size() - 1 );
                 }
 
@@ -380,7 +354,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "]," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"body\": " << '\n';
-            printAST( func->body.get(), out, indent + 2 );
+            printAST( func->body, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -395,7 +369,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"returnType\": " << '\n';
-            printAST( func->returnType.get(), out, indent + 2, true );
+            printAST( func->returnType, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"parameters\": [";
             if ( !func->parameters.empty() ) 
@@ -404,7 +378,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
 
                 for ( std::size_t i = 0; i < func->parameters.size(); ++i ) 
                 {
-                    printParameter( func->parameters[i].get(), out, 
+                    printParameter( func->parameters[i], out, 
                         indent + 2, i != func->parameters.size() - 1 );
                 }
 
@@ -413,7 +387,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "]," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"body\": " << '\n';
-            printAST( func->body.get(), out, indent + 2 );
+            printAST( func->body, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -428,13 +402,13 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"condition\": " << '\n';
-            printAST( ifs->condition.get(), out, indent + 2, true );
+            printAST( ifs->condition, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"then\": " << '\n';
-            printAST( ifs->then.get(), out, indent + 2, true );
+            printAST( ifs->then, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"else\": " << '\n';
-            printAST( ifs->elseStatement.get(), out, indent + 2 );
+            printAST( ifs->elseStatement, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -449,10 +423,10 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"start\": " << '\n';
-            printAST( rng->start.get(), out, indent + 2, true );
+            printAST( rng->start, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"end\": " << '\n';
-            printAST( rng->end.get(), out, indent + 2, true );
+            printAST( rng->end, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"inclusive\": " << ( rng->inclusive ? "true" : "false" ) << '\n';
             endBlock( out, indent, hasTrailingComma );
@@ -469,19 +443,19 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"loopVar\": " << '\n';
-            printAST( forl->loopVar.get(), out, indent + 2, true );
+            printAST( forl->loopVar, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"iterable\": " << '\n';
-            printAST( forl->iterable.get(), out, indent + 2, true );
+            printAST( forl->iterable, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"step\": " << '\n';
-            printAST( forl->step.get(), out, indent + 2, true );
+            printAST( forl->step, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"condition\": " << '\n';
-            printAST( forl->condition.get(), out, indent + 2, true );
+            printAST( forl->condition, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"body\": " << '\n';
-            printAST( forl->body.get(), out, indent + 2 );
+            printAST( forl->body, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -498,10 +472,10 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"op\": \"" << toString( bin->op ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"left\": " << '\n';
-            printAST( bin->left.get(), out, indent + 2, true );
+            printAST( bin->left, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"right\": " << '\n';
-            printAST( bin->right.get(), out, indent + 2 );
+            printAST( bin->right, out, indent + 2 );
             endBlock( out, indent, hasTrailingComma );
             break;
         }
@@ -523,7 +497,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
             out << "\"type\": \"" << toString( node->type() ) << "\"," << '\n';
             writeIndent( out, indent + 1 );
             out << "\"callee\": " << '\n';
-            printAST( callExpr->callee.get(), out, indent + 2, true );
+            printAST( callExpr->callee, out, indent + 2, true );
             writeIndent( out, indent + 1 );
             out << "\"arguments\": [";
             if ( !callExpr->arguments.empty() ) 
@@ -532,7 +506,7 @@ void Debugger::printAST( const ASTNode* node, std::ostream& out, std::size_t ind
 
                 for ( std::size_t i = 0; i < callExpr->arguments.size(); ++i ) 
                 {
-                    printAST( callExpr->arguments[i].get(), out, 
+                    printAST( callExpr->arguments[i], out, 
                         indent + 2, i != callExpr->arguments.size() - 1 );
                 }
 

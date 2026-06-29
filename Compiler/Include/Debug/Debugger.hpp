@@ -2,17 +2,15 @@
 
 /* === Imports === */
 
-#include <memory>
 #include <iostream>
-#include <string>
-#include <variant>
+#include <vector>
 #include "AST/AllASTTypes.hpp"
 
 /* === Debugger === */
 
 class Debugger {
     public:
-        void printASTTree( const std::vector<std::unique_ptr<Statement>>& statements ) const;
+        void printASTTree( const std::vector<Statement*>& statements ) const;
     private:
         void writeIndent( std::ostream& out, std::size_t indent ) const;
 

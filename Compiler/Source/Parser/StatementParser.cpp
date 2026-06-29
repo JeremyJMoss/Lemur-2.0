@@ -2,7 +2,7 @@
 #include "Parser/Parser.hpp"
 #include "Utils/Logger.hpp"
 
-std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParser::parseFunctionDeclaration() 
+std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration() 
 {
     Logger::debug( 
         "Parsing function declaration"
@@ -40,7 +40,7 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
         })
     );
 
-    auto identifier = std::make_unique<Identifier>( idToken.getValue() );
+    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
 
     identifier->location = SourceRange::getLocation( idToken );
 
@@ -70,17 +70,17 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
 
     auto maybeBody = parseBlock();
     if ( !maybeBody ) return std::unexpected( maybeBody.error() );
-    auto block = std::move( maybeBody.value() );
+    auto block = maybeBody.value();
 
     Logger::trace(
         "Function body parsed"
     );
 
-    auto funDec = std::make_unique<FunctionDeclaration>(
-        std::move( identifier ), 
-        std::move( maybeReturnType.value() ), 
-        std::move( parameters ), 
-        std::move( block ),
+    auto funDec = m_compUnit.allocate<FunctionDeclaration>(
+        identifier, 
+        maybeReturnType.value(), 
+        parameters, 
+        block,
         true
     );
 
@@ -96,7 +96,7 @@ std::expected<std::unique_ptr<FunctionDeclaration>, ErrorVariant> StatementParse
     return funDec;
 }
 
-std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock() 
+std::expected<Block*, ErrorVariant> StatementParser::parseBlock() 
 {
     auto front = m_tokenStream.peek();
 
@@ -114,7 +114,7 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
     auto maybeFrontBrace = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LBrace );
     if ( !maybeFrontBrace ) return std::unexpected( maybeFrontBrace.error() );
 
-    std::vector<std::unique_ptr<Statement>> body;
+    std::vector<Statement*> body;
 
     Logger::trace( "Parsing statements inside block" );
 
@@ -157,14 +157,14 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
             continue;
         }
 
-        body.emplace_back( std::move( maybeStatement.value() ) );
+        body.emplace_back( maybeStatement.value() );
 
         current = m_tokenStream.peek();
     }
 
     size_t bodySize = body.size();
 
-    auto block = std::make_unique<Block>( std::move( body ) );
+    auto block = m_compUnit.allocate<Block>( body );
 
     block->location = SourceRange::getLocation( front, current );
 
@@ -178,7 +178,7 @@ std::expected<std::unique_ptr<Block>, ErrorVariant> StatementParser::parseBlock(
     return block;
 }
 
-std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParser::parseVariableDeclaration( const bool locked ) 
+std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariableDeclaration( const bool locked ) 
 {
     Logger::debug(
         "Parsing variable declaration", 
@@ -225,44 +225,33 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         })
     );
 
-    auto identifier = std::make_unique<Identifier>( idToken.getValue() );
+    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
     identifier->location = SourceRange::getLocation( frontToken, idToken );
 
     auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );
 
-    std::unique_ptr<ParsedType> varType;
     auto maybeParsedType = m_typeParser.parseType();
     if ( !maybeParsedType )
     {
-        Logger::debug(
-            "Type parsing failed, using inferred type", 
-            std::to_array<Attribute>({ 
-                { "Identifier", "'" + idToken.getValue() + "'" } 
-            })
-        );
-
-        varType = std::make_unique<ParsedInferredType>();
-        m_errReporter.report(
+        return std::unexpected(
             CompilerError(
-                "Could not parse type. Converted to inferred type.",
-                ErrorSeverity::Warning,
+                "Could not parse type.",
+                ErrorSeverity::Error,
                 maybeColon.value().get().getLocation(),
                 ErrorCategory::Syntax
             )
         );
     }
-    else
-    {
-        varType = std::move( maybeParsedType.value() );
 
-        Logger::trace(
-            "Parsed variable type", 
-            std::to_array<Attribute>({ 
-                { "Type", "'" + toString( varType->kind ) + "'" } 
-            })
-        );
-    }
+    auto varType = maybeParsedType.value();
+
+    Logger::trace(
+        "Parsed variable type", 
+        std::to_array<Attribute>({ 
+            { "Type", "'" + toString( varType->kind ) + "'" } 
+        })
+    );
 
     auto current = m_tokenStream.peek();
 
@@ -270,7 +259,7 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         return std::unexpected(UnexpectedEndOfInputError( current.getLocation() ));
     }
 
-    std::unique_ptr<Expression> initialiser;
+    Expression* initialiser = nullptr;
 
     if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::Assign ) )
     {
@@ -289,17 +278,17 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
         }
         else 
         {
-            initialiser = std::move( maybeInitialiser.value() );
+            initialiser = maybeInitialiser.value();
         }
     }
 
     auto endLocation = initialiser != nullptr ? initialiser->location.end : varType->location.end;
 
-    auto decl = std::make_unique<VariableDeclaration>( 
-        std::move( identifier ), 
-        std::move( varType ), 
+    auto decl = m_compUnit.allocate<VariableDeclaration>( 
+        identifier, 
+        varType, 
         locked, 
-        std::move( initialiser ) 
+        initialiser 
     );
 
     decl->location = {frontToken.getLocation().start, endLocation, frontToken.getLocation().fileId };
@@ -315,7 +304,7 @@ std::expected<std::unique_ptr<VariableDeclaration>, ErrorVariant> StatementParse
     return decl;
 }
 
-std::expected<std::unique_ptr<Return>, ErrorVariant> StatementParser::parseReturn() 
+std::expected<Return*, ErrorVariant> StatementParser::parseReturn() 
 {
     Logger::debug( "Parsing return statement" );
 
@@ -334,7 +323,7 @@ std::expected<std::unique_ptr<Return>, ErrorVariant> StatementParser::parseRetur
         return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
     }
 
-    std::unique_ptr<Expression> value;
+    Expression* value = nullptr;
 
     Logger::trace( "Checking for return value expression" );
 
@@ -352,14 +341,14 @@ std::expected<std::unique_ptr<Return>, ErrorVariant> StatementParser::parseRetur
                 )
             );
         }
-        value = std::move( maybeValue.value() );
+        value = maybeValue.value();
     }
 
     bool hasReturn = value != nullptr;
 
     Logger::trace( "Parsed return value expression" );
 
-    auto ret = std::make_unique<Return>( std::move( value ) );
+    auto ret = m_compUnit.allocate<Return>( value );
 
     auto endLocation = hasReturn ? ret->value->location.end : front.getLocation().end;
 
@@ -375,7 +364,7 @@ std::expected<std::unique_ptr<Return>, ErrorVariant> StatementParser::parseRetur
     return ret;
 }
 
-std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::parseIfConditional( bool justElse ) 
+std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional( bool justElse ) 
 {
     std::string stmtType = justElse ? "else" : "if";
     Logger::debug( "Parsing " + stmtType + " statement" );
@@ -388,7 +377,7 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
 
     auto keyword = m_tokenStream.consume();
 
-    std::unique_ptr<Expression> condition;
+    Expression* condition = nullptr;
 
     // else case does not need condition
     if ( !justElse ) 
@@ -408,7 +397,7 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
             );
         }
 
-        condition = std::move( maybeCondition.value() );
+        condition = maybeCondition.value();
 
         if ( hasFrontParenthesis )
         {
@@ -435,7 +424,7 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
         );
     }
 
-    std::unique_ptr<IfConditional> elseStatement;
+    IfConditional* elseStatement = nullptr;
 
     auto next = m_tokenStream.peek();
 
@@ -462,23 +451,23 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
 
             auto maybeElseStatement = parseIfConditional();
             if ( !maybeElseStatement ) return std::unexpected( maybeElseStatement.error() );
-            elseStatement = std::move( maybeElseStatement.value() );
+            elseStatement = maybeElseStatement.value();
         } 
         else {
             Logger::trace( "Detected 'else' branch, parsing recursively" );
 
             auto maybeElseStatement = parseIfConditional( true );
             if ( !maybeElseStatement ) return std::unexpected( maybeElseStatement.error() );
-            elseStatement = std::move( maybeElseStatement.value() );
+            elseStatement = maybeElseStatement.value();
         }
     }
 
     auto endLocation = elseStatement == nullptr ? maybeBody.value()->location.end : elseStatement->location.end;
 
-    auto ifStmt = std::make_unique<IfConditional>( 
-        std::move( condition ), 
-        std::move( elseStatement ), 
-        std::move( maybeBody.value() ) 
+    auto ifStmt = m_compUnit.allocate<IfConditional>( 
+        condition, 
+        elseStatement, 
+        maybeBody.value() 
     );
 
     ifStmt->location = { front.getLocation().start, endLocation, front.getLocation().fileId };
@@ -488,7 +477,7 @@ std::expected<std::unique_ptr<IfConditional>, ErrorVariant> StatementParser::par
     return ifStmt;
 }
 
-std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForLoop() 
+std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop() 
 {
     Logger::debug( "Parsing for loop statement" );
 
@@ -516,8 +505,8 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
         );
     } 
 
-    std::unique_ptr<Expression> step;
-    std::unique_ptr<Expression> where;
+    Expression* step = nullptr;
+    Expression* where = nullptr;
 
     auto current = m_tokenStream.peek();
 
@@ -546,7 +535,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
         }
         else
         {
-            step = std::move( maybeStep.value() );
+            step = maybeStep.value();
         }
 
         current = m_tokenStream.peek();
@@ -576,7 +565,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
             }
             else
             {
-                where = std::move( maybeWhere.value() );
+                where = maybeWhere.value();
             }
         }
     } 
@@ -601,7 +590,7 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
         }
         else
         {
-            where = std::move( maybeWhere.value() );
+            where = maybeWhere.value();
         }
     }
 
@@ -618,12 +607,12 @@ std::expected<std::unique_ptr<ForLoop>, ErrorVariant> StatementParser::parseForL
         );
     }
 
-    auto forLoop = std::make_unique<ForLoop>( 
-        std::move( maybeLoopVar.value() ), 
-        std::move( maybeIterable.value() ), 
-        std::move( step ), 
-        std::move( where ), 
-        std::move( maybeBody.value() ) 
+    auto forLoop = m_compUnit.allocate<ForLoop>( 
+        maybeLoopVar.value(), 
+        maybeIterable.value(), 
+        step, 
+        where, 
+        maybeBody.value() 
     );
 
     forLoop->location = { maybeForKeyword.value().get().getLocation().start, forLoop->body->location.end, forLoop->body->location.fileId };
