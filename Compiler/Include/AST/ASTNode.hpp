@@ -10,6 +10,26 @@
 
 using NodeId = std::size_t;
 
+struct Literal;
+struct Assignment;
+struct Identifier;
+struct BinaryExpression;
+struct ExpressionStatement;
+struct Block;
+struct Break;
+struct Continue;
+struct Return;
+struct VariableDeclaration;
+struct FunctionDeclaration;
+struct FunctionLiteral;
+struct IfConditional;
+struct ForLoop;
+struct Range;
+struct Unary;
+struct FunctionCall;
+struct ParsedType;
+struct Parameter;
+
 struct ASTVisitor
 {
     virtual void visit(const Literal&) = 0;

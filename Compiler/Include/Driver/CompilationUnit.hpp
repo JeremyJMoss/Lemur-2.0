@@ -61,7 +61,7 @@ class CompilationUnit {
 
         std::span<const Token> readTokens() { return m_tokens.getReadOnlyTokens(); }
 
-        const std::vector<Statement*>& readStatements() const { return m_ast.m_statements; };
+        const std::vector<const Statement*>& readStatements() const { return m_ast.m_statements; };
 
         template<typename T, typename... Args>
         T* allocate(Args&&... args) {

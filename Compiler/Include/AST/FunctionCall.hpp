@@ -11,9 +11,9 @@
 struct FunctionCall : Expression 
 {
     const Expression* callee;
-    std::vector<const Expression*> arguments;
+    const std::vector<Expression*> arguments;
 
-    explicit FunctionCall( const Expression* callee, std::vector<const Expression*> args )
+    explicit FunctionCall( const Expression* callee, std::vector<Expression*> args )
         : callee( callee ), arguments( std::move( args ) ) {};
 
     void accept(ASTVisitor& v) const override { 

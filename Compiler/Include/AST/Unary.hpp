@@ -29,15 +29,3 @@ struct Unary : Expression
 
     static UnaryOperator parseUnaryOperator( const std::string& op );
 };
-
-/* === Utiltity === */
-
-inline const std::string toString( const UnaryOperator& unop ) 
-{
-    switch( unop ) 
-    {
-        case UnaryOperator::Negate: return "-";
-        case UnaryOperator::Not:    return "!";
-        default:                    return "Unknown";
-    }
-}

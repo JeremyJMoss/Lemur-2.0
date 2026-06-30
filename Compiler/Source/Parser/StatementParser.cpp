@@ -1,6 +1,7 @@
 #include "Parser/StatementParser.hpp"
 #include "Parser/Parser.hpp"
 #include "Utils/Logger.hpp"
+#include "AST/ASTPrinter.hpp"
 
 std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration() 
 {
@@ -64,7 +65,7 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
     Logger::trace(
         "Return type parsed", 
         std::to_array<Attribute>({
-            { "Type", "'" + toString( maybeReturnType.value()->kind ) + "'" }
+            { "Type", "'" + ASTPrinter::getParsedType( maybeReturnType.value()->kind ) + "'" }
         })
     );
 
@@ -249,7 +250,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     Logger::trace(
         "Parsed variable type", 
         std::to_array<Attribute>({ 
-            { "Type", "'" + toString( varType->kind ) + "'" } 
+            { "Type", "'" + ASTPrinter::getParsedType( varType->kind ) + "'" } 
         })
     );
 

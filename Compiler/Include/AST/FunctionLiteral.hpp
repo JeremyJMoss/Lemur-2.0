@@ -12,12 +12,12 @@
 struct FunctionLiteral : Expression 
 {
     const ParsedType* returnType;
-    std::vector<const Parameter*> parameters;
+    const std::vector<Parameter*> parameters;
     const Block* body;
 
     explicit FunctionLiteral( 
         const ParsedType* retType, 
-        std::vector<const Parameter*> params, 
+        std::vector<Parameter*> params, 
         const Block* block 
     ) : returnType( retType ), 
         parameters( std::move( params ) ), 

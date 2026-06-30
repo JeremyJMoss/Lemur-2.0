@@ -39,10 +39,10 @@ struct ParsedNamedType : ParsedType {
 };
 
 struct ParsedFunctionType : ParsedType {
-    std::vector<const ParsedType*> parameters;
+    const std::vector<ParsedType*> parameters;
     const ParsedType* returnType;
 
-    ParsedFunctionType( std::vector<const ParsedType*> parameters, const ParsedType* returnType )
+    ParsedFunctionType( std::vector<ParsedType*> parameters, const ParsedType* returnType )
         : ParsedType( ParsedTypeKind::Function ), 
         parameters( std::move( parameters ) ), 
         returnType( returnType ) {}
@@ -66,17 +66,4 @@ struct ParsedOwnershipType : ParsedType
     ParsedOwnershipType( const OwnershipKind ownership, const ParsedType* inner )
         : ParsedType( ParsedTypeKind::Ownership ), 
         ownership( ownership ), inner( inner ) {}
-};
-
-inline std::string toString( const ParsedTypeKind& type ) 
-{
-    switch ( type ) 
-    {
-        case ParsedTypeKind::Function:   return "Function";
-        case ParsedTypeKind::Ownership:  return "Ownership";
-        case ParsedTypeKind::Inferred:   return "Inferred";
-        case ParsedTypeKind::Array:      return "Array";
-        case ParsedTypeKind::Named:      return "Named";
-        default:               return "Unknown";
-    }
 };

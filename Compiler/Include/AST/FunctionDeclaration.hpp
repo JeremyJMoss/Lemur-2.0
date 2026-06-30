@@ -15,14 +15,14 @@ struct FunctionDeclaration : Declaration
 {
     const Identifier* identifier;
     const ParsedType* returnType;
-    std::vector<const Parameter*> parameters;
+    const std::vector<Parameter*> parameters;
     const Block* body;
     bool hasImplementation;
 
     explicit FunctionDeclaration(
         const Identifier* identifier, 
         const ParsedType* returnType, 
-        std::vector<const Parameter*> parameters, 
+        std::vector<Parameter*> parameters, 
         const Block* body,
         bool functionHasBody = true
     ) : identifier( identifier ), 

@@ -2,7 +2,7 @@
 #include "Tokens/Tokenizer.hpp"
 #include "Errors/Errors.hpp"
 #include "Utils/Logger.hpp"
-#include "Debug/Debugger.hpp"
+#include "AST/ASTPrinter.hpp"
 #include <array>
 
 void Driver::compileProgram( std::string& filePath ) 
@@ -39,9 +39,9 @@ void Driver::compileProgram( std::string& filePath )
         return;
     }
 
-    Debugger debugger = Debugger();
+    ASTPrinter astPrinter = ASTPrinter();
 
-    debugger.printASTTree( compUnit->readStatements() );
+    astPrinter.print( compUnit->readStatements() );
 
     Logger::debug( 
         "AST generated with " +

@@ -33,8 +33,6 @@ Lemur2/
 |   |   |   └── VariableDeclaration.hpp
 |   |   ├── DataStructures/
 |   |   |   └── Stack.hpp
-|   |   ├── Debug/
-|   |   |   └── Debugger.hpp
 │   │   ├── Driver/
 |   |   |   ├── CompilationUnit.hpp
 │   │   |   └── Driver.cpp
@@ -80,8 +78,6 @@ Lemur2/
 │   │   ├── AST/
 │   │   |   ├── BinaryExpression.cpp
 │   │   |   └── Unary.cpp
-│   │   ├── Debug/
-│   │   |   └── Debugger.cpp
 │   │   ├── Driver/
 │   │   |   └── Driver.cpp
 │   │   ├── Errors/
