@@ -1,28 +1,71 @@
 #include "Tokens/Tokenizer.hpp"
 #include "Tokens/Token.hpp"
 #include "Driver/CompilationUnit.hpp"
+#include <cctype>
 
 using FileId = std::size_t;
 
-const std::regex Tokenizer::s_TOKEN_PATTERN(
-     R"(&&|\|\||==|!=|<=|>=|->|::|=>|'([^']*)'|[0-9]+\.[0-9]+|[0-9]+|/\*|\*/|[\"+\-*/()=;:<>{}%,!.\[\]]|\w+)"
-);
+namespace {
 
-const std::regex Tokenizer::s_WHITESPACE( 
-    R"(\s+)" 
-);
+bool isWhitespaceChar( char c ) {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f';
+}
 
-const std::regex Tokenizer::s_RE_INTEGER( 
-    R"(^[0-9]+$)" 
-);
+bool isDigitChar( char c ) {
+    return c >= '0' && c <= '9';
+}
 
-const std::regex Tokenizer::s_RE_FLOAT( 
-    R"(^[0-9]+\.[0-9]+$)" 
-);
+bool isIdentifierStartChar( char c ) {
+    return std::isalpha( static_cast<unsigned char>( c ) ) || c == '_';
+}
 
-const std::regex Tokenizer::s_RE_CHAR(
-    R"(^'([^']*)'$)"
-);
+bool isIdentifierPartChar( char c ) {
+    return std::isalnum( static_cast<unsigned char>( c ) ) || c == '_';
+}
+
+std::string readIdentifier( const std::string& line, std::size_t& pos ) {
+    std::size_t start = pos;
+    while ( pos < line.size() && isIdentifierPartChar( line[ pos ] ) ) {
+        pos++;
+    }
+    return line.substr( start, pos - start );
+}
+
+std::string readNumber( const std::string& line, std::size_t& pos ) {
+    std::size_t start = pos;
+    while ( pos < line.size() && isDigitChar( line[ pos ] ) ) {
+        pos++;
+    }
+
+    if ( pos + 1 < line.size() && line[ pos ] == '.' && isDigitChar( line[ pos + 1 ] ) ) {
+        pos++;
+        while ( pos < line.size() && isDigitChar( line[ pos ] ) ) {
+            pos++;
+        }
+    }
+
+    return line.substr( start, pos - start );
+}
+
+std::string readSymbol( const std::string& line, std::size_t& pos, const std::unordered_map<std::string_view, TokenSymbol>& symbols ) {
+    if ( pos + 1 < line.size() ) {
+        std::string_view two( line.data() + pos, 2 );
+        if ( symbols.find( two ) != symbols.end() ) {
+            pos += 2;
+            return std::string( two );
+        }
+    }
+
+    std::string_view one( line.data() + pos, 1 );
+    if ( symbols.find( one ) != symbols.end() ) {
+        pos += 1;
+        return std::string( one );
+    }
+
+    return "";
+}
+
+}
 
 void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader ) 
 {
@@ -33,10 +76,7 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
 
     while ( true ) 
     {
-        if ( onlyHeader )
-        {
-            if ( headerTokens >= maxTokens ) break;
-        }
+        if ( onlyHeader && headerTokens >= maxTokens ) break;
 
         m_lineNum++;
         pos = 0;
@@ -47,131 +87,201 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
 
         while ( pos < line.length() ) 
         {
-            if ( onlyHeader )
+            if ( onlyHeader && headerTokens >= maxTokens ) break;
+
+            if ( m_inToken ) 
             {
-                if ( headerTokens >= maxTokens ) break;
-            }
-
-            std::smatch wsMatch;
-            if ( matchRegex( line, pos, wsMatch, s_WHITESPACE ) ) 
-            {
-                if ( !m_inToken ) 
+                if ( m_partialToken.getType() == TokenKind::String ) 
                 {
-                    pos += wsMatch.length();
-                    continue;
-                } 
-                else 
-                {
-                    std::string value = wsMatch.str( 0 );
+                    bool closed = false;
 
-                    if ( pos != 0 && pos + wsMatch.length() != line.length() ) 
+                    while ( pos < line.length() ) 
                     {
-                        appendPartialToken( value, m_lineNum, pos + line.length() );
-                    } 
-                    else if ( pos + wsMatch.length() != line.length() ) 
-                    {
-                        appendPartialToken( " ", m_lineNum, pos + line.length() );
-                    }
-
-                    pos += wsMatch.length();
-                    continue;
-                }
-            }
-
-            std::smatch match;
-            if ( matchRegex( line, pos, match, s_TOKEN_PATTERN ) ) 
-            {
-                std::string value = match.str( 0 );
-
-                if ( m_inToken ) 
-                {
-                    if ( m_partialToken.getType() == TokenKind::String && value.front() == '"' ) 
-                    {
-                        appendPartialToken( value, m_lineNum, pos + match.length() );
-                        auto newToken = Token( TokenKind::String,  m_partialToken.getValue(), m_partialToken.getLocation() );
-                        m_compUnit.addToken(newToken);
-                        if (onlyHeader) headerTokens++;
-                        clearPartialToken();
-                    } 
-                    else 
-                    {
-                        appendPartialToken( value, m_lineNum, pos + match.length() );
-                        if ( m_partialToken.getType() == TokenKind::Comment && value.ends_with("*/") ) 
+                        if ( line[ pos ] == '"' ) 
                         {
+                            appendPartialToken( "\"", m_lineNum, pos + 1 );
+                            auto newToken = Token( TokenKind::String, m_partialToken.getValue(), m_partialToken.getLocation() );
+                            m_compUnit.addToken( newToken );
+                            if ( onlyHeader ) headerTokens++;
                             clearPartialToken();
+                            pos++;
+                            closed = true;
+                            break;
+                        }
+                        
+                        if ( line[ pos ] == '\\' && pos + 1 < line.length() ) 
+                        {
+                            appendPartialToken( line.substr( pos, 2 ), m_lineNum, pos + 2 );
+                            pos += 2;
+                        }
+                        else 
+                        {
+                            appendPartialToken( line.substr( pos, 1 ), m_lineNum, pos + 1 );
+                            pos++;
                         }
                     }
 
-                    pos += match.length();
+                    if ( !closed ) break;
                     continue;
                 }
 
-                if ( !value.empty() && value.front() == '"' ) 
+                if ( m_partialToken.getType() == TokenKind::Comment ) 
                 {
-                    setPartialToken( TokenKind::String, value, m_lineNum, pos );
-                    pos += match.length();
+                    bool closed = false;
+
+                    while ( pos < line.length() ) 
+                    {
+                        if ( line[ pos ] == '*' && pos + 1 < line.length() && line[ pos + 1 ] == '/' ) 
+                        {
+                            appendPartialToken( "*/", m_lineNum, pos + 2 );
+                            clearPartialToken();
+                            pos += 2;
+                            closed = true;
+                            break;
+                        }
+
+                        appendPartialToken( line.substr( pos, 1 ), m_lineNum, pos + 1 );
+                        pos++;
+                    }
+
+                    if ( !closed ) break;
                     continue;
                 }
+            }
 
-                if ( !value.empty() && value.starts_with( "/*" ) ) 
+            char c = line[ pos ];
+
+            if ( isWhitespaceChar( c ) ) 
+            {
+                pos++;
+                continue;
+            }
+
+            if ( c == '"' ) 
+            {
+                setPartialToken( TokenKind::String, "\"", m_lineNum, pos );
+                pos++;
+                continue;
+            }
+
+            if ( c == '/' && pos + 1 < line.length() && line[ pos + 1 ] == '*' ) 
+            {
+                setPartialToken( TokenKind::Comment, "/*", m_lineNum, pos );
+                pos += 2;
+                continue;
+            }
+
+            if ( c == '\'' ) 
+            {
+                std::size_t start = pos;
+                pos++;
+
+                if ( pos < line.length() ) 
                 {
-                    setPartialToken( TokenKind::Comment, value, m_lineNum, pos );
-                    pos += match.length();
-                    continue;
+                    if ( line[ pos ] == '\\' && pos + 1 < line.length() ) 
+                    {
+                        pos += 2;
+                    }
+                    else 
+                    {
+                        pos++;
+                    }
                 }
 
-                SourceRange range = { 
-                    { m_lineNum, pos }, 
-                    { m_lineNum, pos + match.length() },
+                if ( pos < line.length() && line[ pos ] == '\'' ) 
+                {
+                    pos++;
+                }
+
+                std::string value = line.substr( start, pos - start );
+                SourceRange range = {
+                    { m_lineNum, start },
+                    { m_lineNum, pos },
                     m_compUnit.getFileId()
                 };
 
+                auto newToken = Token( TokenKind::Char, value, range );
+                m_compUnit.addToken( newToken );
+                if ( onlyHeader ) headerTokens++;
+                continue;
+            }
+
+            if ( isDigitChar( c ) ) 
+            {
+                std::size_t start = pos;
+                std::string value = readNumber( line, pos );
+
                 TokenKind type = getTokenType( value );
+                SourceRange range = {
+                    { m_lineNum, start },
+                    { m_lineNum, pos },
+                    m_compUnit.getFileId()
+                };
+
+                auto newToken = Token( type, value, range );
+                m_compUnit.addToken( newToken );
+                if ( onlyHeader ) headerTokens++;
+                continue;
+            }
+
+            if ( isIdentifierStartChar( c ) ) 
+            {
+                std::size_t start = pos;
+                std::string value = readIdentifier( line, pos );
+                TokenKind type = getTokenType( value );
+                SourceRange range = {
+                    { m_lineNum, start },
+                    { m_lineNum, pos },
+                    m_compUnit.getFileId()
+                };
 
                 if ( type == TokenKind::Keyword ) 
                 {
                     TokenKeyword kw = m_KEYWORDS.at( value );
                     auto newToken = Token( type, kw, value, range );
-                    m_compUnit.addToken(newToken);
+                    m_compUnit.addToken( newToken );
                 }
-                else if ( type == TokenKind::Symbol )
-                {
-                    TokenSymbol symbol = m_SYMBOLS.at( value );
-                    auto newToken = Token( type, symbol, value, range );
-                    m_compUnit.addToken(newToken);
-                }
-                else
+                else 
                 {
                     auto newToken = Token( type, value, range );
-                    m_compUnit.addToken(newToken);
+                    m_compUnit.addToken( newToken );
                 }
 
                 if ( onlyHeader ) headerTokens++;
-
-                pos += match.length();
-            } 
-            else 
-            {
-                if ( !( m_inToken && m_partialToken.getType() == TokenKind::Comment ) ) 
-                {
-                    SourceRange errorLocation = {
-                        { m_lineNum, pos },
-                        { m_lineNum, pos + match.length() },
-                        m_compUnit.getFileId()
-                    };
-
-                    m_errReporter.report( CompilerError(
-                            "Unexpected token at line " + std::to_string( m_lineNum ) + 
-                            " position " + std::to_string( pos ) + ": '" + line[ pos ] + "'",
-                            ErrorSeverity::Error,
-                            errorLocation,
-                            ErrorCategory::Lexical
-                        ) 
-                    );   
-                }
-
-                pos++;
+                continue;
             }
+
+            std::string symbol = readSymbol( line, pos, m_SYMBOLS );
+            if ( !symbol.empty() ) 
+            {
+                SourceRange range = {
+                    { m_lineNum, pos - symbol.size() },
+                    { m_lineNum, pos },
+                    m_compUnit.getFileId()
+                };
+
+                TokenSymbol symbolType = m_SYMBOLS.at( symbol );
+                auto newToken = Token( TokenKind::Symbol, symbolType, symbol, range );
+                m_compUnit.addToken( newToken );
+                if ( onlyHeader ) headerTokens++;
+                continue;
+            }
+
+            SourceRange errorLocation = {
+                { m_lineNum, pos },
+                { m_lineNum, pos + 1 },
+                m_compUnit.getFileId()
+            };
+
+            m_errReporter.report( CompilerError(
+                "Unexpected token at line " + std::to_string( m_lineNum ) +
+                " position " + std::to_string( pos ) + ": '" + std::string( 1, c ) + "'",
+                ErrorSeverity::Error,
+                errorLocation,
+                ErrorCategory::Lexical
+            ) );
+
+            pos++;
         }
     }
 
@@ -182,11 +292,10 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
     };
 
     auto newToken = Token( TokenKind::EndOfFile, "", eofLocation );
-    m_compUnit.addToken(newToken);
+    m_compUnit.addToken( newToken );
 
-    checkIssueWithOutput(m_compUnit.getFileId());
+    checkIssueWithOutput( m_compUnit.getFileId() );
 }
-
 
 void Tokenizer::checkIssueWithOutput( FileId fileId ) 
 {
@@ -230,7 +339,7 @@ void Tokenizer::setPartialToken( TokenKind type, const std::string& value, std::
     m_partialToken.setType( type );
     m_partialToken.addToValue( value );
     m_partialToken.setLocationStart( 
-        { start_line, start_pos}
+        { start_line, start_pos }
     );
 }
 
@@ -242,20 +351,35 @@ void Tokenizer::appendPartialToken( const std::string& amendment, std::size_t li
     );
 }
 
-bool Tokenizer::matchRegex( const std::string& input, std::size_t pos, std::smatch& match, const std::regex& tokenPattern ) 
-{
-    return std::regex_search( input.begin() + pos, input.end(), match, tokenPattern ) && match.position() == 0;
-}
-
 TokenKind Tokenizer::getTokenType( const std::string& value ) 
 {
-    if ( std::regex_match( value, s_RE_INTEGER ) )           return TokenKind::Integer;
-    else if ( std::regex_match( value, s_RE_FLOAT ) )        return TokenKind::Float;
-    else if ( m_BOOLEANS.find( value ) != m_BOOLEANS.end() ) return TokenKind::Boolean;
-    else if ( std::regex_match( value, s_RE_CHAR ) )         return TokenKind::Char;    
-    else if ( m_KEYWORDS.find( value ) != m_KEYWORDS.end() ) return TokenKind::Keyword;
-    else if ( m_SYMBOLS.find( value ) != m_SYMBOLS.end() )   return TokenKind::Symbol;
-    
+    bool isInteger = !value.empty();
+    bool isFloat = false;
+    for ( std::size_t i = 0; i < value.size(); ++i ) {
+        if ( value[ i ] == '.' ) {
+            if ( isFloat ) {
+                isInteger = false;
+                break;
+            }
+            isFloat = true;
+            if ( i == 0 || i + 1 == value.size() ) {
+                isInteger = false;
+                break;
+            }
+            continue;
+        }
+        if ( !isDigitChar( value[ i ] ) ) {
+            isInteger = false;
+            isFloat = false;
+            break;
+        }
+    }
+
+    if ( isInteger ) return TokenKind::Integer;
+    if ( isFloat ) return TokenKind::Float;
+    if ( m_BOOLEANS.find( value ) != m_BOOLEANS.end() ) return TokenKind::Boolean;
+    if ( m_KEYWORDS.find( value ) != m_KEYWORDS.end() ) return TokenKind::Keyword;
+    if ( m_SYMBOLS.find( value ) != m_SYMBOLS.end() ) return TokenKind::Symbol;
     return TokenKind::Identifier;
 }
 

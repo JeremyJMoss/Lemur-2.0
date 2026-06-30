@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <regex>
 #include <unordered_set>
 #include <unordered_map>
 #include "Tokens/Token.hpp"
@@ -22,12 +21,10 @@ class Tokenizer
         void checkIssueWithOutput( FileId fileId );
 
     private:
-        static const std::regex s_WHITESPACE;
-        static const std::regex s_TOKEN_PATTERN;
-        static const std::regex s_RE_INTEGER;
-        static const std::regex s_RE_FLOAT;
-        static const std::regex s_RE_CHAR;
-        static const std::regex s_RE_SYMBOL;
+        static bool isWhitespace( char c );
+        static bool isDigit( char c );
+        static bool isIdentifierStart( char c );
+        static bool isIdentifierPart( char c );
 
         const std::unordered_map<std::string_view, TokenKeyword> m_KEYWORDS = {
             { "lock",      TokenKeyword::Lock },
@@ -94,6 +91,5 @@ class Tokenizer
         void setPartialToken( TokenKind type, const std::string& value, std::size_t start_line, std::size_t start_pos );
         void appendPartialToken( const std::string& amendment, std::size_t line, std::size_t pos );
         void clearPartialToken();
-        bool matchRegex( const std::string& input, std::size_t pos, std::smatch& match, const std::regex& tokenPattern );
         TokenKind getTokenType( const std::string& value );
 };
