@@ -441,8 +441,10 @@ void ASTPrinter::visit( const Parameter& parameter ) {
     writeField( "id", parameter.id );
     writeField( "type", std::string("Parameter" ) );
     writeNodeField( "identifier", *parameter.identifier );
-    writeNodeField( "paramType", *parameter.paramType );
-    writeNodeField( "defaultValue", *parameter.defaultValue, false );
+    if ( parameter.defaultValue != nullptr ) {
+        writeNodeField( "defaultValue", *parameter.defaultValue );
+    }
+    writeNodeField( "paramType", *parameter.paramType, false );
     decreaseIndent();
     endBlock();
 }

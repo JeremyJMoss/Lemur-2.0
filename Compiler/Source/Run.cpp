@@ -59,7 +59,7 @@ int main( int argc, char* argv[] )
     auto end = chrono::high_resolution_clock::now();
     auto duration = duration_cast<chrono::microseconds>( end - start );
 
-    std::cout << "Execution time: " << duration.count() << " ms\n";
+    std::cout << "Entire Program Execution time: " << duration.count() << " µs\n";
 
     return EXIT_SUCCESS;
 }

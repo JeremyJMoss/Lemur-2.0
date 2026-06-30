@@ -5,25 +5,23 @@
 
 using FileId = std::size_t;
 
-namespace {
-
-bool isWhitespaceChar( char c ) {
+bool Tokenizer::isWhitespaceChar( char c ) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f';
 }
 
-bool isDigitChar( char c ) {
+bool Tokenizer::isDigitChar( char c ) {
     return c >= '0' && c <= '9';
 }
 
-bool isIdentifierStartChar( char c ) {
+bool Tokenizer::isIdentifierStartChar( char c ) {
     return std::isalpha( static_cast<unsigned char>( c ) ) || c == '_';
 }
 
-bool isIdentifierPartChar( char c ) {
+bool Tokenizer::isIdentifierPartChar( char c ) {
     return std::isalnum( static_cast<unsigned char>( c ) ) || c == '_';
 }
 
-std::string readIdentifier( const std::string& line, std::size_t& pos ) {
+std::string Tokenizer::readIdentifier( const std::string& line, std::size_t& pos ) {
     std::size_t start = pos;
     while ( pos < line.size() && isIdentifierPartChar( line[ pos ] ) ) {
         pos++;
@@ -31,7 +29,7 @@ std::string readIdentifier( const std::string& line, std::size_t& pos ) {
     return line.substr( start, pos - start );
 }
 
-std::string readNumber( const std::string& line, std::size_t& pos ) {
+std::string Tokenizer::readNumber( const std::string& line, std::size_t& pos ) {
     std::size_t start = pos;
     while ( pos < line.size() && isDigitChar( line[ pos ] ) ) {
         pos++;
@@ -63,8 +61,6 @@ std::string readSymbol( const std::string& line, std::size_t& pos, const std::un
     }
 
     return "";
-}
-
 }
 
 void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader ) 
@@ -125,7 +121,7 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
                     continue;
                 }
 
-                if ( m_partialToken.getType() == TokenKind::Comment ) 
+                if ( m_partialToken.getType() == TokenKind::MultiLineComment ) 
                 {
                     bool closed = false;
 
@@ -166,9 +162,14 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
 
             if ( c == '/' && pos + 1 < line.length() && line[ pos + 1 ] == '*' ) 
             {
-                setPartialToken( TokenKind::Comment, "/*", m_lineNum, pos );
+                setPartialToken( TokenKind::MultiLineComment, "/*", m_lineNum, pos );
                 pos += 2;
                 continue;
+            }
+
+            if ( c == '/' && pos + 1 < line.length() && line[ pos + 1 ] == '/' )
+            {
+                break;
             }
 
             if ( c == '\'' ) 
@@ -315,7 +316,7 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
     {
         errorMessage = "Unterminated string literal at end of input";
     }
-    else if ( m_partialToken.getType() == TokenKind::Comment ) 
+    else if ( m_partialToken.getType() == TokenKind::MultiLineComment ) 
     {
         errorMessage = "Unterminated multiline comment at end of input";
     }

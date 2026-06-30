@@ -21,7 +21,7 @@ void Parser::parse()
 
 void Parser::parseNextStatement() 
 {
-    auto current = m_tokenStream.peek();
+    const Token& current = m_tokenStream.peek();
 
     auto maybeStatement = createStatement( current );
 
@@ -171,7 +171,8 @@ std::expected<Statement*, ErrorVariant> Parser::parseKeywordStatement( const Tok
 
 std::expected<Statement*, ErrorVariant> Parser::parseIdentifierStatement( const Token& token )
 {
-    auto next = m_tokenStream.peek(1);
+    const Token& next = m_tokenStream.peek(1);
+    
     // Look ahead to see if this is a declaration like: x : int = ...
     if( next.checkTypeMatches(TokenKind::EndOfFile)) {
         return std::unexpected(

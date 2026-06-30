@@ -9,7 +9,7 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
         "Parsing function declaration"
     );
 
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if (front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected(UnexpectedEndOfInputError(front.getLocation()));
@@ -99,7 +99,7 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
 
 std::expected<Block*, ErrorVariant> StatementParser::parseBlock() 
 {
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if (front.checkTypeMatches( TokenKind::EndOfFile )){
         return std::unexpected(UnexpectedEndOfInputError(front.getLocation()));
@@ -188,10 +188,10 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
         })
     );
 
-    auto frontToken = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
-    if (frontToken.checkTypeMatches( TokenKind::EndOfFile)) {
-        return std::unexpected( UnexpectedEndOfInputError( frontToken.getLocation() ) );
+    if (front.checkTypeMatches( TokenKind::EndOfFile)) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
     }
 
     if ( locked ) 
@@ -204,20 +204,20 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
                 CompilerError(
                     "Locked variable missing lock keyword",
                     ErrorSeverity::Warning,
-                    frontToken.getLocation(),
+                    front.getLocation(),
                     ErrorCategory::Syntax
                 )
             );
         }
     }
 
-    auto peekedToken = m_tokenStream.peek();
+    const Token& peekedToken = m_tokenStream.peek();
 
     if (!peekedToken.checkTypeMatches(TokenKind::Identifier)) {
         return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, peekedToken.getType(), peekedToken.getLocation()));
     }
 
-    auto idToken = m_tokenStream.consume();
+    const Token& idToken = m_tokenStream.consume();
 
     Logger::trace(
         "Consumed variable identifier", 
@@ -227,7 +227,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     );
 
     auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
-    identifier->location = SourceRange::getLocation( frontToken, idToken );
+    identifier->location = SourceRange::getLocation( front, idToken );
 
     auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );
@@ -254,7 +254,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
         })
     );
 
-    auto current = m_tokenStream.peek();
+    const Token& current = m_tokenStream.peek();
 
     if (current.checkTypeMatches(TokenKind::EndOfFile)) {
         return std::unexpected(UnexpectedEndOfInputError( current.getLocation() ));
@@ -292,7 +292,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
         initialiser 
     );
 
-    decl->location = {frontToken.getLocation().start, endLocation, frontToken.getLocation().fileId };
+    decl->location = {front.getLocation().start, endLocation, front.getLocation().fileId };
 
     Logger::debug(
         "Completed variable declaration", 
@@ -309,7 +309,7 @@ std::expected<Return*, ErrorVariant> StatementParser::parseReturn()
 {
     Logger::debug( "Parsing return statement" );
 
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
@@ -318,7 +318,7 @@ std::expected<Return*, ErrorVariant> StatementParser::parseReturn()
     auto maybeReturnKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Return );
     if ( !maybeReturnKeyword ) return std::unexpected( maybeReturnKeyword.error() );
 
-    auto next = m_tokenStream.peek();
+    const Token& next = m_tokenStream.peek();
 
     if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
@@ -370,13 +370,13 @@ std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional(
     std::string stmtType = justElse ? "else" : "if";
     Logger::debug( "Parsing " + stmtType + " statement" );
 
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( !front.checkTypeMatches( TokenKind::Keyword )) {
         return std::unexpected( UnexpectedTypeError( TokenKind::Keyword, front.getType(), front.getLocation() ) );
     }
 
-    auto keyword = m_tokenStream.consume();
+    m_tokenStream.consume();
 
     Expression* condition = nullptr;
 
@@ -437,7 +437,7 @@ std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional(
     {
         Logger::trace( "Detected 'else', checking for 'if' to parse else-if or else body" );
 
-        next = m_tokenStream.peek();
+        next = m_tokenStream.peek( 1 );
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
             return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
@@ -509,7 +509,7 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
     Expression* step = nullptr;
     Expression* where = nullptr;
 
-    auto current = m_tokenStream.peek();
+    const Token& current = m_tokenStream.peek();
 
     if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
@@ -539,13 +539,13 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
             step = maybeStep.value();
         }
 
-        current = m_tokenStream.peek();
+        const Token& next = m_tokenStream.peek();
 
-        if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
         }
 
-        if ( current.checkMatches( TokenKind::Keyword, TokenKeyword::Where ) ) 
+        if ( next.checkMatches( TokenKind::Keyword, TokenKeyword::Where ) ) 
         {
             Logger::trace( "Parsing optional 'where' clause in for loop" );
 

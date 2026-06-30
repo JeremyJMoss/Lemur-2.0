@@ -9,7 +9,7 @@ std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunct
 
     while ( true ) 
     {
-        auto next = m_tokenStream.peek();
+        const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
             return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
@@ -60,13 +60,13 @@ std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunct
 
 std::expected<Parameter*, ErrorVariant> ParameterParser::parseParameter() 
 {
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( !front.checkTypeMatches( TokenKind::Identifier )) {
         return std::unexpected( UnexpectedTypeError( TokenKind::Identifier, front.getType(), front.getLocation() ) );
     }
 
-    auto idToken = m_tokenStream.consume();
+    const Token& idToken = m_tokenStream.consume();
 
     auto identifier = m_compUnit.allocate<Identifier>(idToken.getValue());
 

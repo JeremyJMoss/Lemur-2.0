@@ -59,7 +59,7 @@ size_t ExpressionParser::getPrecedence( TokenSymbol op )
 
 std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression(std::size_t min_precedence) 
 {
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
@@ -71,7 +71,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression(std::
 
     while ( true ) 
     {
-        auto current = m_tokenStream.peek();
+        const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
             return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
@@ -115,7 +115,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePostFixExpressio
      // Parse the chain of postfix operations
      while ( true ) 
      {
-        auto current = m_tokenStream.peek();
+        const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
             return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
@@ -145,7 +145,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePostFixExpressio
 
 std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral() 
 {
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
@@ -163,7 +163,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
 
         while ( true ) 
         {
-            auto token = m_tokenStream.peek(currentPeekOffset);
+            const Token& token = m_tokenStream.peek(currentPeekOffset);
 
             if ( token.checkTypeMatches( TokenKind::EndOfFile )) {
                 return std::unexpected( UnexpectedEndOfInputError( token.getLocation() ) );
@@ -232,7 +232,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
 
     if ( front.checkTypeMatches( TokenKind::Identifier ) ) 
     {
-        auto next = m_tokenStream.peek( 1 );
+        const Token& next = m_tokenStream.peek( 1 );
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile ) ) {
             return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
@@ -242,7 +242,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
             return parseFunctionCall();
         }
 
-        auto idToken = m_tokenStream.consume();
+        const Token& idToken = m_tokenStream.consume();
 
         auto id = m_compUnit.allocate<Identifier>( idToken.getValue() );
         id->location = SourceRange::getLocation( idToken );
@@ -271,7 +271,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
  */
 std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 {
-    auto current = m_tokenStream.peek();
+    const Token& current = m_tokenStream.peek();
 
     if ( current.checkTypeMatches( TokenKind::EndOfFile ) ) {
         return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
@@ -290,7 +290,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto floatToken = m_tokenStream.consume();
+        const Token& floatToken = m_tokenStream.consume();
 
         return std::stof( floatToken.getValue() );
     }
@@ -303,7 +303,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto intToken = m_tokenStream.consume();
+        const Token& intToken = m_tokenStream.consume();
 
         return std::stoi( intToken.getValue() );
     }
@@ -316,7 +316,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto boolToken = m_tokenStream.consume();
+        const Token& boolToken = m_tokenStream.consume();
 
         return boolToken.getValue() == "true";
     }
@@ -402,7 +402,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto charToken = m_tokenStream.consume();
+        m_tokenStream.consume();
 
         return resultChar;
     }
@@ -416,7 +416,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto strToken = m_tokenStream.consume();
+        const Token& strToken = m_tokenStream.consume();
 
         std::string raw = strToken.getValue();
         raw = raw.substr(1, raw.length() - 2);
@@ -432,7 +432,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             attrs
         );
 
-        auto keyword = m_tokenStream.consume();
+        m_tokenStream.consume();
 
         return std::monostate{};
     }
@@ -449,7 +449,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 
 std::expected<Assignment*, ErrorVariant> ExpressionParser::parseAssignment() 
 {
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
@@ -473,7 +473,7 @@ std::expected<Assignment*, ErrorVariant> ExpressionParser::parseAssignment()
 
 std::expected<Expression*, ErrorVariant> ExpressionParser::parseUnary() 
 {
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
    
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
@@ -501,7 +501,7 @@ std::expected<Range*, ErrorVariant> ExpressionParser::parseRange( Expression* st
 {
     bool inclusive;
 
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
@@ -527,7 +527,7 @@ std::expected<Range*, ErrorVariant> ExpressionParser::parseRange( Expression* st
         );
     }
 
-    auto keyword = m_tokenStream.consume();
+    m_tokenStream.consume();
 
     auto maybeEnd = parseExpression();
     if ( !maybeEnd )
@@ -556,7 +556,7 @@ std::expected<std::vector<Expression*>, ErrorVariant> ExpressionParser::parseFun
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
     while( true ) {
-        auto current = m_tokenStream.peek();
+        const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
             return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
@@ -574,7 +574,7 @@ std::expected<std::vector<Expression*>, ErrorVariant> ExpressionParser::parseFun
         
         params.emplace_back( maybeParameter.value() );
 
-        auto next = m_tokenStream.peek();
+        const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
             return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
@@ -595,13 +595,13 @@ std::expected<FunctionCall*, ErrorVariant> ExpressionParser::parseFunctionCall()
 {
     Logger::debug( "Parsing function call" );
 
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( !front.checkTypeMatches( TokenKind::Identifier ) ) {
         return std::unexpected( UnexpectedTypeError( TokenKind::Identifier, front.getType(), front.getLocation() ) );
     }
 
-    auto idToken = m_tokenStream.consume();
+    const Token& idToken = m_tokenStream.consume();
 
     auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
     identifier->location = SourceRange::getLocation( idToken );
@@ -626,7 +626,7 @@ std::expected<FunctionCall*, ErrorVariant> ExpressionParser::parseFunctionCall()
 
 std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLiteral() 
 {
-    auto front = m_tokenStream.peek();
+    const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile ) ) {
         return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
@@ -641,7 +641,7 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
     auto maybeReturnType = m_typeParser.parseType();
     if ( !maybeReturnType ) return std::unexpected( maybeReturnType.error() );
 
-    auto current = m_tokenStream.peek();
+    const Token& current = m_tokenStream.peek();
 
     if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
@@ -653,7 +653,7 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
         auto maybeFirstAngle = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Greater );
         if ( !maybeFirstAngle ) return std::unexpected( maybeFirstAngle.error() );
 
-        auto next = m_tokenStream.peek();
+        const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
             return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );

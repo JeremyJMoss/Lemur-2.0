@@ -16,7 +16,7 @@ enum class TokenKind
     Char,
     Boolean,
     String,
-    Comment,
+    MultiLineComment,
     EndOfFile,
     Unknown,
     None
@@ -26,19 +26,19 @@ inline std::string toString( const TokenKind& kind )
 {
     switch ( kind ) 
     {
-        case TokenKind::Identifier: return "Identifier";
-        case TokenKind::Keyword:    return "Keyword";
-        case TokenKind::Symbol:     return "Symbol";
-        case TokenKind::Integer:    return "Integer";
-        case TokenKind::Float:      return "Float";
-        case TokenKind::Char:       return "Char";
-        case TokenKind::Boolean:    return "Boolean";
-        case TokenKind::String:     return "String";
-        case TokenKind::Comment:    return "Comment";
-        case TokenKind::EndOfFile:  return "EndOfFile";
-        case TokenKind::Unknown:    return "Unknown";
-        case TokenKind::None:       return "None";
-        default:                    return "Invalid TokenKind";
+        case TokenKind::Identifier:       return "Identifier";
+        case TokenKind::Keyword:          return "Keyword";
+        case TokenKind::Symbol:           return "Symbol";
+        case TokenKind::Integer:          return "Integer";
+        case TokenKind::Float:            return "Float";
+        case TokenKind::Char:             return "Char";
+        case TokenKind::Boolean:          return "Boolean";
+        case TokenKind::String:           return "String";
+        case TokenKind::MultiLineComment: return "MultiLineComment";
+        case TokenKind::EndOfFile:        return "EndOfFile";
+        case TokenKind::Unknown:          return "Unknown";
+        case TokenKind::None:             return "None";
+        default:                          return "Invalid TokenKind";
     }
 }
 

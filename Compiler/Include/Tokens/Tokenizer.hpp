@@ -21,10 +21,13 @@ class Tokenizer
         void checkIssueWithOutput( FileId fileId );
 
     private:
-        static bool isWhitespace( char c );
-        static bool isDigit( char c );
-        static bool isIdentifierStart( char c );
-        static bool isIdentifierPart( char c );
+        static bool isWhitespaceChar( char c );
+        static bool isDigitChar( char c );
+        static bool isIdentifierStartChar( char c );
+        static bool isIdentifierPartChar( char c );
+
+        std::string readIdentifier( const std::string& line, std::size_t& pos );
+        std::string readNumber( const std::string& line, std::size_t& pos );
 
         const std::unordered_map<std::string_view, TokenKeyword> m_KEYWORDS = {
             { "lock",      TokenKeyword::Lock },

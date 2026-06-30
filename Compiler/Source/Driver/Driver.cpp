@@ -4,6 +4,9 @@
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
 #include <array>
+#include <chrono>
+
+namespace chrono = std::chrono;
 
 void Driver::compileProgram( std::string& filePath ) 
 {
@@ -13,7 +16,14 @@ void Driver::compileProgram( std::string& filePath )
     FileId fileId = m_srcManager.addFile(filePath);
     auto compUnit = std::make_unique<CompilationUnit>( fileId );
 
+    auto tokenStart = chrono::high_resolution_clock::now();
+
     tokenizeCompilationUnit( *compUnit );
+
+    auto tokenEnd = chrono::high_resolution_clock::now();
+    auto tokenDuration = duration_cast<chrono::microseconds>( tokenEnd - tokenStart );
+
+    std::cout << "Lexer Execution time: " << tokenDuration.count() << " µs\n";
 
     if ( m_errReporter.hasErrors() )
     {
@@ -26,7 +36,14 @@ void Driver::compileProgram( std::string& filePath )
         return;
     }
 
+    auto parserStart = chrono::high_resolution_clock::now();
+
     parseCompilationUnit( *compUnit );
+
+    auto parserEnd = chrono::high_resolution_clock::now();
+    auto parserDuration = duration_cast<chrono::microseconds>( parserEnd - parserStart );
+
+    std::cout << "Parser Execution time: " << parserDuration.count() << " µs\n";
 
     if ( m_errReporter.hasErrors() )
     {
@@ -39,9 +56,9 @@ void Driver::compileProgram( std::string& filePath )
         return;
     }
 
-    ASTPrinter astPrinter = ASTPrinter();
+    // ASTPrinter astPrinter = ASTPrinter();
 
-    astPrinter.print( compUnit->readStatements() );
+    // astPrinter.print( compUnit->readStatements() );
 
     Logger::debug( 
         "AST generated with " +
