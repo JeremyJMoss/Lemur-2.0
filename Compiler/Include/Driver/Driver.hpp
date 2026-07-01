@@ -16,7 +16,7 @@ class Driver
             : m_srcManager(), 
               m_errReporter( m_srcManager ) {}
 
-        void compileProgram( std::string& filePath );
+        void compileProgram();
 
         void tokenizeCompilationUnit( CompilationUnit& compUnit );
 

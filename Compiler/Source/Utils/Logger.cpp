@@ -32,6 +32,11 @@ void Logger::print(
     std::span<const Attribute> attributes
 )
 {
+    if (!s_shouldLog)
+        return;
+
+    ensureLogFileOpen();
+    
     std::ostringstream fileStream;
 
     fileStream << "Fn: '" << funcName << "' | Msg: '" << msg << "'";

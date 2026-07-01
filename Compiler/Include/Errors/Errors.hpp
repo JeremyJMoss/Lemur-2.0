@@ -11,23 +11,25 @@
 #include "SourceControl/SourceLocation.hpp"
 
 enum class ErrorCategory {
-    Lexical,   // tokenization
-    Syntax,    // parsing
-    Semantic,  // meaning / type checking
-    Internal,  // compiler bug / assertion
-    Linking    // Module resolution errors
+    CommandLine, // CLI
+    Lexical,     // tokenization
+    Syntax,      // parsing
+    Semantic,    // meaning / type checking
+    Internal,    // compiler bug / assertion
+    Linking      // Module resolution errors
 };
 
 inline std::string toString( const ErrorCategory& category )
 {
     switch( category )
     {
-        case ErrorCategory::Lexical:  return "Lexical";
-        case ErrorCategory::Syntax:   return "Syntax";
-        case ErrorCategory::Semantic: return "Semantic";
-        case ErrorCategory::Internal: return "Internal";
-        case ErrorCategory::Linking:  return "Linking"; 
-        default:                      return "Uncategorised";  
+        case ErrorCategory::CommandLine: return "Command Line";
+        case ErrorCategory::Lexical:     return "Lexical";
+        case ErrorCategory::Syntax:      return "Syntax";
+        case ErrorCategory::Semantic:    return "Semantic";
+        case ErrorCategory::Internal:    return "Internal";
+        case ErrorCategory::Linking:     return "Linking"; 
+        default:                         return "Uncategorised";  
     }
 }
 
@@ -49,6 +51,21 @@ inline std::string toString( const ErrorSeverity& severity )
         default:                     return "Other"; 
     }
 }
+
+class CommandLineError : public std::exception
+{
+    public:
+        std::string message;
+        ErrorCategory category = ErrorCategory::CommandLine;
+
+        CommandLineError(
+            std::string message
+        ): message( std::move( message ) ) {}
+
+        const char* what() const noexcept override {
+            return message.c_str();
+        }
+};
 
 class CompilerError : public std::exception 
 {

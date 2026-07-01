@@ -3,18 +3,23 @@
 #include "Errors/Errors.hpp"
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
+#include "Modules/ModuleResolver.hpp"
 #include <array>
 #include <chrono>
 
 namespace chrono = std::chrono;
 
-void Driver::compileProgram( std::string& filePath ) 
+void Driver::compileProgram() 
 {
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
 
+    ModuleResolver moduleResolver();
+
     FileId fileId = m_srcManager.addFile(filePath);
     auto compUnit = std::make_unique<CompilationUnit>( fileId );
+
+    m_compilationUnits.
 
     auto tokenStart = chrono::high_resolution_clock::now();
 

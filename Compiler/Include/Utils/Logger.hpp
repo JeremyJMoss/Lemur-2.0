@@ -64,9 +64,17 @@ class Logger
 
         static LogLevel parseLogLevel( const std::string& levelStr );
 
-        static void setFile( const std::string& filepath ) {
-            fs::create_directories( "./logs" );
-            s_logFile.open( filepath, std::ios::app );
+        static void setFile( std::string_view filepath = DefaultLogFile ) {
+            fs::path path( filepath );
+
+            if ( path.has_parent_path() )
+                fs::create_directories(path.parent_path());
+
+            if ( s_logFile.is_open() ) {
+                s_logFile.close();
+            }
+
+            s_logFile.open(path, std::ios::app);
         }
 
         static void error( 
@@ -134,6 +142,7 @@ class Logger
         static inline bool s_shouldLog = false;
         static inline std::ofstream s_logFile;
         static const std::unordered_map<std::string, LogLevel> s_levelMap;
+        static constexpr std::string_view DefaultLogFile = "logs/compiler.log";
 
         static void print(
             LogLevel level,
@@ -141,4 +150,10 @@ class Logger
             const std::string& funcName,
             std::span<const Attribute> attributes = {}
         );
+
+        static void ensureLogFileOpen() {
+            if (!s_logFile.is_open()) {
+                setFile();
+            }
+        }
 };
