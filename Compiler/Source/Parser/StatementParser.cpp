@@ -102,7 +102,8 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
         maybeReturnType.value(), 
         parameters, 
         block,
-        true
+        true,
+        isEntry
     );
 
     funDec->location = { front.getLocation().start, funDec->body->location.end, front.getLocation().fileId};
