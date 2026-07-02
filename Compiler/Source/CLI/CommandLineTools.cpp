@@ -1,34 +1,52 @@
 #include "CLI/CommandLineTools.hpp"
 #include "Utils/Logger.hpp"
 
-std::expected<CLIConfig, CommandLineError> CommandLineTools::parse( int argc, char* argv[] ) 
+std::expected<CLIConfig, CLIStatus> CommandLineTools::parse( int argc, char* argv[] ) 
 {
     CLIConfig config;
 
+    if (argc > 1 && std::string_view(argv[1]) == "--help") {
+        config.showHelp = true;
+        return config;
+    }
+
     if (argc < 2)
     {
-        printHelp("", "No command provided");
-        return std::unexpected(CommandLineError("No command provided"));
+        return std::unexpected(CLIStatus::MissingCommand);
     }
 
     config.command = parseCommand(argv[1]);
 
     switch (config.command) {
         case Command::Unknown: {
-            printHelp(argv[1], "Unknown command");
-            return std::unexpected(CommandLineError("Unknown command"));
+            return std::unexpected(CLIStatus::UnknownCommand);
         }
         case Command::Init: {
-            if ( argc > 3 ) {
-                printHelp(argv[1], "Too many arguments passed to command");
-                return std::unexpected(CommandLineError("Too many arguments passed to command"));
+            if ( argc < 3 ) {
+                return std::unexpected(CLIStatus::MissingArgument);
             }
+
+            if ( argc > 3 && argv[3] == std::string_view("--help") ) {
+                config.showHelp = true;
+                return config;
+            }
+
+            InitConfig initConfig;
+
+            initConfig.name = argv[2];
+
+            config.data = initConfig;
+
             break;
         }
         case Command::Build: {
             if (argc < 3) {
-                printHelp(argv[1], "Missing required module entry point name");
-                return std::unexpected(CommandLineError("Missing required module entry point name"));
+                return std::unexpected(CLIStatus::MissingArgument);
+            }
+
+            if ( argc > 3 && argv[3] == std::string_view("--help") ) {
+                config.showHelp = true;
+                return config;
             }
 
             BuildConfig buildConfig;
@@ -81,7 +99,7 @@ void CommandLineTools::printHelp( const std::string& command, const std::string&
     std::cout << "Lemur Compiler Usage:\n\n";
 
     std::cout << "  lemur build <module> [options]\n";
-    std::cout << "  lemur init [name]\n";
+    std::cout << "  lemur init <name>\n";
 
     std::cout << "Options:\n";
     std::cout << "  --src <path>        Set source directory\n";

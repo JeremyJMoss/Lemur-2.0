@@ -11,7 +11,6 @@
 #include "SourceControl/SourceLocation.hpp"
 
 enum class ErrorCategory {
-    CommandLine, // CLI
     Lexical,     // tokenization
     Syntax,      // parsing
     Semantic,    // meaning / type checking
@@ -23,7 +22,6 @@ inline std::string toString( const ErrorCategory& category )
 {
     switch( category )
     {
-        case ErrorCategory::CommandLine: return "Command Line";
         case ErrorCategory::Lexical:     return "Lexical";
         case ErrorCategory::Syntax:      return "Syntax";
         case ErrorCategory::Semantic:    return "Semantic";
@@ -51,21 +49,6 @@ inline std::string toString( const ErrorSeverity& severity )
         default:                     return "Other"; 
     }
 }
-
-class CommandLineError : public std::exception
-{
-    public:
-        std::string message;
-        ErrorCategory category = ErrorCategory::CommandLine;
-
-        CommandLineError(
-            std::string message
-        ): message( std::move( message ) ) {}
-
-        const char* what() const noexcept override {
-            return message.c_str();
-        }
-};
 
 class CompilerError : public std::exception 
 {

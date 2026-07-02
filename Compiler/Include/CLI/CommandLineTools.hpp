@@ -11,14 +11,25 @@ enum class Command {
     Unknown
 };
 
+enum class CLIStatus {
+    VersionRequested,
+    MissingCommand,
+    UnknownCommand,
+    MissingArgument,
+    TooManyArguments,
+    InvalidOption,
+    InvalidValue,
+};
+
 struct BuildConfig {
     bool optimize = false;
-    std::string outputPath;
-    bool emitAST = false;
-    std::string sourcePath;
     bool loggingEnabled = false;
+    bool emitAST = false;
+    std::string outputPath;
+    std::string sourcePath;
     LogLevel logLevel = LogLevel::INFO;
     std::string logPath;
+    std::string entryModule;
 };
 
 struct InitConfig {
@@ -26,7 +37,9 @@ struct InitConfig {
 };
 
 struct CLIConfig {
-    Command command;
+    Command command = Command::Unknown;
+
+    bool showHelp = false;
 
     std::variant<
         BuildConfig,
@@ -36,8 +49,9 @@ struct CLIConfig {
 
 class CommandLineTools {
     public:
-        std::expected<CLIConfig, CommandLineError> parse( int argc, char* argv[] );
+        std::expected<CLIConfig, CLIStatus> parse( int argc, char* argv[] );
+        static void printHelp( const std::string& command, const std::string& issue );
     private:
         Command parseCommand( std::string_view str );
-        void printHelp( const std::string& command, const std::string& issue );
+        
 };
