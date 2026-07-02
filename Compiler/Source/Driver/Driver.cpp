@@ -19,8 +19,6 @@ void Driver::compileProgram()
     FileId fileId = m_srcManager.addFile(filePath);
     auto compUnit = std::make_unique<CompilationUnit>( fileId );
 
-    m_compilationUnits.
-
     auto tokenStart = chrono::high_resolution_clock::now();
 
     tokenizeCompilationUnit( *compUnit );

@@ -3,16 +3,36 @@
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
 
-std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration() 
+std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration( bool isEntry ) 
 {
     Logger::debug( 
-        "Parsing function declaration"
+        "Parsing function declaration",
+        std::to_array<Attribute>({ 
+            { "Entry Function", ( isEntry ? "true" : "false" ) } 
+        })
     );
 
     const Token& front = m_tokenStream.peek();
 
     if (front.checkTypeMatches( TokenKind::EndOfFile )) {
         return std::unexpected(UnexpectedEndOfInputError(front.getLocation()));
+    }
+
+    if ( isEntry ) 
+    {
+        auto maybeEntryKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Entry );
+        if ( !maybeEntryKeyword )
+        {
+            // Report entry keyword missing from entry function
+            m_errReporter.report(
+                CompilerError(
+                    "Entry keyword missing from entry function",
+                    ErrorSeverity::Warning,
+                    front.getLocation(),
+                    ErrorCategory::Syntax
+                )
+            );
+        }
     }
 
     auto maybeFunctionKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Fn );

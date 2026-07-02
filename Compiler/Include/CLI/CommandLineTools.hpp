@@ -12,7 +12,6 @@ enum class Command {
 };
 
 enum class CLIStatus {
-    VersionRequested,
     MissingCommand,
     UnknownCommand,
     MissingArgument,
@@ -50,7 +49,8 @@ struct CLIConfig {
 class CommandLineTools {
     public:
         std::expected<CLIConfig, CLIStatus> parse( int argc, char* argv[] );
-        static void printHelp( const std::string& command, const std::string& issue );
+        static void printHelp( Command command );
+        static void printIssue( CLIStatus status );
     private:
         Command parseCommand( std::string_view str );
         

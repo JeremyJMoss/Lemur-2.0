@@ -87,32 +87,83 @@ Command CommandLineTools::parseCommand( std::string_view str )
     return Command::Unknown;
 }
 
-void CommandLineTools::printHelp( const std::string& command, const std::string& issue ) {
-    std::cout << "\n";
-    
-    if (!command.empty())
-    {
-        std::cout << "Error: " << issue << "\n";
-        std::cout << "Unknown command: " << command << "\n\n";
+void CommandLineTools::printIssue( CLIStatus status ) 
+{
+    std::cout << '\n';
+
+    std::cout << "Error: ";
+
+    switch ( status ) {
+        case CLIStatus::MissingArgument: {
+            std::cout << "Missing argument to command.";
+            break;
+        }
+        case CLIStatus::MissingCommand: {
+            std::cout << "Missing command\n";
+            printHelp( Command::Unknown );
+            return;
+        }
+        case CLIStatus::InvalidOption: {
+            std::cout << "Invalid option to command";
+            break;
+        }
+        case CLIStatus::InvalidValue: {
+            std::cout << "Invalid value provided";
+            break;
+        }
+        case CLIStatus::TooManyArguments: {
+            std::cout << "Too many arguments passed into command";
+            break;
+        }
+        case CLIStatus::UnknownCommand: {
+            std::cout << "Unknown command passed\n";
+            printHelp( Command::Unknown );
+            return;
+        }
     }
+}
+
+void CommandLineTools::printHelp( Command command ) 
+{
+    std::cout << '\n';
 
     std::cout << "Lemur Compiler Usage:\n\n";
 
-    std::cout << "  lemur build <module> [options]\n";
-    std::cout << "  lemur init <name>\n";
+    switch (command) {
+        case Command::Unknown: {
+            std::cout << "  lemur build <module> [options]\n";
+            std::cout << "  lemur init <name>\n";
 
-    std::cout << "Options:\n";
-    std::cout << "  --src <path>        Set source directory\n";
-    std::cout << "  --log <level>       Set log level (ERROR, WARN, INFO, DEBUG, TRACE)\n";
-    std::cout << "  --log-file <path>   Set log output file\n\n";
+            std::cout << "Options:\n";
+            std::cout << "  --src <path>        Set source directory\n";
+            std::cout << "  --log <level>       Set log level (ERROR, WARN, INFO, DEBUG, TRACE)\n";
+            std::cout << "  --log-file <path>   Set log output file\n\n";
 
-    std::cout << "Examples:\n";
-    std::cout << "  lemur build app --log DEBUG\n";
-    std::cout << "  lemur init my_project\n\n";
+            std::cout << "Examples:\n";
+            std::cout << "  lemur build app --log DEBUG\n";
+            std::cout << "  lemur init my_project\n\n";
 
-    std::cout << "Commands:\n";
-    std::cout << "  build   Compile a module\n";
-    std::cout << "  init    Create a new project\n";
+            std::cout << "Commands:\n";
+            std::cout << "  build   Compile a module\n";
+            std::cout << "  init    Create a new project\n";
 
-    std::cout << std::endl;
+            break;
+        }
+        case Command::Init: {
+            std::cout << "  lemur init <name>\n\n";
+            std::cout << "Examples:\n";
+            std::cout << "  lemur init my_project\n\n";
+        }
+        case Command::Build: {
+            std::cout << "  lemur build <module> [options]\n\n";
+            
+            std::cout << "Examples:\n";
+            std::cout << "  lemur build app --log DEBUG\n\n";
+
+            std::cout << "Commands:\n";
+            std::cout << "  build   Compile a module";
+        }
+    }
+
+    std::cout << '\n';
 }

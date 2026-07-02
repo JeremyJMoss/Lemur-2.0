@@ -159,6 +159,8 @@ std::expected<Statement*, ErrorVariant> Parser::parseKeywordStatement( const Tok
     // Function declaration
     if ( token.checkValueMatches( TokenKeyword::Fn ) ) return m_stmtParser.parseFunctionDeclaration();
 
+    if ( token.checkValueMatches( TokenKeyword::Entry ) ) return m_stmtParser.parseFunctionDeclaration( true );
+
     return std::unexpected( 
         CompilerError(
             "Unknown keyword: '" + token.getValue() + "'", 

@@ -50,6 +50,8 @@ class Tokenizer
             { "rref",      TokenKeyword::Rref },
             { "weak",      TokenKeyword::Weak },
             { "in",        TokenKeyword::In },
+            { "entry",     TokenKeyword::Entry },
+            { "module",    TokenKeyword::Module }
         };
 
         const std::unordered_map<std::string_view, TokenSymbol> m_SYMBOLS = {

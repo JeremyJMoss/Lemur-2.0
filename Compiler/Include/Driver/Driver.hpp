@@ -9,11 +9,17 @@
 
 using FileId = std::size_t;
 
+struct CompilerConfig {
+    std::string sourcePath;
+    std::string entryModule;
+};
+
 class Driver 
 {
     public:
-        Driver()
-            : m_srcManager(), 
+        Driver( const CompilerConfig& config )
+            : m_config( config ),
+              m_srcManager(), 
               m_errReporter( m_srcManager ) {}
 
         void compileProgram();
@@ -23,6 +29,7 @@ class Driver
         void parseCompilationUnit( CompilationUnit& compUnit );
 
     private:
+        const CompilerConfig& m_config;
         SourceManager m_srcManager;
         ErrorReporter m_errReporter;
         std::unordered_map<FileId, CompilationUnit> m_compilationUnits;

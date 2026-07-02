@@ -37,7 +37,7 @@ class StatementParser
 
         void setExpressionParser( ExpressionParser* exprParser ) { m_exprParser = exprParser; }
 
-        std::expected<FunctionDeclaration*, ErrorVariant> parseFunctionDeclaration();
+        std::expected<FunctionDeclaration*, ErrorVariant> parseFunctionDeclaration( bool isEntry = false );
 
         std::expected<Block*, ErrorVariant> parseBlock();
 

@@ -134,7 +134,9 @@ enum class TokenKeyword
     Shared,
     Rref,
     Weak,
-    In
+    In,
+    Entry,
+    Module
 };
 
 inline std::string toString( const TokenKeyword& keyword ) 
@@ -165,7 +167,9 @@ inline std::string toString( const TokenKeyword& keyword )
         case TokenKeyword::Shared:     return "shared";
         case TokenKeyword::Rref:       return "rref";
         case TokenKeyword::Weak:       return "weak";
-        case TokenKeyword::In:         return "In";
+        case TokenKeyword::In:         return "in";
+        case TokenKeyword::Entry:      return "entry";
+        case TokenKeyword::Module:     return "module";
         default:                       return "Invalid Keyword";
     }
 }
