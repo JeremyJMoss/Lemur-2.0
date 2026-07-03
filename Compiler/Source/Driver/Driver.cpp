@@ -14,7 +14,9 @@ void Driver::compileProgram()
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
 
-    ModuleResolver moduleResolver();
+    ModuleResolver moduleResolver(m_srcManager, m_errReporter);
+
+    moduleResolver.buildModuleIndex(m_config.sourcePath.size() > 0 ? m_config.sourcePath : "./src");
 
     FileId fileId = m_srcManager.addFile(filePath);
     auto compUnit = std::make_unique<CompilationUnit>( fileId );

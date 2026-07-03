@@ -7,6 +7,8 @@
 
 namespace fs = std::filesystem;
 
+using FileId = std::size_t;
+
 /* === Forward Declares === */
 
 class SourceManager;
@@ -17,19 +19,17 @@ class ErrorReporter;
 class ModuleResolver {
     public:
         ModuleResolver(
-            fs::path root,
             SourceManager& srcManager,
             ErrorReporter& errReporter
-        ) : m_rootFolder( std::move( root ) ),
+        ) : 
         m_srcManager( srcManager ),
         m_errReporter( errReporter ) {}
 
-        // scans the project and finds all modules starting at m_root
-        void scan();
+        // scans the project and finds all modules starting at root folder
+        void buildModuleIndex( fs::path sourcePath );
 
     private:
-        fs::path m_rootFolder;
         SourceManager& m_srcManager;
         ErrorReporter& m_errReporter;
-        std::unordered_map<std::string, fs::path> moduleIndex;
+        std::unordered_map<std::string, FileId> moduleIndex;
 };

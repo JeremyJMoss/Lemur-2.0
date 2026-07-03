@@ -63,17 +63,128 @@ std::string readSymbol( const std::string& line, std::size_t& pos, const std::un
     return "";
 }
 
-void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader ) 
+std::vector<std::string> Tokenizer::readModuleHeader(std::istream& stream)
+{
+    std::string line;
+    std::size_t pos = 0;
+
+    enum class State
+    {
+        Start,
+        ExpectModule,
+        ExpectName,
+        ExpectDotOrEnd
+    };
+
+    State state = State::Start;
+
+    std::vector<std::string> moduleParts;
+
+    bool inComment = false;
+
+    while (std::getline(stream, line))
+    {
+        pos = 0;
+
+        while (pos < line.length())
+        {
+            char c = line[pos];
+
+            // Handle block comments
+            if (inComment)
+            {
+                if (c == '*' && pos + 1 < line.length() && line[pos + 1] == '/')
+                {
+                    inComment = false;
+                    pos += 2;
+                }
+                else
+                {
+                    ++pos;
+                }
+                continue;
+            }
+
+            // Skip whitespace
+            if (isWhitespaceChar(c))
+            {
+                ++pos;
+                continue;
+            }
+
+            // Skip Line comment
+            if (c == '/' && pos + 1 < line.length() && line[pos + 1] == '/')
+            {
+                break;
+            }
+
+            // Enter multiline comment
+            if (c == '/' && pos + 1 < line.length() && line[pos + 1] == '*')
+            {
+                inComment = true;
+                pos += 2;
+                continue;
+            }
+
+            // Identifier
+            if (isIdentifierStartChar(c))
+            {
+                std::string id = readIdentifier(line, pos);
+
+                if (state == State::Start)
+                {
+                    if (id != "module")
+                        return {}; // invalid header
+
+                    state = State::ExpectName;
+                    continue;
+                }
+
+                if (state == State::ExpectName)
+                {
+                    moduleParts.push_back(std::move(id));
+                    state = State::ExpectDotOrEnd;
+                    continue;
+                }
+
+                return {}; // invalid
+            }
+
+            // Dot (for module paths)
+            if (c == '.')
+            {
+                if (state != State::ExpectDotOrEnd)
+                    return {}; // invalid
+
+                state = State::ExpectName;
+                ++pos;
+                continue;
+            }
+
+            // End of module header
+            if (c == ';')
+            {
+                if (state != State::ExpectDotOrEnd)
+                    return {}; // invalid incomplete module
+
+                return moduleParts;
+            }
+
+            // Anything else is invalid
+            return {};
+        }
+    }
+
+    return {}; // EOF without valid module header
+}
+
+void Tokenizer::tokenizeStream( std::istream& stream ) 
 {
     std::string line;
     std::size_t pos;
-    std::size_t maxTokens = 20;
-    std::size_t headerTokens = 0;
 
     while ( true ) 
     {
-        if ( onlyHeader && headerTokens >= maxTokens ) break;
-
         m_lineNum++;
         pos = 0;
 
@@ -83,8 +194,6 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
 
         while ( pos < line.length() ) 
         {
-            if ( onlyHeader && headerTokens >= maxTokens ) break;
-
             if ( m_inToken ) 
             {
                 if ( m_partialToken.getType() == TokenKind::String ) 
@@ -98,7 +207,6 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
                             appendPartialToken( "\"", m_lineNum, pos + 1 );
                             auto newToken = Token( TokenKind::String, m_partialToken.getValue(), m_partialToken.getLocation() );
                             m_compUnit.addToken( newToken );
-                            if ( onlyHeader ) headerTokens++;
                             clearPartialToken();
                             pos++;
                             closed = true;
@@ -203,7 +311,6 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
 
                 auto newToken = Token( TokenKind::Char, value, range );
                 m_compUnit.addToken( newToken );
-                if ( onlyHeader ) headerTokens++;
                 continue;
             }
 
@@ -221,7 +328,6 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
 
                 auto newToken = Token( type, value, range );
                 m_compUnit.addToken( newToken );
-                if ( onlyHeader ) headerTokens++;
                 continue;
             }
 
@@ -248,7 +354,6 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
                     m_compUnit.addToken( newToken );
                 }
 
-                if ( onlyHeader ) headerTokens++;
                 continue;
             }
 
@@ -264,7 +369,6 @@ void Tokenizer::tokenizeStream( std::istream& stream, bool onlyHeader )
                 TokenSymbol symbolType = m_SYMBOLS.at( symbol );
                 auto newToken = Token( TokenKind::Symbol, symbolType, symbol, range );
                 m_compUnit.addToken( newToken );
-                if ( onlyHeader ) headerTokens++;
                 continue;
             }
 

@@ -17,7 +17,8 @@ class Tokenizer
     public:
         Tokenizer( CompilationUnit& compUnit, ErrorReporter& errReporter ) 
             : m_compUnit( compUnit ), m_errReporter( errReporter ) {}
-        void tokenizeStream( std::istream& stream, bool onlyHeader = false );
+        void tokenizeStream( std::istream& stream );
+        static std::vector<std::string> readModuleHeader( std::istream& stream );
         void checkIssueWithOutput( FileId fileId );
 
     private:
@@ -26,10 +27,10 @@ class Tokenizer
         static bool isIdentifierStartChar( char c );
         static bool isIdentifierPartChar( char c );
 
-        std::string readIdentifier( const std::string& line, std::size_t& pos );
-        std::string readNumber( const std::string& line, std::size_t& pos );
+        static std::string readIdentifier( const std::string& line, std::size_t& pos );
+        static std::string readNumber( const std::string& line, std::size_t& pos );
 
-        const std::unordered_map<std::string_view, TokenKeyword> m_KEYWORDS = {
+        inline const static std::unordered_map<std::string_view, TokenKeyword> m_KEYWORDS = {
             { "lock",      TokenKeyword::Lock },
             { "fn",        TokenKeyword::Fn },
             { "return",    TokenKeyword::Return },
@@ -54,7 +55,7 @@ class Tokenizer
             { "module",    TokenKeyword::Module }
         };
 
-        const std::unordered_map<std::string_view, TokenSymbol> m_SYMBOLS = {
+        inline const static std::unordered_map<std::string_view, TokenSymbol> m_SYMBOLS = {
             { "(", TokenSymbol::LParens },
             { ")", TokenSymbol::RParens },
             { "[", TokenSymbol::LBracket },
@@ -83,7 +84,7 @@ class Tokenizer
             { "->", TokenSymbol::Arrow }
         };
 
-        const std::unordered_set<std::string_view> m_BOOLEANS = {
+        inline const static std::unordered_set<std::string_view> m_BOOLEANS = {
             "true", "false"
         };
 
@@ -96,5 +97,5 @@ class Tokenizer
         void setPartialToken( TokenKind type, const std::string& value, std::size_t start_line, std::size_t start_pos );
         void appendPartialToken( const std::string& amendment, std::size_t line, std::size_t pos );
         void clearPartialToken();
-        TokenKind getTokenType( const std::string& value );
+        static TokenKind getTokenType( const std::string& value );
 };
