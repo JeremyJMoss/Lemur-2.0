@@ -193,7 +193,7 @@ class Token
 
         bool checkValueMatches( TokenKeyword inputValue ) const;
 
-        bool checkValueMatches( const std::string& inputValue ) const;
+        bool checkValueMatches( std::string_view inputValue ) const;
 
         TokenId getId() { return m_id; }
 
@@ -209,7 +209,7 @@ class Token
 
         const std::string& getValue() const;
 
-        void addToValue( const std::string& value );
+        void addToValue( std::string_view value );
 
         void clearValue();
 

@@ -57,7 +57,7 @@ bool Token::checkValueMatches( TokenSymbol inputValue ) const
     return inputValue == m_symbol; 
 }
 
-bool Token::checkValueMatches( const std::string& inputValue ) const 
+bool Token::checkValueMatches( std::string_view inputValue ) const 
 { 
     return inputValue == m_value; 
 }
@@ -92,7 +92,7 @@ const std::string& Token::getValue() const
     return m_value; 
 }
 
-void Token::addToValue( const std::string& value ) 
+void Token::addToValue( std::string_view value ) 
 { 
     m_value += value; 
 }

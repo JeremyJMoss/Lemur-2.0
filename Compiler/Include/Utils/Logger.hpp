@@ -64,7 +64,7 @@ class Logger
 
         static LogLevel parseLogLevel( const std::string& levelStr );
 
-        static void setFile( std::string_view filepath = DefaultLogFile ) {
+        static void setFile( fs::path filepath = DefaultLogFile ) {
             fs::path path( filepath );
 
             if ( path.has_parent_path() )

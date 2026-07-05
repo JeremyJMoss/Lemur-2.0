@@ -27,12 +27,13 @@ class ErrorReporter
 
         void printAllDiagnostics();
 
-        void report( CompilerError&& compErr );
+        void report( const ModuleHeaderError& modHeadErr );
 
-        void report( RuntimeError&& runErr );
+        void report( const CompilerError& compErr );
 
-        void report( SemanticError&& semErr );
+        void report( const RuntimeError& runErr );
 
+        void report( const SemanticError& semErr );
 
         bool hasFatalErrors() const;
 
@@ -44,5 +45,6 @@ class ErrorReporter
         std::vector<CompilerError> m_compilerErrors;
         std::vector<RuntimeError> m_runtimeErrors;
         std::vector<SemanticError> m_semanticErrors;
+        std::vector<ModuleHeaderError> m_moduleHeaderErrors;
         std::size_t m_errCount = 0;
 };

@@ -1,7 +1,9 @@
 #include "Tokens/Tokenizer.hpp"
 #include "Tokens/Token.hpp"
 #include "Driver/CompilationUnit.hpp"
+#include "Errors/ErrorReporter.hpp"
 #include <cctype>
+#include <expected>
 
 using FileId = std::size_t;
 
@@ -63,7 +65,59 @@ std::string readSymbol( const std::string& line, std::size_t& pos, const std::un
     return "";
 }
 
-std::vector<std::string> Tokenizer::readModuleHeader(std::istream& stream)
+bool Tokenizer::isValidIdentifier(std::string_view s)
+{
+    if (s.empty())
+        return false;
+
+    if (!Tokenizer::isIdentifierStartChar(s[0]))
+        return false;
+
+    for (char c : s)
+    {
+        if (!Tokenizer::isIdentifierPartChar(c))
+            return false;
+    }
+
+    return true;
+}
+
+std::expected<std::string, ConfigError> Tokenizer::parseModuleName(std::string_view input)
+{
+    std::string moduleName = "";
+
+    std::size_t start = 0;
+
+    while (start < input.size())
+    {
+        std::size_t end = input.find('.', start);
+
+        if (end == std::string_view::npos)
+            end = input.size();
+
+        std::string_view part = input.substr(start, end - start);
+
+        if (!isValidIdentifier(part))
+        {
+            return std::unexpected(
+                ConfigError("Invalid module name: '" + std::string(input) + "'")
+            );
+        }
+
+        moduleName += part;
+
+        if (end == input.size())
+            break;
+
+        moduleName += '.';
+
+        start = end + 1;
+    }
+
+    return moduleName;
+}
+
+std::expected<std::string, ModuleHeaderError> Tokenizer::readModuleHeader( std::istream& stream )
 {
     std::string line;
     std::size_t pos = 0;
@@ -78,7 +132,7 @@ std::vector<std::string> Tokenizer::readModuleHeader(std::istream& stream)
 
     State state = State::Start;
 
-    std::vector<std::string> moduleParts;
+    std::string moduleName = "";
 
     bool inComment = false;
 
@@ -91,7 +145,7 @@ std::vector<std::string> Tokenizer::readModuleHeader(std::istream& stream)
             char c = line[pos];
 
             // Handle block comments
-            if (inComment)
+            if ( inComment )
             {
                 if (c == '*' && pos + 1 < line.length() && line[pos + 1] == '/')
                 {
@@ -134,7 +188,7 @@ std::vector<std::string> Tokenizer::readModuleHeader(std::istream& stream)
                 if (state == State::Start)
                 {
                     if (id != "module")
-                        return {}; // invalid header
+                        return std::unexpected(ModuleHeaderError("Invalid module header directive", ErrorSeverity::Error)); // invalid header
 
                     state = State::ExpectName;
                     continue;
@@ -142,20 +196,21 @@ std::vector<std::string> Tokenizer::readModuleHeader(std::istream& stream)
 
                 if (state == State::ExpectName)
                 {
-                    moduleParts.push_back(std::move(id));
+                    moduleName += id;
                     state = State::ExpectDotOrEnd;
                     continue;
                 }
 
-                return {}; // invalid
+                return ""; // invalid
             }
 
             // Dot (for module paths)
             if (c == '.')
             {
                 if (state != State::ExpectDotOrEnd)
-                    return {}; // invalid
+                    return std::unexpected(ModuleHeaderError("Malformed module header directive", ErrorSeverity::Error)); // invalid
 
+                moduleName += '.';
                 state = State::ExpectName;
                 ++pos;
                 continue;
@@ -165,17 +220,17 @@ std::vector<std::string> Tokenizer::readModuleHeader(std::istream& stream)
             if (c == ';')
             {
                 if (state != State::ExpectDotOrEnd)
-                    return {}; // invalid incomplete module
+                    return std::unexpected(ModuleHeaderError("Incomplete module header directive missing ending ';'", ErrorSeverity::Error)); // invalid incomplete module
 
-                return moduleParts;
+                return moduleName;
             }
 
             // Anything else is invalid
-            return {};
+            return std::unexpected(ModuleHeaderError("Invalid module header directive", ErrorSeverity::Error));
         }
     }
 
-    return {}; // EOF without valid module header
+    return std::unexpected(ModuleHeaderError("No module directive found", ErrorSeverity::Warning)); // EOF without valid module header
 }
 
 void Tokenizer::tokenizeStream( std::istream& stream ) 
@@ -438,7 +493,7 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
     );
 }
 
-void Tokenizer::setPartialToken( TokenKind type, const std::string& value, std::size_t start_line, std::size_t start_pos ) 
+void Tokenizer::setPartialToken( TokenKind type, std::string_view value, std::size_t start_line, std::size_t start_pos ) 
 {
     m_inToken = true;
     m_partialToken.setType( type );
@@ -448,7 +503,7 @@ void Tokenizer::setPartialToken( TokenKind type, const std::string& value, std::
     );
 }
 
-void Tokenizer::appendPartialToken( const std::string& amendment, std::size_t line, std::size_t pos ) 
+void Tokenizer::appendPartialToken( std::string_view amendment, std::size_t line, std::size_t pos ) 
 {
     m_partialToken.addToValue( amendment );
     m_partialToken.setLocationEnd(
@@ -456,7 +511,7 @@ void Tokenizer::appendPartialToken( const std::string& amendment, std::size_t li
     );
 }
 
-TokenKind Tokenizer::getTokenType( const std::string& value ) 
+TokenKind Tokenizer::getTokenType( std::string_view value ) 
 {
     bool isInteger = !value.empty();
     bool isFloat = false;

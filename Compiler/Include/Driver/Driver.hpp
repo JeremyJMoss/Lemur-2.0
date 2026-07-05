@@ -9,10 +9,7 @@
 
 using FileId = std::size_t;
 
-struct CompilerConfig {
-    std::string sourcePath;
-    std::string entryModule;
-};
+struct CompilerConfig;
 
 class Driver 
 {
@@ -24,11 +21,11 @@ class Driver
 
         void compileProgram();
 
-        void tokenizeCompilationUnit( CompilationUnit& compUnit );
-
-        void parseCompilationUnit( CompilationUnit& compUnit );
-
     private:
+        void compile();
+        void tokenizeCompilationUnit( CompilationUnit& compUnit );
+        void parseCompilationUnit( CompilationUnit& compUnit );
+        
         const CompilerConfig& m_config;
         SourceManager m_srcManager;
         ErrorReporter m_errReporter;

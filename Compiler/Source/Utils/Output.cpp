@@ -17,3 +17,7 @@ void Output::info( const std::string& msg, std::size_t indent )
         std::cout << indentation << Console::White << msg << Console::Reset << std::endl;
     }
 }
+
+void Output::error( const std::string& error ) {
+    std::cerr << Console::Red << error << Console::Reset << std::endl;
+}

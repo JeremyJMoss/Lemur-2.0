@@ -1,15 +1,9 @@
 #pragma once
 
 #include <string>
-#include <variant>
 #include <expected>
 #include "Errors/Errors.hpp"
-
-enum class Command {
-    Build,
-    Init,
-    Unknown
-};
+#include "Config/Config.hpp"
 
 enum class CLIStatus {
     MissingCommand,
@@ -18,32 +12,7 @@ enum class CLIStatus {
     TooManyArguments,
     InvalidOption,
     InvalidValue,
-};
-
-struct BuildConfig {
-    bool optimize = false;
-    bool loggingEnabled = false;
-    bool emitAST = false;
-    std::string outputPath;
-    std::string sourcePath;
-    LogLevel logLevel = LogLevel::INFO;
-    std::string logPath;
-    std::string entryModule;
-};
-
-struct InitConfig {
-    std::string name;
-};
-
-struct CLIConfig {
-    Command command = Command::Unknown;
-
-    bool showHelp = false;
-
-    std::variant<
-        BuildConfig,
-        InitConfig
-    > data;
+    InvalidSourcePath
 };
 
 class CommandLineTools {
@@ -53,5 +22,6 @@ class CommandLineTools {
         static void printIssue( CLIStatus status );
     private:
         Command parseCommand( std::string_view str );
+        bool isValidSourcePath( fs::path path );
         
 };

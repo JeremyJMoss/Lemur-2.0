@@ -50,6 +50,34 @@ inline std::string toString( const ErrorSeverity& severity )
     }
 }
 
+class ConfigError : public std::exception 
+{
+    public:
+        std::string message;
+        ConfigError( 
+            std::string message
+        ) : message( std::move( message ) ) {}
+
+        const char* what() const noexcept override {
+            return message.c_str();
+        }
+};
+
+class ModuleHeaderError : public std::exception
+{
+    public:
+        std::string message;
+        ErrorSeverity severity;
+        ModuleHeaderError( 
+            std::string message,
+            ErrorSeverity severity
+        ) : message( std::move( message ) ), severity( severity ) {}
+
+        const char* what() const noexcept override {
+            return message.c_str();
+        }
+};
+
 class CompilerError : public std::exception 
 {
     public:

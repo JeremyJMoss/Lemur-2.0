@@ -1,9 +1,10 @@
-#pragma once;
+#pragma once
 
 /* === Imports === */
 
 #include <filesystem>
 #include <unordered_map>
+#include <optional>
 
 namespace fs = std::filesystem;
 
@@ -25,11 +26,12 @@ class ModuleResolver {
         m_srcManager( srcManager ),
         m_errReporter( errReporter ) {}
 
-        // scans the project and finds all modules starting at root folder
-        void buildModuleIndex( fs::path sourcePath );
+        void buildModuleIndex( const fs::path& sourcePath );
+
+        std::optional<FileId> resolveModuleFileId( const std::string& moduleName ) const;
 
     private:
         SourceManager& m_srcManager;
         ErrorReporter& m_errReporter;
-        std::unordered_map<std::string, FileId> moduleIndex;
+        std::unordered_map<std::string, FileId> m_moduleIndex;
 };

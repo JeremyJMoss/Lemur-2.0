@@ -2,15 +2,16 @@
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
+#include <expected>
 #include "Tokens/Token.hpp"
 #include "SourceControl/SourceLocation.hpp"
 #include "SourceControl/SourceManager.hpp"
-#include "Errors/ErrorReporter.hpp"
-#include "Driver/CompilationUnit.hpp"
+#include "Errors/Errors.hpp"
 
 using FileId = std::size_t;
 
 class CompilationUnit;
+class ErrorReporter;
 
 class Tokenizer 
 {
@@ -18,7 +19,8 @@ class Tokenizer
         Tokenizer( CompilationUnit& compUnit, ErrorReporter& errReporter ) 
             : m_compUnit( compUnit ), m_errReporter( errReporter ) {}
         void tokenizeStream( std::istream& stream );
-        static std::vector<std::string> readModuleHeader( std::istream& stream );
+        static std::expected<std::string, ConfigError> parseModuleName(std::string_view input);
+        static std::expected<std::string, ModuleHeaderError> readModuleHeader( std::istream& stream );
         void checkIssueWithOutput( FileId fileId );
 
     private:
@@ -29,6 +31,8 @@ class Tokenizer
 
         static std::string readIdentifier( const std::string& line, std::size_t& pos );
         static std::string readNumber( const std::string& line, std::size_t& pos );
+
+        static bool isValidIdentifier(std::string_view s);
 
         inline const static std::unordered_map<std::string_view, TokenKeyword> m_KEYWORDS = {
             { "lock",      TokenKeyword::Lock },
@@ -94,8 +98,8 @@ class Tokenizer
         bool m_inToken = false;
         std::size_t m_lineNum = 0;
         std::size_t m_lastLineLength = 0;
-        void setPartialToken( TokenKind type, const std::string& value, std::size_t start_line, std::size_t start_pos );
-        void appendPartialToken( const std::string& amendment, std::size_t line, std::size_t pos );
+        void setPartialToken( TokenKind type, std::string_view value, std::size_t start_line, std::size_t start_pos );
+        void appendPartialToken( std::string_view amendment, std::size_t line, std::size_t pos );
         void clearPartialToken();
-        static TokenKind getTokenType( const std::string& value );
+        static TokenKind getTokenType( std::string_view value );
 };

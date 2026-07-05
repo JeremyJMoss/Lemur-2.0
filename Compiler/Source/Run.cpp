@@ -5,12 +5,57 @@
 #include "Utils/Logger.hpp"
 #include "Driver/Driver.hpp"
 #include "Utils/Output.hpp"
-#include "Utils/Logger.hpp";
+#include "Utils/Logger.hpp"
 #include "CLI/CommandLineTools.hpp"
+#include "Config/Config.hpp"
+#include "Utils/TomlConfigHandler.hpp"
+#include "Config/ConfigResolver.hpp"
 
 namespace fs = std::filesystem;
 
 namespace chrono = std::chrono;
+
+void build( const CLIConfig& config ) {
+    auto start = chrono::high_resolution_clock::now();
+
+    BuildCLIConfig buildConfig = std::get<BuildCLIConfig>(config.data);
+
+    // configure logging setup
+    Logger::setShouldLog(buildConfig.loggingEnabled.value_or(false));
+    Logger::setLevel(buildConfig.logLevel.value_or(LogLevel::INFO));
+    Logger::setFile(buildConfig.logPath.value_or("./logs/compiler.log"));
+
+    TomlConfigHandler tomlHandler;
+
+    auto maybeCompConfig = tomlHandler.parseOrFail();
+
+    if (!maybeCompConfig) {
+        throw maybeCompConfig.error();
+    }
+
+    CompilerConfig compConfig = maybeCompConfig.value();
+
+    ConfigResolver::mergeConfigurations( buildConfig, compConfig );
+
+    Driver compilerDriver = Driver( compConfig );
+
+    compilerDriver.compileProgram();
+
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = duration_cast<chrono::microseconds>( end - start );
+
+    std::cout << "Entire Program Execution time: " << duration.count() << " µs\n";
+}
+
+bool init( const CLIConfig& config ) {
+    InitCLIConfig initConfig = std::get<InitCLIConfig>(config.data);
+
+    Output::info( "Initialising Project: " + initConfig.name );
+
+    TomlConfigHandler tomlHandler;
+
+    return tomlHandler.createTomlFile( initConfig.name );
+}
 
 int main( int argc, char* argv[] )
 {
@@ -32,11 +77,21 @@ int main( int argc, char* argv[] )
 
     switch (cliConfig.command) {
         case Command::Build: {
-            build(cliConfig);
+            try {
+                build(cliConfig);
+            } catch (const std::exception& e) {
+                Output::error(e.what());
+                return EXIT_FAILURE;
+            }
             break;
         }
         case Command::Init: {
-            init(cliConfig);
+            bool success = init(cliConfig);
+            if (!success) {
+                Output::error( "Failed to create lemur.toml file in root directory" );
+                return EXIT_FAILURE;
+            }
+            Output::success( "Successfully create lemur.toml file in root directory" );
             break;
         }
         case Command::Unknown: {
@@ -45,42 +100,5 @@ int main( int argc, char* argv[] )
     }
 
     return EXIT_SUCCESS;
-}
-
-void build( const CLIConfig& config ) {
-    auto start = chrono::high_resolution_clock::now();
-
-    BuildConfig buildConfig = std::get<BuildConfig>(config.data);
-
-    if (buildConfig.loggingEnabled) {
-        Logger::setShouldLog(true);
-        Logger::setLevel(buildConfig.logLevel);
-    }
-
-    if (buildConfig.logPath.size() > 0) {
-        Logger::setFile(buildConfig.logPath);
-    }
-
-    CompilerConfig compConfig;
-
-    compConfig.sourcePath = buildConfig.sourcePath;
-    compConfig.entryModule = buildConfig.entryModule;
-
-    Driver compilerDriver = Driver( compConfig );
-
-    compilerDriver.compileProgram();
-
-    auto end = chrono::high_resolution_clock::now();
-    auto duration = duration_cast<chrono::microseconds>( end - start );
-
-    std::cout << "Entire Program Execution time: " << duration.count() << " µs\n";
-}
-
-void init( const CLIConfig& config ) {
-    std::cout << "Initialising Project: ";
-
-    InitConfig initConfig = std::get<InitConfig>(config.data);
-
-    std::cout << initConfig.name << std::endl;
 }
 

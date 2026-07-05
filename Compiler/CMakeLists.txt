@@ -41,9 +41,20 @@ set_target_properties(lemur PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/.."
 )
 
-# ---- GoogleTest Setup ----
 include(FetchContent)
 
+# ---- TOML Parser Setup ---- #
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG v3.4.0
+)
+
+FetchContent_MakeAvailable(tomlplusplus)
+
+target_link_libraries(lemur-core PRIVATE tomlplusplus::tomlplusplus)
+
+# ---- GoogleTest Setup ----
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git

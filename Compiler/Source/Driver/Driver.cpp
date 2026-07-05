@@ -4,6 +4,8 @@
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
 #include "Modules/ModuleResolver.hpp"
+#include "Config/Config.hpp"
+#include "Utils/Output.hpp"
 #include <array>
 #include <chrono>
 
@@ -11,15 +13,37 @@ namespace chrono = std::chrono;
 
 void Driver::compileProgram() 
 {
+    try {
+        compile();
+        m_errReporter.printAllDiagnostics();
+    } catch (const FatalCompilerError& error) {
+        m_errReporter.printAllDiagnostics();
+    }
+}
+
+void Driver::compile() {
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
 
     ModuleResolver moduleResolver(m_srcManager, m_errReporter);
 
-    moduleResolver.buildModuleIndex(m_config.sourcePath.size() > 0 ? m_config.sourcePath : "./src");
+    moduleResolver.buildModuleIndex(m_config.sourcePath);
 
-    FileId fileId = m_srcManager.addFile(filePath);
-    auto compUnit = std::make_unique<CompilationUnit>( fileId );
+    auto fileId = moduleResolver.resolveModuleFileId(m_config.entryModule);
+
+    if ( !fileId ) {
+        m_errReporter.report(
+            ModuleHeaderError("Unable to find entry module \"" + m_config.entryModule + "\" within declared module", ErrorSeverity::Fatal)
+        );
+        
+        Logger::error( 
+            "Unable to find entry module \"" + m_config.entryModule + "\" within declared modules" 
+        );
+
+        return;
+    }
+
+    auto compUnit = std::make_unique<CompilationUnit>( fileId.value() );
 
     auto tokenStart = chrono::high_resolution_clock::now();
 
@@ -61,9 +85,10 @@ void Driver::compileProgram()
         return;
     }
 
-    // ASTPrinter astPrinter = ASTPrinter();
-
-    // astPrinter.print( compUnit->readStatements() );
+    if (m_config.emitAST) {
+        ASTPrinter astPrinter = ASTPrinter();
+        astPrinter.print( compUnit->readStatements() );
+    }
 
     Logger::debug( 
         "AST generated with " +

@@ -123,6 +123,13 @@ void ErrorReporter::printErrorDiagnostic(
 
 void ErrorReporter::printAllDiagnostics()
 {
+    for ( auto error: m_moduleHeaderErrors )
+    {
+        std::cerr << "[" << toString( error.severity ) << "] " << error.message << std::endl; 
+    }
+
+    m_moduleHeaderErrors.clear();
+
     for ( auto error: m_runtimeErrors )
     {
         std::cerr << "[" << toString( error.severity ) << "] Internal compiler issue: " << error.message << std::endl;
@@ -138,7 +145,22 @@ void ErrorReporter::printAllDiagnostics()
     m_compilerErrors.clear();
 }
 
-void ErrorReporter::report( CompilerError&& compErr ) 
+void ErrorReporter::report( const ModuleHeaderError& modHeadErr ) 
+{
+    if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
+
+    m_moduleHeaderErrors.emplace_back( std::move( modHeadErr ) );
+
+    if ( modHeadErr.severity == ErrorSeverity::Fatal ) 
+    {
+        m_errCount++;
+        throw FatalCompilerError( "Fatal error caught during compilation" );
+    }
+
+    if ( modHeadErr.severity == ErrorSeverity::Error ) m_errCount++;
+}
+
+void ErrorReporter::report( const CompilerError& compErr ) 
 {
     if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
 
@@ -153,7 +175,7 @@ void ErrorReporter::report( CompilerError&& compErr )
     if ( compErr.severity == ErrorSeverity::Error ) m_errCount++;
 }
 
-void ErrorReporter::report( RuntimeError&& runErr )
+void ErrorReporter::report( const RuntimeError& runErr )
 {
     if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
 
@@ -168,7 +190,7 @@ void ErrorReporter::report( RuntimeError&& runErr )
     if ( runErr.severity == ErrorSeverity::Error ) m_errCount++;
 }
 
-void ErrorReporter::report( SemanticError&& semErr ) 
+void ErrorReporter::report( const SemanticError& semErr ) 
 {
     if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
 
@@ -181,6 +203,8 @@ bool ErrorReporter::hasFatalErrors() const
         if ( err.severity == ErrorSeverity::Fatal ) return true;
     for ( const auto& err : m_runtimeErrors )
         if ( err.severity == ErrorSeverity::Fatal ) return true;
+    for ( const auto& err : m_moduleHeaderErrors )
+        if (err .severity == ErrorSeverity::Fatal ) return true;
     return false;
 }
 

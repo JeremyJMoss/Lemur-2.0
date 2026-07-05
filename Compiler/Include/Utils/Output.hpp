@@ -20,6 +20,8 @@ class Output
         static void success( const std::string& msg, std::size_t indent = 0 );
         
         static void info( const std::string& msg, std::size_t indent = 0 );
+
+        static void error( const std::string& msg );
         
         // Quiet mode support
         static void setQuiet( bool quiet ) { s_quiet = quiet; }
