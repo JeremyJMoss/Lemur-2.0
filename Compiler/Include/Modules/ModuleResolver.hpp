@@ -28,10 +28,10 @@ class ModuleResolver {
 
         void buildModuleIndex( const fs::path& sourcePath );
 
-        std::optional<FileId> resolveModuleFileId( const std::string& moduleName ) const;
+        std::optional<FileId> resolveModuleFileId( std::string_view moduleName ) const;
 
     private:
         SourceManager& m_srcManager;
         ErrorReporter& m_errReporter;
-        std::unordered_map<std::string, FileId> m_moduleIndex;
+        std::unordered_map<std::string_view, FileId> m_moduleIndex;
 };

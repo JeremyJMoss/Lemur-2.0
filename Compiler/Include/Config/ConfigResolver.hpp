@@ -1,5 +1,11 @@
 #pragma once
-#include "Config/Config.hpp"
+
+/* === Forward Declarations === */
+
+struct BuildCLIConfig;
+struct CompilerConfig;
+
+/* === Config Resolver === */
 
 struct ConfigResolver {
     public:

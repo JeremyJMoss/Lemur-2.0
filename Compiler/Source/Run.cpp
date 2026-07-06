@@ -50,7 +50,7 @@ void build( const CLIConfig& config ) {
 bool init( const CLIConfig& config ) {
     InitCLIConfig initConfig = std::get<InitCLIConfig>(config.data);
 
-    Output::info( "Initialising Project: " + initConfig.name );
+    Output::info( "Initialising Project: " + std::string( initConfig.name ) );
 
     TomlConfigHandler tomlHandler;
 

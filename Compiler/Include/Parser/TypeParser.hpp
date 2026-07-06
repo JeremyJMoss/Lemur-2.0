@@ -1,12 +1,14 @@
 #pragma once
 
 #include <expected>
-#include "Errors/ErrorReporter.hpp"
-#include "AST/ParsedType.hpp"
-#include "Tokens/TokenStream.hpp"
+#include <vector>
+#include "Errors/Errors.hpp"
+
+struct ParsedType;
 
 class CompilationUnit;
 class Parser;
+class TokenStream;
 
 class TypeParser{
     public:

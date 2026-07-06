@@ -1,5 +1,8 @@
 #include "Parser/TypeParser.hpp"
 #include "Driver/CompilationUnit.hpp"
+#include "Tokens/TokenStream.hpp"
+#include "AST/ParsedType.hpp"
+#include "AST/Identifier.hpp"
 
 std::expected<ParsedType*, ErrorVariant> TypeParser::parseType() 
 {

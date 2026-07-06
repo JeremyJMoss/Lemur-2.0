@@ -7,7 +7,7 @@
 
 /* === Enums === */
 
-enum class UnaryOperator 
+enum class UnaryOperator : std::uint8_t
 {
     Not,    // "!"
     Negate, // "-"
@@ -20,12 +20,13 @@ struct Unary : Expression
     const Expression* argument;
     const UnaryOperator op;
     
-    explicit Unary( const Expression* arg, const std::string& oper )
-        : argument( arg ), op( parseUnaryOperator(oper) ) {}
+    explicit Unary( const Expression* arg, std::string_view oper )
+        : argument( arg ), op( parseUnaryOperator( oper ) ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 
-    static UnaryOperator parseUnaryOperator( const std::string& op );
+    static UnaryOperator parseUnaryOperator( std::string_view op );
 };

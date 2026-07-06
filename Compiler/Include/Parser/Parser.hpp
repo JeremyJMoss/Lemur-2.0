@@ -10,11 +10,11 @@
 #include "Parser/TypeParser.hpp"
 #include "Parser/ExpressionParser.hpp"
 #include "Parser/StatementParser.hpp"
+#include "Parser/ParameterParser.hpp"
 #include "Tokens/TokenStream.hpp"
+#include "Driver/CompilationUnit.hpp"
 
 /* === Forward Declarations === */
-
-class CompilationUnit;
 class ErrorReporter;
 
 /* === Parser === */

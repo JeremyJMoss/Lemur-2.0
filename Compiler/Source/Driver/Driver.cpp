@@ -1,5 +1,6 @@
 #include "Driver/Driver.hpp"
 #include "Tokens/Tokenizer.hpp"
+#include "Parser/Parser.hpp"
 #include "Errors/Errors.hpp"
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
@@ -33,11 +34,11 @@ void Driver::compile() {
 
     if ( !fileId ) {
         m_errReporter.report(
-            ModuleHeaderError("Unable to find entry module \"" + m_config.entryModule + "\" within declared module", ErrorSeverity::Fatal)
+            ModuleHeaderError("Unable to find entry module \"" + std::string( m_config.entryModule ) + "\" within declared module", ErrorSeverity::Fatal)
         );
         
         Logger::error( 
-            "Unable to find entry module \"" + m_config.entryModule + "\" within declared modules" 
+            "Unable to find entry module \"" + std::string( m_config.entryModule ) + "\" within declared modules" 
         );
 
         return;

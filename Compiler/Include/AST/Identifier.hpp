@@ -10,9 +10,11 @@
 struct Identifier : Expression 
 {
     const std::string name;
-    explicit Identifier( const std::string& value ) : name( std::move( value ) ) {}
+    explicit Identifier( std::string value ) 
+        : name( std::move( value ) ) {}
     
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

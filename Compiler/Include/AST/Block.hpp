@@ -5,8 +5,6 @@
 #include <vector>
 #include "AST/ASTNode.hpp"
 
-/* === Forward Declarations === */
-
 /* === Block === */
 
 struct Block : Statement 
@@ -16,7 +14,8 @@ struct Block : Statement
     explicit Block( std::vector<Statement*> statements ) 
         : statements( std::move( statements ) ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

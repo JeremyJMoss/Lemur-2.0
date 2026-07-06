@@ -4,6 +4,7 @@
 #include <variant>
 #include <filesystem>
 #include <vector>
+#include <string>
 #include "Utils/Logger.hpp"
 
 namespace fs = std::filesystem;
@@ -22,11 +23,11 @@ struct BuildCLIConfig {
     std::optional<fs::path> outputPath;
     std::optional<LogLevel> logLevel;
     std::optional<fs::path> logPath;
-    std::optional<std::string> entryModule;
+    std::optional<std::string_view> entryModule;
 };
 
 struct InitCLIConfig {
-    std::string name;
+    std::string_view name;
 };
 
 struct CLIConfig {
@@ -45,5 +46,5 @@ struct CompilerConfig {
     bool emitAST = false;
     fs::path sourcePath;
     fs::path outputPath;
-    std::string entryModule;
+    std::string_view entryModule;
 };

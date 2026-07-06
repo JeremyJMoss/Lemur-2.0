@@ -3,9 +3,13 @@
 /* === Imports === */
 
 #include <vector>
-#include "AST/ParsedType.hpp"
-#include "AST/Parameter.hpp"
-#include "AST/Block.hpp"
+#include <AST/ASTNode.hpp>
+
+/* === Forward Declarations === */
+
+struct ParsedType;
+struct Parameter;
+struct Block;
 
 /* === FunctionLiteral === */
 
@@ -15,7 +19,7 @@ struct FunctionLiteral : Expression
     const std::vector<Parameter*> parameters;
     const Block* body;
 
-    explicit FunctionLiteral( 
+    FunctionLiteral( 
         const ParsedType* retType, 
         std::vector<Parameter*> params, 
         const Block* block 
@@ -23,7 +27,8 @@ struct FunctionLiteral : Expression
         parameters( std::move( params ) ), 
         body( block ) {};
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

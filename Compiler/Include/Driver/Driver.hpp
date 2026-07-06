@@ -1,15 +1,19 @@
 #pragma once
 
+/* === Imports === */
+
 #include <unordered_map>
 #include "Errors/ErrorReporter.hpp"
 #include "SourceControl/SourceManager.hpp"
-#include "Tokens/Tokenizer.hpp"
-#include "Parser/Parser.hpp"
 #include "Driver/CompilationUnit.hpp"
 
 using FileId = std::size_t;
 
+/* === Forward Declarations === */
+
 struct CompilerConfig;
+
+/* === Compiler Driver === */
 
 class Driver 
 {

@@ -12,10 +12,11 @@ struct Assignment : Expression
     const Expression* identifier;
     const Expression* value;
 
-    explicit Assignment( Expression* id, Expression* val )
+    Assignment( Expression* id, Expression* val )
     : identifier( id ), value( val ) {};
     
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        return v.visit( *this );
     }
 };

@@ -2,6 +2,7 @@
 #include "Parser/Parser.hpp"
 #include "AST/AllASTTypes.hpp"
 #include "Errors/Errors.hpp"
+#include "Errors/ErrorReporter.hpp"
 #include "Utils/Logger.hpp"
 
 /**

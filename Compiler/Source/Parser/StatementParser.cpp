@@ -1,7 +1,15 @@
 #include "Parser/StatementParser.hpp"
 #include "Parser/Parser.hpp"
 #include "Utils/Logger.hpp"
+#include "Errors/Errors.hpp"
+#include "Errors/ErrorReporter.hpp"
 #include "AST/ASTPrinter.hpp"
+#include "AST/FunctionDeclaration.hpp"
+#include "AST/Block.hpp"
+#include "AST/Identifier.hpp"
+
+#include <expected>
+#include <variant>
 
 std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration( bool isEntry ) 
 {

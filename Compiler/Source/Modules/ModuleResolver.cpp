@@ -92,7 +92,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
     }
 }
 
-std::optional<FileId> ModuleResolver::resolveModuleFileId(const std::string& moduleName) const
+std::optional<FileId> ModuleResolver::resolveModuleFileId(std::string_view moduleName) const
 {
     auto it = m_moduleIndex.find(moduleName);
 

@@ -1,4 +1,10 @@
 #include "Parser/ParameterParser.hpp"
+#include "Tokens/TokenStream.hpp"
+#include "Driver/CompilationUnit.hpp"
+#include "Parser/TypeParser.hpp"
+#include "AST/Identifier.hpp"
+#include "AST/ParsedType.hpp"
+#include "AST/Parameter.hpp"
 
 std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunctionParameters() {    
     auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );

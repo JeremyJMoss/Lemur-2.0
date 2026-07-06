@@ -7,7 +7,7 @@
 
 /* === Enums === */
 
-enum class BinaryOperators 
+enum class BinaryOperator : std::uint8_t
 {
     Plus,                 // "+"
     Minus,                // "-"
@@ -29,20 +29,21 @@ enum class BinaryOperators
 struct BinaryExpression : Expression 
 {
     const Expression* left;
-    const BinaryOperators op;
+    const BinaryOperator op;
     const Expression* right;
 
     explicit BinaryExpression( 
         const Expression* left, 
-        const std::string& oper,
+        std::string_view oper,
         const Expression* right 
     ) : left( left ), 
-    op( parseOperator(oper) ), 
-    right( right ) {};
+        op( parseOperator( oper ) ), 
+        right( right ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        return v.visit( *this );
     }
     
-    static BinaryOperators parseOperator( const std::string& op );
+    static BinaryOperator parseOperator( std::string_view op );
 };

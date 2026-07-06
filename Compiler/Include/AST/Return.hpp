@@ -13,7 +13,8 @@ struct Return : Statement
     explicit Return( const Expression* val ) 
         : value( val ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

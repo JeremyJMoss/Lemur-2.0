@@ -6,9 +6,7 @@
 #include <vector>
 #include "SourceControl/SourceLocation.hpp"
 
-/* === Base AST Node === */
-
-using NodeId = std::size_t;
+/* === Forward Declarations === */
 
 struct Literal;
 struct Assignment;
@@ -30,6 +28,9 @@ struct FunctionCall;
 struct ParsedType;
 struct Parameter;
 
+/* === Visitor === */
+
+// Visitor struct for logging and debugging
 struct ASTVisitor
 {
     virtual void visit(const Literal&) = 0;
@@ -54,6 +55,9 @@ struct ASTVisitor
     virtual ~ASTVisitor() = default;
 };
 
+/* === Base AST Node === */
+using NodeId = std::size_t;
+
 struct ASTNode 
 {
     static inline NodeId nextId = 0;
@@ -62,21 +66,28 @@ struct ASTNode
     SourceRange location;
     virtual ~ASTNode() = default;
     virtual void accept( ASTVisitor& v ) const = 0;
-    ASTNode(): id(nextId++) {}
+    // allow auto increment of NodeId
+    ASTNode(): id( nextId++ ) {}
 };
 
 /* === Derived AST Nodes === */
 
+// Produces a value when evaluated.
 struct Expression : ASTNode {};
 
+// Performs an action during program execution.
 struct Statement : ASTNode {};
 
+// Declares a symbol (e.g. variable, function, type, or module) within a scope.
 struct Declaration : Statement {};
 
-/* === AST === */
+/* === Abstract Syntax Tree === */
 
 struct AST {
     std::vector<const Statement*> m_statements;
 
-    void addStatement( Statement* statement ) { m_statements.push_back( statement ); }
+    void addStatement( Statement* statement ) 
+    { 
+        m_statements.push_back( statement ); 
+    }
 };

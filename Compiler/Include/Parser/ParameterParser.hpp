@@ -1,11 +1,17 @@
 #pragma once
 
+/* === Imports === */
 #include <expected>
-#include "Parser/TypeParser.hpp"
-#include "AST/Parameter.hpp"
-#include "Tokens/TokenStream.hpp"
-#include "Driver/CompilationUnit.hpp"
+#include <vector>
+#include "Errors/Errors.hpp"
 
+/* === Forward Declarations === */
+struct Parameter;
+class CompilationUnit;
+class TokenStream;
+class TypeParser;
+
+/* === Parameter Parser === */
 class ParameterParser {
     public:
         ParameterParser( CompilationUnit& compUnit, TokenStream& tStream, TypeParser& typeParser )

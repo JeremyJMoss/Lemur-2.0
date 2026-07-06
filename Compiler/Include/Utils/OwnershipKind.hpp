@@ -2,7 +2,7 @@
 
 #include <string>
 
-enum class OwnershipKind 
+enum class OwnershipKind : std::uint8_t
 {
     Owned,    // Exclusive ownership (like unique_ptr)
     Rref,     // Immutable borrow/reference

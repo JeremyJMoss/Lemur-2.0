@@ -8,5 +8,5 @@ class TomlConfigHandler {
     public:
         std::expected<CompilerConfig, ConfigError> parseOrFail();
 
-        bool createTomlFile(const std::string& projectName );
+        bool createTomlFile(std::string_view projectName );
 };

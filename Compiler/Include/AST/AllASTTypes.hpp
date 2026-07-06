@@ -19,3 +19,4 @@
 #include "AST/Return.hpp"
 #include "AST/Unary.hpp"
 #include "AST/VariableDeclaration.hpp"
+#include "AST/Parameter.hpp"

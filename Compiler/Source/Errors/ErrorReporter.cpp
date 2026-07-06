@@ -1,9 +1,11 @@
+#include <tuple>
 #include "Errors/ErrorReporter.hpp"
 #include "Errors/Errors.hpp"
+#include "SourceControl/SourceManager.hpp"
 
 void ErrorReporter::printErrorDiagnostic(
     ErrorSeverity severity,
-    const std::string& message, 
+    std::string_view message, 
     const SourceRange& range
 ) const
 {
@@ -13,7 +15,7 @@ void ErrorReporter::printErrorDiagnostic(
     std::size_t endCol    = range.end.column;
     const std::string& filePath = m_srcManager.getFilePath( range.fileId );
     
-    std::vector<std::tuple<std::string, std::size_t>> lines;
+    std::vector<std::tuple<std::string_view, std::size_t>> lines;
 
     for ( std::size_t i = startLine; i <= endLine; i++ ) 
     {
@@ -25,12 +27,12 @@ void ErrorReporter::printErrorDiagnostic(
 
     std::cerr << toString( severity ) << ": " << filePath << " " << "at line " << startLine << ", column " << ( startCol + 1 ) << ": " << message << std::endl;
 
-    for ( const std::tuple<std::string, std::size_t>& line : lines ) 
+    for ( const std::tuple<std::string_view, std::size_t>& line : lines ) 
     {
         std::size_t lineNo = std::get<1>(line);
         std::string lineNoStr = std::to_string(lineNo);
         std::string ind(width - lineNoStr.length(), ' ');
-        std::string lineStr = std::get<0>(line);
+        std::string_view lineStr = std::get<0>(line);
 
         std::cerr << ind << lineNoStr << " | " << lineStr << std::endl;
         std::cerr << std::string(width, ' ') << " | ";

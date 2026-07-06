@@ -1,21 +1,37 @@
 #pragma once
 
+/* === Imports === */
+
 #include <expected>
 #include <regex>
-#include "AST/ASTNode.hpp"
-#include "AST/Assignment.hpp"
-#include "AST/Range.hpp"
-#include "AST/FunctionLiteral.hpp"
-#include "AST/FunctionCall.hpp"
-#include "AST/Literal.hpp"
-#include "Errors/ErrorReporter.hpp"
-#include "Parser/TypeParser.hpp"
-#include "Parser/ParameterParser.hpp"
-#include "Parser/StatementParser.hpp"
-#include "Tokens/TokenStream.hpp"
-#include "Driver/CompilationUnit.hpp"
+#include "Errors/Errors.hpp"
+
+/* === Forward Declarations === */
+
+struct ASTNode;
+struct Assignment;
+struct Range;
+struct FunctionLiteral;
+struct FunctionCall;
+struct Literal;
 
 class Parser;
+class CompilationUnit;
+class TokenStream;
+class TypeParser;
+class ParameterParser;
+class StatementParser;
+
+using LiteralValue = std::variant<
+    std::string_view, 
+    char, 
+    int, 
+    float, 
+    bool, 
+    std::monostate
+>;
+
+/* === Expression Statement === */
 
 class ExpressionParser{
     public:

@@ -3,12 +3,10 @@
 /* === Imports === */
 #include <string>
 #include <vector>
-#include <iostream>
-#include <tuple>
-#include <variant>
-#include "SourceControl/SourceLocation.hpp"
-#include "SourceControl/SourceManager.hpp"
 #include "Errors/Errors.hpp"
+
+struct SourceRange;
+class SourceManager;
 
 class ErrorReporter 
 {
@@ -17,7 +15,7 @@ class ErrorReporter
 
         void printErrorDiagnostic(
             ErrorSeverity severity,
-            const std::string& message,
+            std::string_view message,
             const SourceRange& range
         ) const;
 

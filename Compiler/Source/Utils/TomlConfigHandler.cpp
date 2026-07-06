@@ -102,7 +102,7 @@ std::expected<CompilerConfig, ConfigError> TomlConfigHandler::parseOrFail()
     return config;
 }
 
-bool TomlConfigHandler::createTomlFile(const std::string& projectName) 
+bool TomlConfigHandler::createTomlFile(std::string_view projectName) 
 {
     fs::path tomlFilePath = fs::absolute(fs::current_path() / fs::path("lemur.toml"));
 

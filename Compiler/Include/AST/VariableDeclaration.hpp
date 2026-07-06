@@ -3,8 +3,11 @@
 /* === Imports === */
 
 #include "AST/ASTNode.hpp"
-#include "AST/ParsedType.hpp"
-#include "AST/Identifier.hpp"
+
+/* === Forward Declarations === */
+
+struct Identifier;
+struct ParsedType;
 
 /* === VariableDeclaration === */
 
@@ -23,9 +26,10 @@ struct VariableDeclaration : Declaration
     ) : identifier( id ), 
         varType( type ), 
         locked( lock ), 
-        initialiser( initialiserStmt ) {};
+        initialiser( initialiserStmt ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

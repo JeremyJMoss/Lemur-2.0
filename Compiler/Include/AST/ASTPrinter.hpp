@@ -1,13 +1,57 @@
 #pragma once
 
 #include <ostream>
-#include "AST/AllASTTypes.hpp"
+#include <string>
+#include <vector>
+#include <variant>
+#include "AST/ASTNode.hpp"
+
+/* === Forward Declarations === */
+
+struct Assignment;
+struct BinaryExpression;
+struct Block;
+struct Break;
+struct Continue;
+struct ExpressionStatement;
+struct ForLoop;
+struct FunctionCall;
+struct FunctionDeclaration;
+struct FunctionLiteral;
+struct Identifier;
+struct IfConditional;
+struct Literal;
+struct Parameter;
+struct ParsedType;
+struct Range;
+struct Return;
+struct Unary;
+struct VariableDeclaration;
+
+enum class BinaryOperator : std::uint8_t;
+enum class OwnershipKind : std::uint8_t;
+enum class ParsedTypeKind : std::uint8_t;
+enum class UnaryOperator : std::uint8_t;
+
+using LiteralValue = std::variant<
+    std::string_view, 
+    char, 
+    int, 
+    float, 
+    bool, 
+    std::monostate
+>;
+
+/* === ASTPrinter === */
 
 class ASTPrinter : public ASTVisitor {
     public:
+        /// @brief Prints the AST rooted at the supplied statements.
+        ///
+        /// @param statements statements to loop over to print
         void print( const std::vector<const Statement*>& statements );
         
-        // Visitors for each AST Node
+        /* === Visitors for each AST Node === */
         void visit( const Literal& lit ) override;
         void visit( const Assignment& assignment ) override;
         void visit( const Identifier& identifier ) override;
@@ -28,32 +72,52 @@ class ASTPrinter : public ASTVisitor {
         void visit( const Parameter& parameter ) override;
         void visit( const ParsedType& parsedType ) override;
 
-        static std::string getBinaryOperator( BinaryOperators op );
+        /// @brief Converts a binary operator enum to its textual representation.
+        /// @param op binary operator enum
+        /// @return textual representation of BinaryOperator enum.
+        static std::string getBinaryOperator( BinaryOperator op );
 
-        static std::string getUnaryOperator( const UnaryOperator& unop );
+        /// @brief Converts a unary operator enum to its textual representation.
+        ///
+        /// @param unop unary operator enum
+        /// @return textual representation of UnaryOperator enum.
+        static std::string getUnaryOperator( UnaryOperator unop );
 
+        /// @brief Converts a parsed type enum to its textual representation.
+        ///
+        /// @param type parsed type kind enum
+        /// @return textual representation of ParsedTypeKind enum.
         static std::string getParsedType( const ParsedTypeKind& type );
 
+        /// @brief Converts an ownership kind enum to its textual representation.
+        ///
+        /// @param kind ownership kind enum
+        /// @return textual representation of OwnershipKind enum.
         static std::string getOwnershipKind( const OwnershipKind kind );
 
+        /// @brief Converts a literal value variant to its textual represenstation.
+        ///
+        /// @param value variant value of multiple literal types
+        /// @return textual representation of variant LiteralValue.
         static std::string getLiteralValue( const LiteralValue& value );
 
     private:
         std::ostream* m_out;
-        int64_t m_indent = 0;
+        std::int16_t m_indent = 0;
 
         void writeIndent() const;
-
         void startBlock() const;
-
         void endBlock() const;
-
         void increaseIndent();
-
         void decreaseIndent();
 
+        /// @brief Print a file labelled with given label in JSON format
+        /// @tparam T Type of the field value 
+        /// @param label label JSON field name.
+        /// @param value value t be printed alongside label
+        /// @param hasComma whether a trailing comma is required after the field
         template <typename T>
-        void writeField( const std::string& label, const T& value, bool hasComma = true ) {
+        void writeField( std::string_view label, const T& value, bool hasComma = true ) {
             writeIndent();
 
             *m_out << '"' << label << "\": " << value;
@@ -64,18 +128,23 @@ class ASTPrinter : public ASTVisitor {
             *m_out << '\n';
         }
 
+        /// @brief Print an array of values for labeled with given label in JSON format
+        /// @tparam T Type of the field value inside the vector
+        /// @param label label JSON field name.
+        /// @param vec Vector of T to print values of inside json array
+        /// @param hasComma whether a trailing comma is required after the field
         template <typename T>
-        void writeArrayField( const std::string& label, const std::vector<T*>& array, bool hasComma = true ) {
+        void writeArrayField( std::string_view label, const std::vector<T*>& vec, bool hasComma = true ) {
             writeIndent();
             *m_out << "\"" << label << "\": [";
-            if ( !array.empty() ) {
+            if ( !vec.empty() ) {
                 *m_out << '\n';
                 increaseIndent();
-                for ( std::size_t i = 0; i < array.size(); ++i ) {
+                for ( std::size_t i = 0; i < vec.size(); ++i ) {
                     if ( i != 0 ) {
                         *m_out << ",\n";
                     }
-                    array[i]->accept(*this);
+                    vec[i]->accept(*this);
                 }
                 decreaseIndent();
                 *m_out << "\n";
@@ -90,13 +159,34 @@ class ASTPrinter : public ASTVisitor {
             *m_out << '\n';
         }
 
-        void writeNodeField( const std::string& label, const ASTNode& node, bool hasComma = true );
+        /// @brief Writes a named AST node field in JSON format
+        /// @param label label JSON field name.
+        /// @param node AST Node to print
+        /// @param hasComma whether a trailing comma is required after the field
+        void writeNodeField( std::string_view label, const ASTNode& node, bool hasComma = true );
 
-        void writeRawField( const std::string& label, const std::string& value, bool hasComma = true);
+        /// @brief Writes a raw field value with a label in JSON format
+        /// @param label label JSON field name.
+        /// @param value raw value to print
+        /// @param hasComma whether a trailing comma is required after the field
+        void writeRawField( std::string_view label, std::string_view value, bool hasComma = true);
 
-        void writeField( const std::string& label, const std::string& value, bool hasComma = true );
+        /// @brief Writes a field value with a label in JSON format
+        /// @param label label JSON field name.
+        /// @param value value to print
+        /// @param hasComma whether a trailing comma is required after the field
+        void writeField( std::string_view label, std::string_view value, bool hasComma = true );
 
+        /// @brief Converts a char value to it's JSON formatted textual representation for printing.
+        ///
+        /// @param c char to convert to string
+        /// @return the char as a string representation for JSON
         static std::string getCharToString( char c );
 
-        static std::string trimTrailingZeros( const std::string& str );
+    
+        /// @brief Removes insignificant trailing zeros from a floating-point literal string for JSON formatting.
+        ///
+        /// @param str string of float to remove trailing zeros from
+        /// @return newly constructed string with trailing zeros removed
+        static std::string trimTrailingZeros( std::string_view str );
 };

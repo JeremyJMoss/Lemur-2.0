@@ -14,11 +14,14 @@ struct Range : Expression
 
     explicit Range(
         const Expression* start, 
-        const Expression* end, bool incl
-    ) : start( start ), end( end ), 
-        inclusive( incl ) {};
+        const Expression* end, 
+        bool incl
+    ) : start( start ), 
+        end( end ), 
+        inclusive( incl ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

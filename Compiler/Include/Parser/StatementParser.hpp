@@ -1,19 +1,24 @@
 #pragma once
 
-#include "Parser/ParameterParser.hpp"
-#include "AST/FunctionDeclaration.hpp"
-#include "AST/Block.hpp"
-#include "AST/Return.hpp"
-#include "AST/IfConditional.hpp"
-#include "AST/ForLoop.hpp"
-#include "AST/VariableDeclaration.hpp"
-#include "Tokens/TokenStream.hpp"
+#include <expected>
+#include "Errors/Errors.hpp"
 
 /* === Forward Declarations === */
 
+struct Block;
+struct ForLoop;
+struct FunctionDeclaration;
+struct IfConditional;
+struct Return;
+struct VariableDeclaration;
+
 class CompilationUnit;
-class Parser;
 class ExpressionParser;
+class ParameterParser;
+class TypeParser;
+class Parser;
+class TokenStream;
+class ErrorReporter;
 
 /* === StatementParser === */
 

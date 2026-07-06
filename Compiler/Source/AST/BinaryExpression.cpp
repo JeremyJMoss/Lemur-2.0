@@ -3,22 +3,22 @@
 #include <stdexcept>
 #include "AST/BinaryExpression.hpp"
 
-BinaryOperators BinaryExpression::parseOperator( const std::string& op ) 
+BinaryOperator BinaryExpression::parseOperator( std::string_view op ) 
 {
-    const std::unordered_map<std::string, BinaryOperators> op_map = {
-        {"+",  BinaryOperators::Plus},
-        {"-",  BinaryOperators::Minus},
-        {"*",  BinaryOperators::Multiply},
-        {"/",  BinaryOperators::Divide},
-        {"<",  BinaryOperators::LessThan},
-        {"<=", BinaryOperators::LessThanOrEqualTo},
-        {">",  BinaryOperators::GreaterThan},
-        {">=", BinaryOperators::GreaterThanOrEqualTo},
-        {"==", BinaryOperators::Equal},
-        {"!=", BinaryOperators::NotEqual},
-        {"&&", BinaryOperators::And},
-        {"||", BinaryOperators::Or},
-        {"%", BinaryOperators::Remainder}
+    const std::unordered_map<std::string_view, BinaryOperator> op_map = {
+        {"+",  BinaryOperator::Plus},
+        {"-",  BinaryOperator::Minus},
+        {"*",  BinaryOperator::Multiply},
+        {"/",  BinaryOperator::Divide},
+        {"<",  BinaryOperator::LessThan},
+        {"<=", BinaryOperator::LessThanOrEqualTo},
+        {">",  BinaryOperator::GreaterThan},
+        {">=", BinaryOperator::GreaterThanOrEqualTo},
+        {"==", BinaryOperator::Equal},
+        {"!=", BinaryOperator::NotEqual},
+        {"&&", BinaryOperator::And},
+        {"||", BinaryOperator::Or},
+        {"%", BinaryOperator::Remainder}
     };
 
     auto it = op_map.find( op );
@@ -28,5 +28,5 @@ BinaryOperators BinaryExpression::parseOperator( const std::string& op )
         return it->second;
     }
 
-    throw std::invalid_argument( "Invalid binary operator: " + op );
+    throw std::invalid_argument( "Invalid binary operator: " + std::string( op ) );
 }

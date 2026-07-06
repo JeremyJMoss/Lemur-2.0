@@ -3,7 +3,10 @@
 /* === Imports === */
 
 #include "AST/ASTNode.hpp"
-#include "AST/Block.hpp"
+
+/* === Forward Declarations === */
+
+struct Block;
 
 /* === IfConditional === */
 
@@ -21,7 +24,8 @@ struct IfConditional : Statement
         elseStatement( elseStatement ), 
         then( body ) {};
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

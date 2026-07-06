@@ -2,8 +2,11 @@
 
 /* === Imports === */
 
-#include "AST/ParsedType.hpp"
 #include "AST/ASTNode.hpp"
+
+/* === Forward Declarations === */
+
+struct ParsedType;
 
 /* === Parameter === */
 
@@ -21,7 +24,8 @@ struct Parameter : ASTNode
         paramType( type ), 
         defaultValue( defaultValue ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

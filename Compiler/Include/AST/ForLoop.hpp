@@ -3,8 +3,11 @@
 /* === Imports === */
 
 #include "AST/ASTNode.hpp"
-#include "AST/Block.hpp"
-#include "AST/VariableDeclaration.hpp"
+
+/* === Forward Declarations === */
+
+struct VariableDeclaration;
+struct Block;
 
 /* === For Loop === */
 
@@ -14,19 +17,22 @@ struct ForLoop : Statement
     const Expression* iterable;
     const Expression* step;
     const Expression* condition;
-    const Block* body = nullptr;
+    const Block* body;
 
     ForLoop( 
         const VariableDeclaration* loopVar, 
         const Expression* iterable, 
         const Expression* step, 
-        const Expression* where, 
+        const Expression* condition, 
         const Block* body 
-    ) : loopVar( loopVar ), iterable( iterable ), 
-        step( step ), condition( where ), 
+    ) : loopVar( loopVar ), 
+        iterable( iterable ), 
+        step( step ), 
+        condition( condition ), 
         body( body ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

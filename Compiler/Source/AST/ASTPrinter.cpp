@@ -1,10 +1,10 @@
 #include "AST/ASTPrinter.hpp"
-#include <regex>
+#include "AST/AllASTTypes.hpp"
+#include "AST/ParsedType.hpp"
 #include <fstream>
 
 void ASTPrinter::writeIndent() const {
-    static const char spaces[] =
-        "                                                                "; // 64 spaces
+    static const char spaces[] = "                                                                "; // 64 spaces
 
     std::size_t count = m_indent * 2;
     while (count > sizeof(spaces) - 1)
@@ -33,7 +33,7 @@ void ASTPrinter::decreaseIndent() {
     m_indent--;
 }
 
-void ASTPrinter::writeField(const std::string& label, const std::string& value, bool hasComma ) {
+void ASTPrinter::writeField(std::string_view label, std::string_view value, bool hasComma ) {
     writeIndent();
 
     *m_out << '"' << label << "\": \"" << value << '"';
@@ -44,7 +44,7 @@ void ASTPrinter::writeField(const std::string& label, const std::string& value, 
     *m_out << '\n';
 }
 
-void ASTPrinter::writeNodeField( const std::string& label, const ASTNode& node, bool hasComma ) {
+void ASTPrinter::writeNodeField( std::string_view label, const ASTNode& node, bool hasComma ) {
     writeIndent();
     *m_out << "\"" << label << "\": \n";
     increaseIndent();
@@ -56,7 +56,7 @@ void ASTPrinter::writeNodeField( const std::string& label, const ASTNode& node, 
     decreaseIndent();
 }
 
-void ASTPrinter::writeRawField( const std::string& label, const std::string& value, bool hasComma) {
+void ASTPrinter::writeRawField( std::string_view label, std::string_view value, bool hasComma) {
     writeIndent();
 
     *m_out << '"' << label << "\": " << value;
@@ -67,22 +67,22 @@ void ASTPrinter::writeRawField( const std::string& label, const std::string& val
     *m_out << '\n';
 }
 
-std::string ASTPrinter::getBinaryOperator( BinaryOperators op ) {
+std::string ASTPrinter::getBinaryOperator( BinaryOperator op ) {
     switch ( op ) 
     {
-        case BinaryOperators::Plus:                 return "+";
-        case BinaryOperators::Minus:                return "-";
-        case BinaryOperators::Multiply:             return "*";
-        case BinaryOperators::Divide:               return "/";
-        case BinaryOperators::LessThan:             return "<";
-        case BinaryOperators::LessThanOrEqualTo:    return "<=";
-        case BinaryOperators::GreaterThan:          return ">";
-        case BinaryOperators::GreaterThanOrEqualTo: return ">=";
-        case BinaryOperators::Equal:                return "==";
-        case BinaryOperators::NotEqual:             return "!=";
-        case BinaryOperators::And:                  return "&&";
-        case BinaryOperators::Or:                   return "||";
-        case BinaryOperators::Remainder:            return "%";
+        case BinaryOperator::Plus:                 return "+";
+        case BinaryOperator::Minus:                return "-";
+        case BinaryOperator::Multiply:             return "*";
+        case BinaryOperator::Divide:               return "/";
+        case BinaryOperator::LessThan:             return "<";
+        case BinaryOperator::LessThanOrEqualTo:    return "<=";
+        case BinaryOperator::GreaterThan:          return ">";
+        case BinaryOperator::GreaterThanOrEqualTo: return ">=";
+        case BinaryOperator::Equal:                return "==";
+        case BinaryOperator::NotEqual:             return "!=";
+        case BinaryOperator::And:                  return "&&";
+        case BinaryOperator::Or:                   return "||";
+        case BinaryOperator::Remainder:            return "%";
         default:                                    return "Unknown";
     }
 }
@@ -127,13 +127,21 @@ std::string ASTPrinter::getOwnershipKind( const OwnershipKind kind ) {
     }
 };
 
-std::string ASTPrinter::trimTrailingZeros(const std::string& str)
+std::string ASTPrinter::trimTrailingZeros(std::string_view str)
 {
-    static const std::regex pattern(
-        R"((\.\d*?[1-9])0+|\.(?=0+$)|\.0+$)"
-    );
+    std::string result(str);
 
-    return std::regex_replace(str, pattern, "$1");
+    auto dot = result.find('.');
+    if (dot == std::string::npos)
+        return result;
+
+    while (!result.empty() && result.back() == '0')
+        result.pop_back();
+
+    if (!result.empty() && result.back() == '.')
+        result.pop_back();
+
+    return result;
 }
 
 std::string ASTPrinter::getLiteralValue( const LiteralValue& value )
@@ -159,7 +167,7 @@ std::string ASTPrinter::getLiteralValue( const LiteralValue& value )
     }, value );
 }
 
-std::string ASTPrinter::getUnaryOperator( const UnaryOperator& unop ) {
+std::string ASTPrinter::getUnaryOperator( UnaryOperator unop ) {
     switch( unop ) 
     {
         case UnaryOperator::Negate: return "-";

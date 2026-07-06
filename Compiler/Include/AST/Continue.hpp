@@ -10,7 +10,8 @@ struct Continue : Statement
 {
     Continue() = default;
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

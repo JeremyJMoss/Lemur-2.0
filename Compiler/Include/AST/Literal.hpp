@@ -6,10 +6,10 @@
 #include <variant>
 #include "AST/ASTNode.hpp"
 
-/* === Constants === */
+/* === Variant Declaration === */
 
 using LiteralValue = std::variant<
-    std::string, 
+    std::string_view, 
     char, 
     int, 
     float, 
@@ -23,10 +23,15 @@ struct Literal : Expression
 {
     LiteralValue value;
 
-    explicit Literal( LiteralValue val ) 
+    // avoiding extra copies with multiple constructors
+    explicit Literal( const LiteralValue& val )
+        : value( val ) {}
+    
+    explicit Literal( LiteralValue&& val )
         : value( std::move( val ) ) {}
     
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };

@@ -1,8 +1,20 @@
 #include <array>
 
 #include "Parser/ExpressionParser.hpp"
+#include "Tokens/TokenStream.hpp"
+#include "Driver/CompilationUnit.hpp"
+#include "Parser/ParameterParser.hpp"
+#include "Parser/TypeParser.hpp"
+#include "Parser/StatementParser.hpp"
+#include "AST/Block.hpp"
 #include "AST/BinaryExpression.hpp"
 #include "AST/Unary.hpp"
+#include "AST/Range.hpp"
+#include "AST/FunctionCall.hpp"
+#include "AST/FunctionLiteral.hpp"
+#include "AST/Identifier.hpp"
+#include "AST/Literal.hpp"
+#include "AST/Assignment.hpp"
 #include "Utils/Logger.hpp"
 
 /* === Static Private Member Variables === */

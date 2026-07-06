@@ -4,10 +4,13 @@
 
 #include <vector>
 #include "AST/ASTNode.hpp"
-#include "AST/ParsedType.hpp"
-#include "AST/Parameter.hpp"
-#include "AST/Identifier.hpp"
-#include "AST/Block.hpp"
+
+/* === Forward Declarations === */
+
+struct Identifier;
+struct ParsedType;
+struct Parameter;
+struct Block;
 
 /* === FunctionDeclaration === */
 
@@ -34,7 +37,8 @@ struct FunctionDeclaration : Declaration
         hasImplementation( functionHasBody ),
         isEntry( isEntry ) {};
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit(*this);
     }
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 /* === Imports === */
+
 #include "AST/ASTNode.hpp"
 
 /* === ExpressionStatement === */
@@ -12,7 +13,8 @@ struct ExpressionStatement : Statement
     explicit ExpressionStatement( const Expression* expr ) 
         : expression( expr ) {}
 
-    void accept(ASTVisitor& v) const override { 
-        return v.visit(*this);
+    void accept( ASTVisitor& v ) const override 
+    { 
+        v.visit( *this );
     }
 };
