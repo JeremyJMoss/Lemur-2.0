@@ -4,7 +4,7 @@
 
 LogLevel Logger::s_logLevel = LogLevel::INFO;
 
-const std::unordered_map<std::string, LogLevel> Logger::s_levelMap = {
+const std::unordered_map<std::string_view, LogLevel> Logger::s_levelMap = {
     { "error",   LogLevel::ERROR },
     { "warn",    LogLevel::WARN },
     { "info",    LogLevel::INFO },
@@ -27,8 +27,8 @@ LogLevel Logger::parseLogLevel( const std::string& levelStr )
 
 void Logger::print(
     LogLevel level,
-    const std::string& msg,
-    const std::string& funcName,
+    std::string_view msg,
+    std::string_view funcName,
     std::span<const Attribute> attributes
 )
 {

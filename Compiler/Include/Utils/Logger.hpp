@@ -9,7 +9,7 @@
 
 namespace fs = std::filesystem;
 
-enum class LogLevel 
+enum class LogLevel : uint8_t
 {
     ERROR = 0,
     WARN,
@@ -18,7 +18,7 @@ enum class LogLevel
     TRACE
 };
 
-static inline std::string toString( const LogLevel& level )
+static inline std::string toString( LogLevel level )
 {
     switch( level )
     {
@@ -78,7 +78,7 @@ class Logger
         }
 
         static void error( 
-            const std::string& msg, 
+            std::string_view msg, 
             std::span<const Attribute> attributes = {},
             const std::source_location& loc = std::source_location::current()  
         ) 
@@ -90,7 +90,7 @@ class Logger
         }
 
         static void warn( 
-            const std::string& msg, 
+            std::string_view msg, 
             std::span<const Attribute> attributes = {},
             const std::source_location& loc = std::source_location::current() 
         ) 
@@ -102,7 +102,7 @@ class Logger
         }
 
         static void info( 
-            const std::string& msg,
+            std::string_view msg,
             std::span<const Attribute> attributes = {},
             const std::source_location& loc = std::source_location::current()
         ) 
@@ -114,7 +114,7 @@ class Logger
         }
 
         static void debug( 
-            const std::string& msg, 
+            std::string_view msg, 
             std::span<const Attribute> attributes = {},
             const std::source_location& loc = std::source_location::current()
         ) 
@@ -126,7 +126,7 @@ class Logger
         }
 
         static void trace(
-            const std::string& msg,
+            std::string_view msg,
             std::span<const Attribute> attributes = {},
             const std::source_location& loc = std::source_location::current()
         ) 
@@ -141,13 +141,13 @@ class Logger
         static LogLevel s_logLevel;
         static inline bool s_shouldLog = false;
         static inline std::ofstream s_logFile;
-        static const std::unordered_map<std::string, LogLevel> s_levelMap;
+        static const std::unordered_map<std::string_view, LogLevel> s_levelMap;
         static constexpr std::string_view DefaultLogFile = "logs/compiler.log";
 
         static void print(
             LogLevel level,
-            const std::string& msg,
-            const std::string& funcName,
+            std::string_view msg,
+            std::string_view funcName,
             std::span<const Attribute> attributes = {}
         );
 
