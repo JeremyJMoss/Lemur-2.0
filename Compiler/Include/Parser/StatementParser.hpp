@@ -32,17 +32,19 @@ class StatementParser
             ErrorReporter& errReporter,
             TypeParser& typeParser,
             ParameterParser& paramParser
-        ) 
-        : m_parent( parent ), 
-        m_compUnit( compUnit ),
-        m_tokenStream( tStream ), 
-        m_errReporter( errReporter ), 
-        m_typeParser( typeParser ), 
-        m_paramParser( paramParser ) {}
+        ) : m_parent( parent ), 
+            m_compUnit( compUnit ),
+            m_tokenStream( tStream ), 
+            m_errReporter( errReporter ), 
+            m_typeParser( typeParser ), 
+            m_paramParser( paramParser ) {}
 
-        void setExpressionParser( ExpressionParser* exprParser ) { m_exprParser = exprParser; }
+        void setExpressionParser( ExpressionParser* exprParser ) 
+        { 
+            m_exprParser = exprParser; 
+        }
 
-        std::expected<FunctionDeclaration*, ErrorVariant> parseFunctionDeclaration( bool isEntry = false );
+        std::expected<FunctionDeclaration*, ErrorVariant> parseFunctionDeclaration( const bool isEntry = false );
 
         std::expected<Block*, ErrorVariant> parseBlock();
 

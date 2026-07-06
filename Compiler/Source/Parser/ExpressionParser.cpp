@@ -17,18 +17,8 @@
 #include "AST/Assignment.hpp"
 #include "Utils/Logger.hpp"
 
-/* === Static Private Member Variables === */
-
-const std::regex ExpressionParser::s_RE_STRING_REPL( ( R"(\\\")" ) );
-
 /* === Helper Methods === */
 
-/**
- * Gets operator precedence
- * 
- * @param const std::string& op Operator to check precedence of
- * @returns The precedence number of the operator passed in 
- */
 size_t ExpressionParser::getPrecedence( TokenSymbol op ) 
 {
     size_t prec = 0;
@@ -65,6 +55,53 @@ size_t ExpressionParser::getPrecedence( TokenSymbol op )
 
     Logger::trace( "Operator '" + toString( op ) + "' has precedence " + std::to_string( prec ) );
     return prec;
+}
+
+std::string ExpressionParser::unescapeString( std::string_view raw )
+{
+    std::string out;
+    out.reserve( raw.size() );
+
+    for ( size_t i = 0; i < raw.size(); ++i )
+    {
+        if ( raw[i] == '\\' && i + 1 < raw.size() )
+        {
+            switch ( raw[i + 1] )
+            {
+                case '"':
+                    out.push_back( '"' );
+                    ++i;
+                    break;
+
+                case '\\':
+                    out.push_back( '\\' );
+                    ++i;
+                    break;
+
+                case 'n':
+                    out.push_back( '\n' );
+                    ++i;
+                    break;
+
+                case 't':
+                    out.push_back( '\t' );
+                    ++i;
+                    break;
+
+                default:
+                    // unknown escape — keep literal or handle error
+                    out.push_back( raw[i + 1] );
+                    ++i;
+                    break;
+            }
+        }
+        else
+        {
+            out.push_back( raw[i] );
+        }
+    }
+
+    return out;
 }
 
 /* === Public Member Methods === */
@@ -432,8 +469,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 
         std::string raw = strToken.getValue();
         raw = raw.substr(1, raw.length() - 2);
-        raw = std::regex_replace( raw, s_RE_STRING_REPL, "\"" );
-        return raw;
+        return unescapeString( raw );
     }
 
     // Nullptr value

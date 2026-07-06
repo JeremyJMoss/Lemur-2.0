@@ -34,11 +34,11 @@ void Driver::compile() {
 
     if ( !fileId ) {
         m_errReporter.report(
-            ModuleHeaderError("Unable to find entry module \"" + std::string( m_config.entryModule ) + "\" within declared module", ErrorSeverity::Fatal)
+            ModuleHeaderError("Unable to find entry module \"" + m_config.entryModule + "\" within declared module", ErrorSeverity::Fatal)
         );
         
         Logger::error( 
-            "Unable to find entry module \"" + std::string( m_config.entryModule ) + "\" within declared modules" 
+            "Unable to find entry module \"" + m_config.entryModule + "\" within declared modules" 
         );
 
         return;
@@ -104,7 +104,7 @@ void Driver::compile() {
 }
 
 void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
-    const std::string& filePath = m_srcManager.getFilePath(compUnit.getFileId());
+    fs::path filePath = m_srcManager.getFilePath(compUnit.getFileId());
     std::ifstream fileStream( filePath );
 
     if ( !fileStream.is_open() ) 

@@ -1,12 +1,17 @@
 #pragma once
 
 /* === Imports === */
+
 #include <string>
 #include <vector>
 #include "Errors/Errors.hpp"
 
+/* === Forward Declarations === */
+
 struct SourceRange;
 class SourceManager;
+
+/* === Error Reporter === */
 
 class ErrorReporter 
 {

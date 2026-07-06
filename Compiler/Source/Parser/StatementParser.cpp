@@ -7,11 +7,16 @@
 #include "AST/FunctionDeclaration.hpp"
 #include "AST/Block.hpp"
 #include "AST/Identifier.hpp"
+#include "AST/VariableDeclaration.hpp"
+#include "AST/Return.hpp"
+#include "AST/IfConditional.hpp"
+#include "AST/ForLoop.hpp"
+#include "Driver/CompilationUnit.hpp"
 
 #include <expected>
 #include <variant>
 
-std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration( bool isEntry ) 
+std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration( const bool isEntry ) 
 {
     Logger::debug( 
         "Parsing function declaration",

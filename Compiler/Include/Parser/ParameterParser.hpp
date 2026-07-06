@@ -14,8 +14,13 @@ class TypeParser;
 /* === Parameter Parser === */
 class ParameterParser {
     public:
-        ParameterParser( CompilationUnit& compUnit, TokenStream& tStream, TypeParser& typeParser )
-            : m_compUnit( compUnit ), m_tokenStream( tStream ), m_typeParser( typeParser ) {}
+        ParameterParser( 
+            CompilationUnit& compUnit, 
+            TokenStream& tStream, 
+            TypeParser& typeParser 
+        ) : m_compUnit( compUnit ), 
+            m_tokenStream( tStream ), 
+            m_typeParser( typeParser ) {}
 
         std::expected<std::vector<Parameter*>, ErrorVariant> parseFunctionParameters();
 

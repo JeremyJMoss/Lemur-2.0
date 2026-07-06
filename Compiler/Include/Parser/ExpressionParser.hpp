@@ -3,7 +3,9 @@
 /* === Imports === */
 
 #include <expected>
-#include <regex>
+#include <vector>
+#include <string>
+#include <variant>
 #include "Errors/Errors.hpp"
 
 /* === Forward Declarations === */
@@ -57,8 +59,6 @@ class ExpressionParser{
         std::expected<Expression*, ErrorVariant> parseInitialiser();
 
     private:
-        static const std::regex s_RE_STRING_REPL;
-
         CompilationUnit& m_compUnit;
         TokenStream& m_tokenStream;
         TypeParser& m_typeParser;
@@ -79,5 +79,11 @@ class ExpressionParser{
 
         std::expected<FunctionLiteral*, ErrorVariant> parseFunctionLiteral();
 
+        /// @brief Gets operator precedence
+        /// 
+        /// @param op Operator to check precedence of
+        /// @returns The precedence number of the operator passed in
         std::size_t getPrecedence( TokenSymbol op );
+
+        std::string unescapeString( std::string_view raw );
 };

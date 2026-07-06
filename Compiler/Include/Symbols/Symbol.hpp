@@ -8,11 +8,10 @@
 using SymbolId = std::size_t;
 using TypeId = std::size_t;
 
-/* === Forward References === */
+constexpr SymbolId InvalidSymbolId = static_cast<std::size_t>(-1);
 
-/* === Enums === */
+/* === Enum Declarations === */
 
-// Symbol Types
 enum class SymbolType 
 {
     Variable,
@@ -22,14 +21,12 @@ enum class SymbolType
 
 /* === Symbols === */
 
-constexpr SymbolId InvalidSymbolId = static_cast<std::size_t>(-1);
-
 struct Symbol 
 {
     // Symbolid assigned via Symbol Table
     SymbolId m_id;
     TypeId m_typeId;
-    std::string m_name;
+    const std::string m_name;
     SymbolType m_kind;
     
     void setId( SymbolId symbolId ) { m_id = symbolId; }
@@ -56,26 +53,40 @@ struct VariableSymbol : Symbol {
         bool isMutable,
         TypeId typeId,
         bool isTemporary = false
-    ) : Symbol( std::move(name), SymbolType::Variable, typeId ), isMutable(isMutable), isTemporary(isTemporary) {}
+    ) : Symbol( 
+            std::move( name ), 
+            SymbolType::Variable, 
+            typeId 
+        ), 
+        isMutable( isMutable ), 
+        isTemporary( isTemporary ) {}
 };
 
 struct FunctionSymbol : Symbol {
     FunctionSymbol(
         std::string name,
         TypeId typeId
-    ) : Symbol( std::move(name), SymbolType::Function, typeId ) {}
+    ) : Symbol( 
+            std::move(name), 
+            SymbolType::Function, 
+            typeId 
+        ) {}
 };
 
 struct TypeSymbol : Symbol {
     TypeSymbol(
-        const std::string& name,
+        std::string name,
         TypeId typeId
-    ) : Symbol( name, SymbolType::Type, typeId ) {}
+    ) : Symbol( 
+            std::move( name ), 
+            SymbolType::Type, 
+            typeId 
+        ) {}
 };
 
 /* === Utility === */
 
-inline const std::string toString( const SymbolType& kind ) 
+inline const std::string toString( SymbolType kind ) 
 {
     switch ( kind ) 
     {

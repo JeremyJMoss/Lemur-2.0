@@ -1,4 +1,3 @@
-#include <cstddef>
 using SymbolId = std::size_t;
 using OverloadSetId = std::size_t;
 

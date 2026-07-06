@@ -1,11 +1,13 @@
 #include "Modules/ModuleResolver.hpp"
+
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <fstream>
 #include "Utils/Logger.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Errors/ErrorReporter.hpp"
 #include "Tokens/Tokenizer.hpp"
-#include <filesystem>
-#include <optional>
-#include <string>
 
 namespace fs = std::filesystem;
 using FileId = std::size_t;
@@ -17,10 +19,10 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
     Logger::info( "Starting Module Resolution" );
     Logger::info( "Scanning file headers" );
 
-    for ( const auto &file : fs::recursive_directory_iterator( sourcePath ) )
+    for ( const fs::directory_entry &file : fs::recursive_directory_iterator( sourcePath ) )
     {
-        const auto path = file.path();
-        const auto pathStr = "'" + path.string() + "'";
+        const fs::path path = file.path();
+        const std::string_view pathStr = "'" + path.string() + "'";
 
         if ( !file.is_regular_file() ) {
             continue;
@@ -65,7 +67,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
         if ( !maybeModuleIdentifier ) {
             m_errReporter.report( 
                 ModuleHeaderError(
-                    maybeModuleIdentifier.error().message + " for file path " + pathStr, 
+                    maybeModuleIdentifier.error().message + " for file path " + std::string( pathStr ), 
                     maybeModuleIdentifier.error().severity
                 ) 
             );
@@ -92,7 +94,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
     }
 }
 
-std::optional<FileId> ModuleResolver::resolveModuleFileId(std::string_view moduleName) const
+std::optional<FileId> ModuleResolver::resolveModuleFileId( std::string_view moduleName ) const
 {
     auto it = m_moduleIndex.find(moduleName);
 

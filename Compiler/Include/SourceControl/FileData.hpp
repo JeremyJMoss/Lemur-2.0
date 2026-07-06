@@ -1,3 +1,7 @@
+#pragma once
+
+/* === Imports === */
+
 #include <vector>
 #include <fstream>
 #include <filesystem>
@@ -5,6 +9,8 @@
 namespace fs = std::filesystem;
 
 using FileId = size_t;
+
+/* === File Data === */
 
 class FileData
 {
@@ -15,15 +21,32 @@ class FileData
         std::vector<std::streampos> m_lineOffsets; // byte offset at start of each line
 
     public:
-        FileId getFileId(){ return m_id; }
+        FileId getFileId() const 
+        { 
+            return m_id; 
+        }
 
-        fs::path getFilePath() { return m_filePath; }
+        fs::path getFilePath() const 
+        { 
+            return m_filePath; 
+        }
 
-        void addLineOffset( std::streampos pos ) { m_lineOffsets.push_back( pos ); }
+        void addLineOffset( std::streampos pos ) 
+        { 
+            m_lineOffsets.push_back( pos ); 
+        }
 
-        size_t getLinesCollected() { return m_lineOffsets.size(); }
+        size_t getLinesCollected() const 
+        { 
+            return m_lineOffsets.size(); 
+        }
 
-        std::streampos getStreamPosition( std::size_t lineNo ) { return m_lineOffsets[ lineNo - 1 ]; }
+        std::streampos getStreamPosition( std::size_t lineNo ) const 
+        { 
+            return m_lineOffsets[ lineNo - 1 ]; 
+        }
 
-        FileData( fs::path filePath ) : m_id( s_nextId++ ), m_filePath( filePath ) {}
+        FileData( fs::path filePath ) 
+            : m_id( s_nextId++ ), 
+              m_filePath( filePath ) {}
 };

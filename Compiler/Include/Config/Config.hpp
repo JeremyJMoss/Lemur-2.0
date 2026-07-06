@@ -27,7 +27,7 @@ struct BuildCLIConfig {
 };
 
 struct InitCLIConfig {
-    std::string_view name;
+    std::string name;
 };
 
 struct CLIConfig {
@@ -46,5 +46,5 @@ struct CompilerConfig {
     bool emitAST = false;
     fs::path sourcePath;
     fs::path outputPath;
-    std::string_view entryModule;
+    std::string entryModule;
 };

@@ -1,14 +1,15 @@
 #pragma once
 
-#include <exception>
+/* === Imports === */
+
+#include <stdexcept>
 #include <string>
-#include <iostream>
-#include <algorithm>
-#include <tuple>
 #include <variant>
 #include "Tokens/Token.hpp"
 #include "AST/ASTNode.hpp"
 #include "SourceControl/SourceLocation.hpp"
+
+/* === Enum Declarations === */
 
 enum class ErrorCategory {
     Lexical,     // tokenization
@@ -18,7 +19,16 @@ enum class ErrorCategory {
     Linking      // Module resolution errors
 };
 
-inline std::string toString( const ErrorCategory& category )
+enum class ErrorSeverity {
+    Note,
+    Warning,
+    Error,
+    Fatal
+};
+
+/* === Utility === */
+
+inline std::string toString( ErrorCategory category )
 {
     switch( category )
     {
@@ -31,14 +41,7 @@ inline std::string toString( const ErrorCategory& category )
     }
 }
 
-enum class ErrorSeverity {
-    Note,
-    Warning,
-    Error,
-    Fatal
-};
-
-inline std::string toString( const ErrorSeverity& severity )
+inline std::string toString( ErrorSeverity severity )
 {
     switch( severity )
     {
@@ -49,6 +52,8 @@ inline std::string toString( const ErrorSeverity& severity )
         default:                     return "Other"; 
     }
 }
+
+/* === Error Types === */
 
 class ConfigError : public std::exception 
 {

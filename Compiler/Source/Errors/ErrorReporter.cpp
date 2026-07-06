@@ -1,4 +1,6 @@
 #include <tuple>
+#include <iostream>
+#include <string>
 #include "Errors/ErrorReporter.hpp"
 #include "Errors/Errors.hpp"
 #include "SourceControl/SourceManager.hpp"

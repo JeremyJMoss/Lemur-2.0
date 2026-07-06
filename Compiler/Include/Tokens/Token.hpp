@@ -1,12 +1,16 @@
 #pragma once
+
+/* === Imports === */
+
 #include <string>
 #include <vector>
-#include <algorithm>
 #include "SourceControl/SourceLocation.hpp"
 
 using TokenId = size_t;
 
-enum class TokenKind 
+/* === Enum Declarations === */
+
+enum class TokenKind : u_int8_t
 {
     Identifier,
     Keyword,
@@ -22,27 +26,7 @@ enum class TokenKind
     None
 };
 
-inline std::string toString( const TokenKind& kind ) 
-{
-    switch ( kind ) 
-    {
-        case TokenKind::Identifier:       return "Identifier";
-        case TokenKind::Keyword:          return "Keyword";
-        case TokenKind::Symbol:           return "Symbol";
-        case TokenKind::Integer:          return "Integer";
-        case TokenKind::Float:            return "Float";
-        case TokenKind::Char:             return "Char";
-        case TokenKind::Boolean:          return "Boolean";
-        case TokenKind::String:           return "String";
-        case TokenKind::MultiLineComment: return "MultiLineComment";
-        case TokenKind::EndOfFile:        return "EndOfFile";
-        case TokenKind::Unknown:          return "Unknown";
-        case TokenKind::None:             return "None";
-        default:                          return "Invalid TokenKind";
-    }
-}
-
-enum class TokenSymbol 
+enum class TokenSymbol : u_int8_t
 {
     None,
     LParens,       // )
@@ -73,7 +57,60 @@ enum class TokenSymbol
     Arrow          // ->
 };
 
-inline std::string toString( const TokenSymbol& symbol ) 
+enum class TokenKeyword : u_int8_t
+{
+    None,
+    Infer,
+    Int,
+    Float,
+    Bool,
+    String,
+    Null,
+    If,
+    Else,
+    Return,
+    Lock,
+    Fn,
+    For,
+    Until,
+    To,
+    Step,
+    Where,
+    Break, 
+    Continue,
+    Wref,
+    Owned,
+    Shared,
+    Rref,
+    Weak,
+    In,
+    Entry,
+    Module
+};
+
+/* === Utility === */
+
+inline std::string toString( const TokenKind kind ) 
+{
+    switch ( kind ) 
+    {
+        case TokenKind::Identifier:       return "Identifier";
+        case TokenKind::Keyword:          return "Keyword";
+        case TokenKind::Symbol:           return "Symbol";
+        case TokenKind::Integer:          return "Integer";
+        case TokenKind::Float:            return "Float";
+        case TokenKind::Char:             return "Char";
+        case TokenKind::Boolean:          return "Boolean";
+        case TokenKind::String:           return "String";
+        case TokenKind::MultiLineComment: return "MultiLineComment";
+        case TokenKind::EndOfFile:        return "EndOfFile";
+        case TokenKind::Unknown:          return "Unknown";
+        case TokenKind::None:             return "None";
+        default:                          return "Invalid TokenKind";
+    }
+}
+
+inline std::string toString( const TokenSymbol symbol ) 
 {
     switch ( symbol ) 
     {
@@ -108,38 +145,7 @@ inline std::string toString( const TokenSymbol& symbol )
     }
 }
 
-enum class TokenKeyword
-{
-    None,
-    Infer,
-    Int,
-    Float,
-    Bool,
-    String,
-    Null,
-    If,
-    Else,
-    Return,
-    Lock,
-    Fn,
-    For,
-    Until,
-    To,
-    Step,
-    Where,
-    Break, 
-    Continue,
-    Wref,
-    Owned,
-    Shared,
-    Rref,
-    Weak,
-    In,
-    Entry,
-    Module
-};
-
-inline std::string toString( const TokenKeyword& keyword ) 
+inline std::string toString( const TokenKeyword keyword ) 
 {
     switch ( keyword ) 
     {
@@ -173,6 +179,8 @@ inline std::string toString( const TokenKeyword& keyword )
         default:                       return "Invalid Keyword";
     }
 }
+
+/* === Token === */
 
 class Token 
 {
@@ -225,14 +233,14 @@ class Token
 
         Token() {}
 
-        Token( TokenKind type, TokenSymbol symbol, const std::string& value, SourceRange location ) 
-            : m_id( nextId++ ), m_type( type ), m_symbol( symbol ), m_value( value ), m_location( location ) {}
+        Token( TokenKind type, TokenSymbol symbol, std::string value, SourceRange location ) 
+            : m_id( nextId++ ), m_type( type ), m_symbol( symbol ), m_value( std::move( value ) ), m_location( location ) {}
 
-        Token( TokenKind type, TokenKeyword kw, const std::string& value, SourceRange location )
-            : m_id( nextId++ ), m_type( type ), m_keyword( kw ), m_value( value ), m_location( location ) {}
+        Token( TokenKind type, TokenKeyword kw, std::string value, SourceRange location )
+            : m_id( nextId++ ), m_type( type ), m_keyword( kw ), m_value( std::move( value ) ), m_location( location ) {}
 
-        Token( TokenKind type, const std::string& value, SourceRange location )
-            : m_id( nextId++ ), m_type( type ), m_value( value ), m_location( location ) {}
+        Token( TokenKind type, std::string value, SourceRange location )
+            : m_id( nextId++ ), m_type( type ), m_value( std::move( value ) ), m_location( location ) {}
     
     private:
         TokenId m_id;

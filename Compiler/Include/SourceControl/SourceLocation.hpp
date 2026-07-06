@@ -1,9 +1,14 @@
 #pragma once
 
+/* === Imports === */
+
 #include <string>
-#include <cstddef>
+
+/* === Forward Declarations === */
 
 class Token;
+
+/* === Source Location === */
 
 struct SourceLocation 
 {
@@ -14,15 +19,17 @@ struct SourceLocation
     }
 };
 
+/* === Source Range === */
+
 struct SourceRange 
 {
-    static SourceRange getLocation( const Token& startToken, const Token& endToken );
-
-    static SourceRange getLocation( const Token& token );
-
     SourceLocation start;
     SourceLocation end;
     std::size_t fileId;
+
+    static SourceRange getLocation( const Token& startToken, const Token& endToken );
+
+    static SourceRange getLocation( const Token& token );
 
     std::string toString() const { 
         // If start and end are the same line/column, just show one position

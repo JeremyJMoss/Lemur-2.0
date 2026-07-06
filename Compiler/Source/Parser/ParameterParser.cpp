@@ -74,9 +74,9 @@ std::expected<Parameter*, ErrorVariant> ParameterParser::parseParameter()
 
     const Token& idToken = m_tokenStream.consume();
 
-    auto identifier = m_compUnit.allocate<Identifier>(idToken.getValue());
+    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
 
-    identifier->location = SourceRange::getLocation(idToken);
+    identifier->location = SourceRange::getLocation( idToken );
 
     auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
     if ( !maybeColon ) return std::unexpected( maybeColon.error() );

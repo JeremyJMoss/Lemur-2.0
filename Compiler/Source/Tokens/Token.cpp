@@ -1,5 +1,7 @@
 #include "Tokens/Token.hpp"
 
+#include <algorithm>
+
 bool Token::checkMatches( TokenKind inputType, TokenSymbol inputValue ) const 
 { 
     return inputType == m_type && inputValue == m_symbol; 

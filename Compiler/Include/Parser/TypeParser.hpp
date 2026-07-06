@@ -1,14 +1,18 @@
 #pragma once
 
+/* === Imports ===*/
 #include <expected>
 #include <vector>
 #include "Errors/Errors.hpp"
 
+/* === Forward Declarations === */
 struct ParsedType;
 
 class CompilationUnit;
 class Parser;
 class TokenStream;
+
+/* === Type Parser ===*/
 
 class TypeParser{
     public:

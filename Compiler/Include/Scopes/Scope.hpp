@@ -1,7 +1,13 @@
+#pragma once
+
+/* === Imports === */
+
 #include "Scopes/NameBinding.hpp"
 
 using ScopeId = size_t;
 constexpr ScopeId InvalidScopeId = static_cast<ScopeId>(-1);
+
+/* === Enum Declarations === */
 
 enum class ScopeOwnerKind 
 {
@@ -11,12 +17,14 @@ enum class ScopeOwnerKind
     Block
 };
 
+/* === Scope === */
+
 struct Scope {
     ScopeId m_id;
     ScopeId m_parentId;
     ScopeOwnerKind m_kind;
 
-    bool hasParent(const Scope& scope) {
+    bool hasParent( const Scope& scope ) {
         return scope.m_parentId != InvalidScopeId;
     }
 

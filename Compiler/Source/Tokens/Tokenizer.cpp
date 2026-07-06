@@ -23,7 +23,7 @@ bool Tokenizer::isIdentifierPartChar( char c ) {
     return std::isalnum( static_cast<unsigned char>( c ) ) || c == '_';
 }
 
-std::string Tokenizer::readIdentifier( const std::string& line, std::size_t& pos ) {
+std::string Tokenizer::readIdentifier( const std::string& line, std::size_t pos ) {
     std::size_t start = pos;
     while ( pos < line.size() && isIdentifierPartChar( line[ pos ] ) ) {
         pos++;
@@ -31,7 +31,7 @@ std::string Tokenizer::readIdentifier( const std::string& line, std::size_t& pos
     return line.substr( start, pos - start );
 }
 
-std::string Tokenizer::readNumber( const std::string& line, std::size_t& pos ) {
+std::string Tokenizer::readNumber( const std::string& line, std::size_t pos ) {
     std::size_t start = pos;
     while ( pos < line.size() && isDigitChar( line[ pos ] ) ) {
         pos++;
@@ -47,7 +47,7 @@ std::string Tokenizer::readNumber( const std::string& line, std::size_t& pos ) {
     return line.substr( start, pos - start );
 }
 
-std::string readSymbol( const std::string& line, std::size_t& pos, const std::unordered_map<std::string_view, TokenSymbol>& symbols ) {
+std::string readSymbol( std::string_view line, std::size_t pos, const std::unordered_map<std::string_view, TokenSymbol>& symbols ) {
     if ( pos + 1 < line.size() ) {
         std::string_view two( line.data() + pos, 2 );
         if ( symbols.find( two ) != symbols.end() ) {
@@ -65,7 +65,7 @@ std::string readSymbol( const std::string& line, std::size_t& pos, const std::un
     return "";
 }
 
-bool Tokenizer::isValidIdentifier(std::string_view s)
+bool Tokenizer::isValidIdentifier( std::string_view s )
 {
     if (s.empty())
         return false;
@@ -82,7 +82,7 @@ bool Tokenizer::isValidIdentifier(std::string_view s)
     return true;
 }
 
-std::expected<std::string, ConfigError> Tokenizer::parseModuleName(std::string_view input)
+std::expected<std::string, ConfigError> Tokenizer::parseModuleName( std::string_view input )
 {
     std::string moduleName = "";
 

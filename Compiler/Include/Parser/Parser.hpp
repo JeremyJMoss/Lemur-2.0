@@ -4,37 +4,28 @@
 
 #include <iostream>
 #include <expected>
-#include "Tokens/Token.hpp"
-#include "AST/AllASTTypes.hpp"
+#include "Errors/Errors.hpp"
 #include "AST/ParsedType.hpp"
 #include "Parser/TypeParser.hpp"
 #include "Parser/ExpressionParser.hpp"
 #include "Parser/StatementParser.hpp"
 #include "Parser/ParameterParser.hpp"
 #include "Tokens/TokenStream.hpp"
-#include "Driver/CompilationUnit.hpp"
 
 /* === Forward Declarations === */
+
+struct Token;
+struct Statement;
+
 class ErrorReporter;
+class CompilationUnit;
 
 /* === Parser === */
-
-using fileId = std::size_t;
 
 class Parser 
 {
     public:
-        Parser( CompilationUnit& compUnit, ErrorReporter& errReporter )
-            : m_compUnit( compUnit ),
-            m_errReporter( errReporter ),
-            m_tokenStream( m_compUnit.readTokens() ),
-            m_typeParser( m_compUnit, m_tokenStream ),
-            m_paramParser( m_compUnit, m_tokenStream, m_typeParser ),
-            m_stmtParser( *this, m_compUnit, m_tokenStream, m_errReporter, m_typeParser, m_paramParser ),
-            m_exprParser( m_compUnit, m_tokenStream, m_typeParser, m_paramParser ) {
-                m_stmtParser.setExpressionParser( &m_exprParser );
-                m_exprParser.setStatementParser( &m_stmtParser );
-            }
+        Parser(CompilationUnit& compUnit, ErrorReporter& errReporter);
         
         void parse();
 
