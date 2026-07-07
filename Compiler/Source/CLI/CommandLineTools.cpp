@@ -175,7 +175,7 @@ void CommandLineTools::printHelp( Command command )
             std::cout << "  --output -o <path>     Set output directory\n";
             std::cout << "  --entry -e <path>      Set entry module name\n";
             std::cout << "  --optimize             Set whether output should be optimized for production use\n";
-            std::cout << "  --emitAST              Set whether Abstract Syntax Tree output should be emitted as json file in output directory\n";
+            std::cout << "  --emit-ast             Set whether Abstract Syntax Tree output should be emitted as json file in output directory\n";
             std::cout << "  --log <level>          Set log level (ERROR, WARN, INFO, DEBUG, TRACE)\n";
             std::cout << "  --log-file <path>      Set log output file\n\n";
 
@@ -204,7 +204,7 @@ void CommandLineTools::printHelp( Command command )
             std::cout << "  --output -o <path>     Set output directory\n";
             std::cout << "  --entry -e <path>      Set entry module name\n";
             std::cout << "  --optimize             Set whether output should be optimized for production use\n";
-            std::cout << "  --emitAST              Set whether Abstract Syntax Tree output should be emitted as json file in output directory\n";
+            std::cout << "  --emit-ast             Set whether Abstract Syntax Tree output should be emitted as json file in output directory\n";
             std::cout << "  --log <level>          Set log level (ERROR, WARN, INFO, DEBUG, TRACE)\n";
             std::cout << "  --log-file <path>      Set log output file\n\n";
             

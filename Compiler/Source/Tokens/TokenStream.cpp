@@ -73,7 +73,7 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
             "Expect mismatch. Token type matched but value mismatch.",
             std::to_array<Attribute>({ 
                 { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + peekedToken.getValue() + "'" }
+                { "Value", "'" + std::string( peekedToken.getValue() ) + "'" }
             })
         );
 
@@ -88,7 +88,7 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
         "Expect succeeded",
         std::to_array<Attribute>({
             { "Type", "'" + toString( token.getType() ) + "'" },
-            { "Value", "'" + token.getValue() + "'" }
+            { "Value", "'" + std::string( token.getValue() ) + "'" }
         })
     );
 
@@ -132,7 +132,7 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
             "Expect mismatch. Token type matched but value mismatch.",
             std::to_array<Attribute>({ 
                 { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + peekedToken.getValue() + "'" }
+                { "Value", "'" + std::string( peekedToken.getValue() ) + "'" }
             })
         );
 
@@ -147,7 +147,7 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
         "Expect succeeded",
         std::to_array<Attribute>({
             { "Type", "'" + toString( token.getType() ) + "'" },
-            { "Value", "'" + token.getValue() + "'" }
+            { "Value", "'" + std::string( token.getValue() ) + "'" }
         })
     );
 
@@ -197,7 +197,7 @@ void TokenStream::recoverFromError()
 
         // setting up array for debugging purposes
         const std::array attrs = {
-            Attribute{ "Value", "'" + token.getValue() + "'" },
+            Attribute{ "Value", "'" + std::string( token.getValue() ) + "'" },
             Attribute{ "Position", std::to_string( m_pos ) },
             Attribute{ "Location", token.getLocation().toString() }
         };

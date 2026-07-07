@@ -4,9 +4,9 @@
 
 #include <vector>
 
-/* === FunctionType === */
-
 using TypeId = std::size_t;
+
+/* === Function Info === */
 
 struct FunctionInfo
 {

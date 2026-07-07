@@ -89,7 +89,7 @@ void Token::clearType()
     m_type = TokenKind::None; 
 }
 
-const std::string& Token::getValue() const 
+std::string_view Token::getValue() const 
 { 
     return m_value; 
 }

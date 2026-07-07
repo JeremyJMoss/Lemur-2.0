@@ -26,13 +26,13 @@ void Driver::compile() {
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
 
-    ModuleResolver moduleResolver(m_srcManager, m_errReporter);
+    ModuleResolver moduleResolver( m_srcManager, m_errReporter );
 
-    moduleResolver.buildModuleIndex(m_config.sourcePath);
+    moduleResolver.buildModuleIndex( m_config.sourcePath );
 
-    auto fileId = moduleResolver.resolveModuleFileId(m_config.entryModule);
+    auto maybeFileId = moduleResolver.resolveModuleFileId( m_config.entryModule );
 
-    if ( !fileId ) {
+    if ( !maybeFileId ) {
         m_errReporter.report(
             ModuleHeaderError("Unable to find entry module \"" + m_config.entryModule + "\" within declared module", ErrorSeverity::Fatal)
         );
@@ -44,7 +44,11 @@ void Driver::compile() {
         return;
     }
 
-    auto compUnit = std::make_unique<CompilationUnit>( fileId.value() );
+    FileId fileId = maybeFileId.value();
+
+    m_srcManager.setModuleName(fileId, m_config.entryModule );
+
+    auto compUnit = std::make_unique<CompilationUnit>( fileId, m_config.entryModule );
 
     auto tokenStart = chrono::high_resolution_clock::now();
 
@@ -86,9 +90,9 @@ void Driver::compile() {
         return;
     }
 
-    if (m_config.emitAST) {
+    if ( m_config.emitAST ) {
         ASTPrinter astPrinter = ASTPrinter();
-        astPrinter.print( compUnit->readStatements() );
+        astPrinter.print( compUnit->readStatements(), m_config.outputPath );
     }
 
     Logger::debug( 

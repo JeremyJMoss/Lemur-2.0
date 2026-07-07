@@ -4,9 +4,9 @@
 
 #include "Utils/OwnershipKind.hpp"
 
-/* === OwnershipTypeInfo === */
-
 using TypeId = std::size_t;
+
+/* === Ownership Type === */
 
 struct OwnershipInfo
 {
@@ -14,5 +14,6 @@ struct OwnershipInfo
     const OwnershipKind m_ownership;
 
     OwnershipInfo( TypeId inner, OwnershipKind owner ) 
-        : m_inner( inner ), m_ownership( owner ) {}
+        : m_inner( inner ), 
+          m_ownership( owner ) {}
 };

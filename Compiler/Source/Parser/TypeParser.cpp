@@ -58,7 +58,7 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseType()
         {
             return std::unexpected( 
                 CompilerError(
-                    "Unexpected '" + current.getValue() + "' in function type declaration", 
+                    "Unexpected '" + std::string( current.getValue() ) + "' in function type declaration", 
                     ErrorSeverity::Error,
                     current.getLocation(),
                     ErrorCategory::Syntax
@@ -110,7 +110,7 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseType()
         {
             return std::unexpected( 
                 CompilerError(
-                    "Unexpected keyword " + front.getValue(),
+                    "Unexpected keyword " + std::string( front.getValue() ),
                     ErrorSeverity::Error,
                     front.getLocation(),
                     ErrorCategory::Syntax 
@@ -198,7 +198,7 @@ std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameter
         {
             return std::unexpected( 
                 CompilerError(
-                    "Unexpected '" + current.getValue() + "' in function type declaration parameter list.", 
+                    "Unexpected '" + std::string( current.getValue() ) + "' in function type declaration parameter list.", 
                     ErrorSeverity::Error,
                     current.getLocation(),
                     ErrorCategory::Syntax
@@ -227,7 +227,7 @@ std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameter
             {
                 return std::unexpected( 
                     CompilerError(
-                        "Unexpected '" + next.getValue() + "' in function type declaration parameter list.", 
+                        "Unexpected '" + std::string( next.getValue() ) + "' in function type declaration parameter list.", 
                         ErrorSeverity::Error,
                         next.getLocation(),
                         ErrorCategory::Syntax

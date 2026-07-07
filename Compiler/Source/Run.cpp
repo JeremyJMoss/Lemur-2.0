@@ -54,7 +54,35 @@ bool init( const CLIConfig& config ) {
 
     TomlConfigHandler tomlHandler;
 
-    return tomlHandler.createTomlFile( initConfig.name );
+    if (!tomlHandler.createTomlFile( initConfig.name )) {
+        return false;
+    }
+
+    fs::path buildFolder = "build";
+    if (!fs::create_directories(buildFolder)) {
+        return false;
+    }
+
+    fs::path sourceFolder = "src";
+    if (!fs::create_directories(sourceFolder)) {
+        return false;
+    }
+
+    fs::path filePath = sourceFolder / "test.lmur";
+
+    std::ofstream file(filePath);
+
+    if (!file)
+    {
+        return false;
+    }
+
+    file << "module app;\n\n";
+    file << "entry fn main(): int {\n";
+    file << "    return 0;\n";
+    file << "}";
+
+    return true;
 }
 
 int main( int argc, char* argv[] )

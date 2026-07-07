@@ -1,11 +1,11 @@
 #pragma once
 
+/* === Imports === */
+
 #include <string>
 #include <variant>
-#include "Types/FunctionInfo.hpp"
-#include "Types/PrimitiveInfo.hpp"
-#include "Types/OwnershipInfo.hpp"
-#include "Types/ArrayInfo.hpp"
+
+/* === Enum Declarations === */
 
 enum class TypeKind 
 {
@@ -23,16 +23,44 @@ enum class TypeOrigin {
     UserDefined
 };
 
-using TypeId = std::size_t;
-constexpr TypeId InvalidTypeId = static_cast<std::size_t>(-1);
+/* === Forward Declarations === */
+
+struct PrimitiveInfo;
+struct FunctionInfo;
+struct OwnershipInfo;
+struct ArrayInfo;
+
+/* === Variants === */
 
 using TypeData = std::variant<
     std::monostate,   // for Null / Inferred / Unresolved
-    PrimitiveInfo,
-    FunctionInfo,
-    OwnershipInfo,
-    ArrayInfo
+    PrimitiveInfo*,
+    FunctionInfo*,
+    OwnershipInfo*,
+    ArrayInfo*
 >;
+
+using TypeId = std::size_t;
+constexpr TypeId InvalidTypeId = static_cast<std::size_t>(-1);
+
+/* === Utility === */
+
+inline const std::string toString( const TypeKind kind ) 
+{
+    switch ( kind ) 
+    {
+        case TypeKind::Primitive:     return "Primitive";
+        case TypeKind::Ownership:     return "Ownership";
+        case TypeKind::Inferred:      return "Inferred";
+        case TypeKind::Array:         return "Array";
+        case TypeKind::Function:      return "Function";
+        case TypeKind::Null:          return "Null";
+        case TypeKind::Unresolved:    return "Unresolved";
+        default:                      return "Unknown";
+    }
+};
+
+/* === Type === */
 
 struct Type
 {
@@ -51,21 +79,4 @@ struct Type
         m_data( data ) {};
 
     virtual ~Type() = default;
-
-        
-};
-
-inline const std::string toString( const TypeKind kind ) 
-{
-    switch ( kind ) 
-    {
-        case TypeKind::Primitive:     return "Primitive";
-        case TypeKind::Ownership:     return "Ownership";
-        case TypeKind::Inferred:      return "Inferred";
-        case TypeKind::Array:         return "Array";
-        case TypeKind::Function:      return "Function";
-        case TypeKind::Null:          return "Null";
-        case TypeKind::Unresolved:    return "Unresolved";
-        default:                      return "Unknown";
-    }
 };

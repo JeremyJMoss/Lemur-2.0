@@ -11,6 +11,7 @@
 #include "AST/Return.hpp"
 #include "AST/IfConditional.hpp"
 #include "AST/ForLoop.hpp"
+#include "AST/ModuleDeclaration.hpp"
 #include "Driver/CompilationUnit.hpp"
 
 #include <expected>
@@ -70,7 +71,7 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
     Logger::trace(
         "Function name parsed", 
         std::to_array<Attribute>({
-            { "Identifier", "'" + idToken.getValue() + "'" }
+            { "Identifier", "'" + std::string( idToken.getValue() ) + "'" }
         })
     );
 
@@ -124,7 +125,7 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
     Logger::debug(
         "Function declaration parsed successfully",
         std::to_array<Attribute>({
-            { "Name", "'" + idToken.getValue() + "'" }
+            { "Name", "'" + std::string( idToken.getValue() ) + "'" }
         })
     );
 
@@ -256,7 +257,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     Logger::trace(
         "Consumed variable identifier", 
         std::to_array<Attribute>({ 
-            { "Identifier", "'" + idToken.getValue() + "'" } 
+            { "Identifier", "'" + std::string( idToken.getValue() ) + "'" } 
         })
     );
 
@@ -301,7 +302,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
         Logger::trace(
             "Detected assignment in variable declaration", 
             std::to_array<Attribute>({ 
-                { "Identifier", "'" + idToken.getValue() + "'" } 
+                { "Identifier", "'" + std::string( idToken.getValue() ) + "'" } 
             })
         );
 
@@ -331,7 +332,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     Logger::debug(
         "Completed variable declaration", 
         std::to_array<Attribute>({ 
-            { "Identifier", "'" + decl->identifier->name + "'" },
+            { "Identifier", "'" + std::string( decl->identifier->name ) + "'" },
             { "HasInitialiser", ( initialiser ? "true" : "false" ) }
         })
     );
@@ -655,4 +656,104 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
     Logger::debug( "Successfully parsed for loop statement" );
 
     return forLoop;
+}
+
+std::expected<ModuleDeclaration*, ErrorVariant> StatementParser::parseModuleDeclaration()
+{
+    Logger::debug( "Parsing module declaration" );
+
+    const Token& front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    }
+
+    auto maybeModuleKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Module );
+    if ( !maybeModuleKeyword ) return std::unexpected( maybeModuleKeyword.error() );
+
+    TokenKind nextTokenTypeExpected = TokenKind::Identifier;
+
+    std::string builtModuleName = "";
+
+    while (true) 
+    {
+        const Token& next = m_tokenStream.peek();
+
+        if ( next.checkTypeMatches( nextTokenTypeExpected ) ) 
+        {
+            if ( nextTokenTypeExpected == TokenKind::Identifier ) 
+            {
+                builtModuleName += next.getValue();
+                m_tokenStream.consume();
+                nextTokenTypeExpected = TokenKind::Symbol;
+                continue;
+            }
+
+            if ( nextTokenTypeExpected == TokenKind::Symbol && next.checkValueMatches( TokenSymbol::Dot ) ) 
+            {
+                builtModuleName += next.getValue();
+                m_tokenStream.consume();
+                nextTokenTypeExpected = TokenKind::Identifier;
+                continue;
+            }
+
+            if ( nextTokenTypeExpected == TokenKind::Symbol && next.checkValueMatches( TokenSymbol::SemiColon ) ) {
+                break;
+            }
+
+            if ( nextTokenTypeExpected == TokenKind::Symbol) {
+                return std::unexpected( 
+                    CompilerError(
+                        "Malformed module declaration statement. Missing terminating node.",
+                        ErrorSeverity::Error,
+                        next.getLocation(),
+                        ErrorCategory::Syntax
+                    ) 
+                );
+            } else {
+                return std::unexpected(
+                    CompilerError(
+                        "Malformed module declaration statement. Expected " + toString( TokenKind::Identifier ) +  " got " + toString( next.getType() ),
+                        ErrorSeverity::Error,
+                        next.getLocation(),
+                        ErrorCategory::Syntax
+                    )
+                );
+            }
+        }
+    }
+
+    if ( builtModuleName.empty() ) {
+        return std::unexpected(
+            CompilerError(
+                "Empty module declaration statement",
+                ErrorSeverity::Error,
+                front.getLocation(),
+                ErrorCategory::Syntax
+            )
+        );
+    }
+
+    if ( m_compUnit.getModuleName() != builtModuleName ) {
+        const Token& next = m_tokenStream.peek();
+
+        return std::unexpected(
+            CompilerError(
+                "Module declaration statement does not match module name stored in resolved file",
+                ErrorSeverity::Error,
+                { front.getLocation().start, next.getLocation().end, front.getLocation().fileId },
+                ErrorCategory::Syntax
+            )
+        );
+    }
+
+    Identifier* identifier = m_compUnit.allocate<Identifier>( m_compUnit.getModuleName() );
+
+    ModuleDeclaration* modDec = m_compUnit.allocate<ModuleDeclaration>( identifier );
+
+    modDec->location = { front.getLocation().start, modDec->identifier->location.end, front.getLocation().fileId };
+
+    Logger::debug( "Successfully parsed module declaration statement" );
+
+    return modDec;
 }

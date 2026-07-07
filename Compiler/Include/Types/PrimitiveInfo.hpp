@@ -4,11 +4,11 @@
 
 #include <string>
 
-/* === PrimitiveTypeInfo === */
+/* === Primitive Type === */
 
 struct PrimitiveInfo
 {
-    std::string name;
+    const std::string name;
 
     PrimitiveInfo( std::string name ) 
         : name( std::move( name ) ) {}

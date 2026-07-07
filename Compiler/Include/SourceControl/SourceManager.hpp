@@ -18,14 +18,16 @@ class SourceManager
     public:
         FileId addFile( const fs::path& filePath );
 
-        std::string_view getLine( FileId fileId, std::size_t lineNumber ) const;
+        const std::string getLine( FileId fileId, std::size_t lineNumber ) const;
 
         fs::path getFilePath( FileId fileId ) const
         {
-            return files.at( fileId ).getFilePath().string();
+            return m_files.at( fileId ).getFilePath().string();
         }
 
+        void setModuleName( FileId id, std::string_view moduleName );
+
     private:
-        std::unordered_map<FileId, FileData> files;
-        std::unordered_map<fs::path, FileId> pathToId;
+        std::unordered_map<FileId, FileData> m_files;
+        std::unordered_map<fs::path, FileId> m_pathToId;
 };

@@ -23,7 +23,7 @@ struct BuildCLIConfig {
     std::optional<fs::path> outputPath;
     std::optional<LogLevel> logLevel;
     std::optional<fs::path> logPath;
-    std::optional<std::string_view> entryModule;
+    std::optional<std::string> entryModule;
 };
 
 struct InitCLIConfig {

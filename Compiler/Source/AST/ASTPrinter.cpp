@@ -1,7 +1,9 @@
 #include "AST/ASTPrinter.hpp"
 #include "AST/AllASTTypes.hpp"
-#include "AST/ParsedType.hpp"
 #include <fstream>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 void ASTPrinter::writeIndent() const {
     static const char spaces[] = "                                                                "; // 64 spaces
@@ -31,17 +33,6 @@ void ASTPrinter::increaseIndent() {
 
 void ASTPrinter::decreaseIndent() {
     m_indent--;
-}
-
-void ASTPrinter::writeField(std::string_view label, std::string_view value, bool hasComma ) {
-    writeIndent();
-
-    *m_out << '"' << label << "\": \"" << value << '"';
-
-    if ( hasComma )
-        *m_out << ',';
-
-    *m_out << '\n';
 }
 
 void ASTPrinter::writeNodeField( std::string_view label, const ASTNode& node, bool hasComma ) {
@@ -290,7 +281,7 @@ void ASTPrinter::visit( const ExpressionStatement& expressionStmt ) {
     startBlock();
     increaseIndent();
     writeField( "id", expressionStmt.id );
-    writeField( "type", std::string("Expression Statement" ) );
+    writeField( "type", std::string( "Expression Statement" ) );
     writeNodeField( "expression", *expressionStmt.expression, false );
     decreaseIndent();
     endBlock();
@@ -300,7 +291,7 @@ void ASTPrinter::visit( const BinaryExpression& binExp ) {
     startBlock();
     increaseIndent();
     writeField( "id", binExp.id );
-    writeField( "type", std::string("Binary Expression") );
+    writeField( "type", std::string( "Binary Expression" ) );
     writeField( "op", getBinaryOperator( binExp.op ) );
     writeNodeField( "left", *binExp.left );
     writeNodeField( "right", *binExp.right, false );
@@ -457,10 +448,20 @@ void ASTPrinter::visit( const Parameter& parameter ) {
     endBlock();
 }
 
-void ASTPrinter::print( const std::vector<const Statement*>& statements )
+void ASTPrinter::visit( const ModuleDeclaration& modDec ) {
+    startBlock();
+    increaseIndent();
+    writeField( "id", modDec.id );
+    writeField( "type", std::string("Module Declaration" ) );
+    writeNodeField( "identifier", *modDec.identifier, false );
+    decreaseIndent();
+    endBlock();
+}
+
+void ASTPrinter::print( const std::vector<const Statement*>& statements, const fs::path& outputPath )
 {
-    std::ofstream outFile("ast_output.json", std::ios::out | std::ios::binary);
-    outFile.rdbuf()->pubsetbuf(nullptr, 1 << 20); // 1MB buffer
+    std::ofstream outFile( outputPath / "ast_output.json", std::ios::out | std::ios::binary );
+    outFile.rdbuf()->pubsetbuf( nullptr, 1 << 20 ); // 1MB buffer
 
     m_out = &outFile;
 

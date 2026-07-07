@@ -4,7 +4,10 @@
 #include <string>
 #include <vector>
 #include <variant>
+#include <filesystem>
 #include "AST/ASTNode.hpp"
+
+namespace fs = std::filesystem;
 
 /* === Forward Declarations === */
 
@@ -27,6 +30,7 @@ struct Range;
 struct Return;
 struct Unary;
 struct VariableDeclaration;
+struct ModuleDeclaration;
 
 enum class BinaryOperator : std::uint8_t;
 enum class OwnershipKind : std::uint8_t;
@@ -49,7 +53,7 @@ class ASTPrinter : public ASTVisitor {
         /// @brief Prints the AST rooted at the supplied statements.
         ///
         /// @param statements statements to loop over to print
-        void print( const std::vector<const Statement*>& statements );
+        void print( const std::vector<const Statement*>& statements, const fs::path& outputPath );
         
         /* === Visitors for each AST Node === */
         void visit( const Literal& lit ) override;
@@ -71,6 +75,7 @@ class ASTPrinter : public ASTVisitor {
         void visit( const FunctionCall& funCall ) override;
         void visit( const Parameter& parameter ) override;
         void visit( const ParsedType& parsedType ) override;
+        void visit( const ModuleDeclaration& modDec ) override;
 
         /// @brief Converts a binary operator enum to its textual representation.
         /// @param op binary operator enum
@@ -117,12 +122,23 @@ class ASTPrinter : public ASTVisitor {
         /// @param value value t be printed alongside label
         /// @param hasComma whether a trailing comma is required after the field
         template <typename T>
-        void writeField( std::string_view label, const T& value, bool hasComma = true ) {
+        void writeField(std::string_view label, const T& value, bool hasComma = true)
+        {
             writeIndent();
 
-            *m_out << '"' << label << "\": " << value;
+            *m_out << '"' << label << "\": ";
 
-            if ( hasComma )
+            if constexpr (std::is_same_v<T, std::string> ||
+                        std::is_same_v<T, std::string_view>)
+            {
+                *m_out << '"' << value << '"';
+            }
+            else
+            {
+                *m_out << value;
+            }
+
+            if (hasComma)
                 *m_out << ',';
 
             *m_out << '\n';
@@ -170,12 +186,6 @@ class ASTPrinter : public ASTVisitor {
         /// @param value raw value to print
         /// @param hasComma whether a trailing comma is required after the field
         void writeRawField( std::string_view label, std::string_view value, bool hasComma = true);
-
-        /// @brief Writes a field value with a label in JSON format
-        /// @param label label JSON field name.
-        /// @param value value to print
-        /// @param hasComma whether a trailing comma is required after the field
-        void writeField( std::string_view label, std::string_view value, bool hasComma = true );
 
         /// @brief Converts a char value to it's JSON formatted textual representation for printing.
         ///

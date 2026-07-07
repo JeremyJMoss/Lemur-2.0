@@ -17,6 +17,7 @@ class FileData
     private:
         static inline FileId s_nextId = 0;
         FileId m_id;
+        std::string_view m_moduleName;
         fs::path m_filePath;
         std::vector<std::streampos> m_lineOffsets; // byte offset at start of each line
 
@@ -26,9 +27,19 @@ class FileData
             return m_id; 
         }
 
+        std::string_view getModuleName() const
+        {
+            return m_moduleName;
+        }
+
         fs::path getFilePath() const 
         { 
             return m_filePath; 
+        }
+
+        void setModuleName( std::string_view moduleName ) 
+        {
+            m_moduleName = moduleName;
         }
 
         void addLineOffset( std::streampos pos ) 

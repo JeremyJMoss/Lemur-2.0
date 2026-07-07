@@ -35,7 +35,7 @@ std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunct
         parameters.emplace_back( maybeParameter.value() );
 
         // After param, expect either ',' or ')'
-        auto seperator = m_tokenStream.peek();
+        const Token& seperator = m_tokenStream.peek();
 
         if ( seperator.checkMatches( TokenKind::Symbol, TokenSymbol::Comma ) ) 
         {
@@ -52,7 +52,7 @@ std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunct
         {
             return std::unexpected(
                 CompilerError(
-                    "Expected ',' or ')' after parameter, got '" + seperator.getValue() + "'", 
+                    "Expected ',' or ')' after parameter, got '" + std::string( seperator.getValue() ) + "'", 
                     ErrorSeverity::Error,
                     seperator.getLocation(),
                     ErrorCategory::Syntax
@@ -74,7 +74,7 @@ std::expected<Parameter*, ErrorVariant> ParameterParser::parseParameter()
 
     const Token& idToken = m_tokenStream.consume();
 
-    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+    Identifier* identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
 
     identifier->location = SourceRange::getLocation( idToken );
 
@@ -84,7 +84,7 @@ std::expected<Parameter*, ErrorVariant> ParameterParser::parseParameter()
     auto maybeParsedType = m_typeParser.parseType();
     if ( !maybeParsedType ) return std::unexpected( maybeParsedType.error() );
 
-    auto param = m_compUnit.allocate<Parameter>( identifier, maybeParsedType.value() );
+    Parameter* param = m_compUnit.allocate<Parameter>( identifier, maybeParsedType.value() );
     
     param->location = { front.getLocation().start, param->paramType->location.end, front.getLocation().fileId };
 

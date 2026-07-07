@@ -27,6 +27,7 @@ struct Unary;
 struct FunctionCall;
 struct ParsedType;
 struct Parameter;
+struct ModuleDeclaration;
 
 /* === Visitor === */
 
@@ -52,6 +53,7 @@ struct ASTVisitor
     virtual void visit(const FunctionCall&) = 0;
     virtual void visit(const ParsedType&) = 0;
     virtual void visit(const Parameter&) = 0;
+    virtual void visit(const ModuleDeclaration&) = 0;
     virtual ~ASTVisitor() = default;
 };
 

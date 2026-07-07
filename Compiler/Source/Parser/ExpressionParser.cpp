@@ -1,6 +1,5 @@
-#include <array>
-
 #include "Parser/ExpressionParser.hpp"
+
 #include "Tokens/TokenStream.hpp"
 #include "Driver/CompilationUnit.hpp"
 #include "Parser/ParameterParser.hpp"
@@ -17,9 +16,12 @@
 #include "AST/Assignment.hpp"
 #include "Utils/Logger.hpp"
 
+#include <array>
+#include <charconv>
+
 /* === Helper Methods === */
 
-size_t ExpressionParser::getPrecedence( TokenSymbol op ) 
+size_t ExpressionParser::getPrecedence( const TokenSymbol op ) 
 {
     size_t prec = 0;
 
@@ -106,7 +108,7 @@ std::string ExpressionParser::unescapeString( std::string_view raw )
 
 /* === Public Member Methods === */
 
-std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression(std::size_t min_precedence) 
+std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression( const std::size_t min_precedence ) 
 {
     const Token& front = m_tokenStream.peek();
 
@@ -137,7 +139,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression(std::
 
         if ( nextPrecedence <= min_precedence ) break;
 
-        auto op = m_tokenStream.consume().getValue();
+        std::string_view op = m_tokenStream.consume().getValue();
         
         auto maybeRight = parseExpression( nextPrecedence + 1 );
         if ( !maybeRight ) return std::unexpected( maybeRight.error() );
@@ -176,11 +178,11 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePostFixExpressio
             auto maybeParams = parseFunctionCallArgs();
             if ( !maybeParams ) return std::unexpected( maybeParams.error() );
 
-            auto exprLocation = expr->location.end;
+            const SourceLocation& exprLocation = expr->location.end;
 
             expr = m_compUnit.allocate<FunctionCall>( expr, maybeParams.value() );
 
-            expr->location = {current.getLocation().start, exprLocation, current.getLocation().fileId };
+            expr->location = { current.getLocation().start, exprLocation, current.getLocation().fileId };
         }
         else 
         {
@@ -341,7 +343,27 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 
         const Token& floatToken = m_tokenStream.consume();
 
-        return std::stof( floatToken.getValue() );
+        float value;
+
+        auto [ptr, ec] = std::from_chars(
+            floatToken.getValue().data(),
+            floatToken.getValue().data() + floatToken.getValue().size(),
+            value
+        );
+
+        if (ec != std::errc{})
+        {
+            return std::unexpected(
+                CompilerError(
+                    "Invalid float literal",
+                    ErrorSeverity::Error,
+                    current.getLocation(),
+                    ErrorCategory::Syntax
+                )
+            );
+        }
+
+        return value;
     }
 
     // Integer value
@@ -354,7 +376,27 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 
         const Token& intToken = m_tokenStream.consume();
 
-        return std::stoi( intToken.getValue() );
+        int value;
+
+        auto [ptr, ec] = std::from_chars(
+            intToken.getValue().data(),
+            intToken.getValue().data() + intToken.getValue().size(),
+            value
+        );
+
+        if (ec != std::errc{})
+        {
+            return std::unexpected(
+                CompilerError(
+                    "Invalid int literal",
+                    ErrorSeverity::Error,
+                    current.getLocation(),
+                    ErrorCategory::Syntax
+                )
+            );
+        }
+
+        return value;
     }
 
     // Boolean value
@@ -373,7 +415,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
     // Char value
     if ( current.checkTypeMatches( TokenKind::Char ) ) 
     {
-        std::string val = current.getValue();
+        std::string_view val = current.getValue();
 
         // Remove surrounding quotes if they exist
         if ( val.size() >= 2 && val.front() == '\'' && val.back() == '\'' ) 
@@ -467,7 +509,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
 
         const Token& strToken = m_tokenStream.consume();
 
-        std::string raw = strToken.getValue();
+        std::string_view raw = strToken.getValue();
         raw = raw.substr(1, raw.length() - 2);
         return unescapeString( raw );
     }
@@ -487,7 +529,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
     
     return std::unexpected( 
         CompilerError(
-            "Expected number, boolean, char or string literal, got '" + current.getValue() + "'", 
+            "Expected number, boolean, char or string literal, got '" + std::string( current.getValue() ) + "'", 
             ErrorSeverity::Error,
             current.getLocation(),
             ErrorCategory::Syntax 
@@ -567,7 +609,7 @@ std::expected<Range*, ErrorVariant> ExpressionParser::parseRange( Expression* st
     {
         return std::unexpected(
             CompilerError(
-                "Expected either 'to' or 'until' got " + front.getValue(), 
+                "Expected either 'to' or 'until' got " + std::string( front.getValue() ), 
                 ErrorSeverity::Error,
                 front.getLocation(),
                 ErrorCategory::Syntax

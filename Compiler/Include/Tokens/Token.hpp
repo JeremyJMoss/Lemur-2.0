@@ -215,7 +215,7 @@ class Token
 
         void clearType();
 
-        const std::string& getValue() const;
+        std::string_view getValue() const;
 
         void addToValue( std::string_view value );
 
@@ -233,14 +233,14 @@ class Token
 
         Token() {}
 
-        Token( TokenKind type, TokenSymbol symbol, std::string value, SourceRange location ) 
-            : m_id( nextId++ ), m_type( type ), m_symbol( symbol ), m_value( std::move( value ) ), m_location( location ) {}
+        Token( TokenKind type, TokenSymbol symbol, std::string_view value, SourceRange location ) 
+            : m_id( nextId++ ), m_type( type ), m_symbol( symbol ), m_value( value ), m_location( location ) {}
 
-        Token( TokenKind type, TokenKeyword kw, std::string value, SourceRange location )
-            : m_id( nextId++ ), m_type( type ), m_keyword( kw ), m_value( std::move( value ) ), m_location( location ) {}
+        Token( TokenKind type, TokenKeyword kw, std::string_view value, SourceRange location )
+            : m_id( nextId++ ), m_type( type ), m_keyword( kw ), m_value( value ), m_location( location ) {}
 
-        Token( TokenKind type, std::string value, SourceRange location )
-            : m_id( nextId++ ), m_type( type ), m_value( std::move( value ) ), m_location( location ) {}
+        Token( TokenKind type, std::string_view value, SourceRange location )
+            : m_id( nextId++ ), m_type( type ), m_value( value ), m_location( location ) {}
     
     private:
         TokenId m_id;

@@ -43,7 +43,7 @@ void Parser::parseNextStatement()
 
     // setting up array for debugging
     const std::array attrs = {
-        Attribute{ "Value", "'" + current.getValue() + "'" },
+        Attribute{ "Value", "'" + std::string( current.getValue() ) + "'" },
         Attribute{ "Type", "'" + toString( current.getType() ) + "'" },
         Attribute{ "Location", current.getLocation().toString() }
     };
@@ -78,7 +78,7 @@ std::expected<Statement*, ErrorVariant> Parser::createStatement( const Token& to
 {
     // setting up array for debugging purposes
     const std::array attrs = {
-        Attribute{ "Value", "'" + token.getValue() + "'" },
+        Attribute{ "Value", "'" + std::string( token.getValue() ) + "'" },
         Attribute{ "Location", token.getLocation().toString() }
     };
 
@@ -177,9 +177,19 @@ std::expected<Statement*, ErrorVariant> Parser::parseKeywordStatement( const Tok
 
     if ( token.checkValueMatches( TokenKeyword::Entry ) ) return m_stmtParser.parseFunctionDeclaration( true );
 
+    if ( token.checkValueMatches( TokenKeyword::Module ) ) {
+        auto maybeDeclaration = m_stmtParser.parseModuleDeclaration();
+        if ( !maybeDeclaration ) return std::unexpected( maybeDeclaration.error() );
+
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
+
+        return maybeDeclaration.value();
+    }
+
     return std::unexpected( 
         CompilerError(
-            "Unknown keyword: '" + token.getValue() + "'", 
+            "Unknown keyword: '" + std::string( token.getValue() ) + "'", 
             ErrorSeverity::Error,
             token.getLocation(),
             ErrorCategory::Syntax

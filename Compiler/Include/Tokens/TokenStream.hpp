@@ -2,6 +2,7 @@
 
 #include <span>
 #include <expected>
+#include <functional>
 #include "Tokens/Token.hpp"
 #include "Errors/Errors.hpp"
 

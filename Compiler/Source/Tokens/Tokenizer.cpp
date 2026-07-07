@@ -4,6 +4,7 @@
 #include "Errors/ErrorReporter.hpp"
 #include <cctype>
 #include <expected>
+#include <iostream>
 
 using FileId = std::size_t;
 
@@ -23,7 +24,7 @@ bool Tokenizer::isIdentifierPartChar( char c ) {
     return std::isalnum( static_cast<unsigned char>( c ) ) || c == '_';
 }
 
-std::string Tokenizer::readIdentifier( const std::string& line, std::size_t pos ) {
+std::string_view Tokenizer::readIdentifier( std::string_view line, std::size_t& pos ) {
     std::size_t start = pos;
     while ( pos < line.size() && isIdentifierPartChar( line[ pos ] ) ) {
         pos++;
@@ -31,7 +32,7 @@ std::string Tokenizer::readIdentifier( const std::string& line, std::size_t pos 
     return line.substr( start, pos - start );
 }
 
-std::string Tokenizer::readNumber( const std::string& line, std::size_t pos ) {
+std::string_view Tokenizer::readNumber( std::string_view line, std::size_t& pos ) {
     std::size_t start = pos;
     while ( pos < line.size() && isDigitChar( line[ pos ] ) ) {
         pos++;
@@ -47,19 +48,19 @@ std::string Tokenizer::readNumber( const std::string& line, std::size_t pos ) {
     return line.substr( start, pos - start );
 }
 
-std::string readSymbol( std::string_view line, std::size_t pos, const std::unordered_map<std::string_view, TokenSymbol>& symbols ) {
+std::string_view Tokenizer::readSymbol( std::string_view line, std::size_t& pos, const std::unordered_map<std::string_view, TokenSymbol>& symbols ) {
     if ( pos + 1 < line.size() ) {
         std::string_view two( line.data() + pos, 2 );
         if ( symbols.find( two ) != symbols.end() ) {
             pos += 2;
-            return std::string( two );
+            return two;
         }
     }
 
     std::string_view one( line.data() + pos, 1 );
     if ( symbols.find( one ) != symbols.end() ) {
         pos += 1;
-        return std::string( one );
+        return one;
     }
 
     return "";
@@ -183,7 +184,7 @@ std::expected<std::string, ModuleHeaderError> Tokenizer::readModuleHeader( std::
             // Identifier
             if (isIdentifierStartChar(c))
             {
-                std::string id = readIdentifier(line, pos);
+                std::string_view id = readIdentifier( line, pos );
 
                 if (state == State::Start)
                 {
@@ -196,7 +197,7 @@ std::expected<std::string, ModuleHeaderError> Tokenizer::readModuleHeader( std::
 
                 if (state == State::ExpectName)
                 {
-                    moduleName += id;
+                    moduleName += std::string( id );
                     state = State::ExpectDotOrEnd;
                     continue;
                 }
@@ -270,12 +271,12 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                         
                         if ( line[ pos ] == '\\' && pos + 1 < line.length() ) 
                         {
-                            appendPartialToken( line.substr( pos, 2 ), m_lineNum, pos + 2 );
+                            appendPartialToken( std::string_view( line ).substr( pos, 2 ), m_lineNum, pos + 2 );
                             pos += 2;
                         }
                         else 
                         {
-                            appendPartialToken( line.substr( pos, 1 ), m_lineNum, pos + 1 );
+                            appendPartialToken( std::string_view( line ).substr( pos, 1 ), m_lineNum, pos + 1 );
                             pos++;
                         }
                     }
@@ -299,7 +300,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                             break;
                         }
 
-                        appendPartialToken( line.substr( pos, 1 ), m_lineNum, pos + 1 );
+                        appendPartialToken( std::string_view( line ).substr( pos, 1 ), m_lineNum, pos + 1 );
                         pos++;
                     }
 
@@ -357,14 +358,14 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                     pos++;
                 }
 
-                std::string value = line.substr( start, pos - start );
+                std::string_view value = std::string_view( line ).substr( start, pos - start );
                 SourceRange range = {
                     { m_lineNum, start },
                     { m_lineNum, pos },
                     m_compUnit.getFileId()
                 };
 
-                auto newToken = Token( TokenKind::Char, value, range );
+                auto newToken = Token( TokenKind::Char, std::string( value ), range );
                 m_compUnit.addToken( newToken );
                 continue;
             }
@@ -372,7 +373,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
             if ( isDigitChar( c ) ) 
             {
                 std::size_t start = pos;
-                std::string value = readNumber( line, pos );
+                std::string_view value = readNumber( line, pos );
 
                 TokenKind type = getTokenType( value );
                 SourceRange range = {
@@ -381,7 +382,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                     m_compUnit.getFileId()
                 };
 
-                auto newToken = Token( type, value, range );
+                auto newToken = Token( type, std::string( value ), range );
                 m_compUnit.addToken( newToken );
                 continue;
             }
@@ -389,7 +390,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
             if ( isIdentifierStartChar( c ) ) 
             {
                 std::size_t start = pos;
-                std::string value = readIdentifier( line, pos );
+                std::string_view value = readIdentifier( line, pos );
                 TokenKind type = getTokenType( value );
                 SourceRange range = {
                     { m_lineNum, start },
@@ -400,19 +401,19 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 if ( type == TokenKind::Keyword ) 
                 {
                     TokenKeyword kw = m_KEYWORDS.at( value );
-                    auto newToken = Token( type, kw, value, range );
+                    auto newToken = Token( type, kw, std::string( value ), range );
                     m_compUnit.addToken( newToken );
                 }
                 else 
                 {
-                    auto newToken = Token( type, value, range );
+                    auto newToken = Token( type, std::string( value ), range );
                     m_compUnit.addToken( newToken );
                 }
 
                 continue;
             }
 
-            std::string symbol = readSymbol( line, pos, m_SYMBOLS );
+            std::string_view symbol = readSymbol( line, pos, m_SYMBOLS );
             if ( !symbol.empty() ) 
             {
                 SourceRange range = {
@@ -422,7 +423,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 };
 
                 TokenSymbol symbolType = m_SYMBOLS.at( symbol );
-                auto newToken = Token( TokenKind::Symbol, symbolType, symbol, range );
+                auto newToken = Token( TokenKind::Symbol, symbolType, std::string( symbol ), range );
                 m_compUnit.addToken( newToken );
                 continue;
             }

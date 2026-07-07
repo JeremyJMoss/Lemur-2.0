@@ -22,7 +22,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
     for ( const fs::directory_entry &file : fs::recursive_directory_iterator( sourcePath ) )
     {
         const fs::path path = file.path();
-        const std::string_view pathStr = "'" + path.string() + "'";
+        const std::string pathStr = "'" + path.string() + "'";
 
         if ( !file.is_regular_file() ) {
             continue;
@@ -67,7 +67,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
         if ( !maybeModuleIdentifier ) {
             m_errReporter.report( 
                 ModuleHeaderError(
-                    maybeModuleIdentifier.error().message + " for file path " + std::string( pathStr ), 
+                    maybeModuleIdentifier.error().message + " for file path " + pathStr, 
                     maybeModuleIdentifier.error().severity
                 ) 
             );
@@ -94,9 +94,9 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
     }
 }
 
-std::optional<FileId> ModuleResolver::resolveModuleFileId( std::string_view moduleName ) const
+std::optional<FileId> ModuleResolver::resolveModuleFileId( const std::string& moduleName ) const
 {
-    auto it = m_moduleIndex.find(moduleName);
+    auto it = m_moduleIndex.find( moduleName );
 
     if (it == m_moduleIndex.end())
         return std::nullopt;

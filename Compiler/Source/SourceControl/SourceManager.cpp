@@ -18,9 +18,9 @@ FileId SourceManager::addFile( const fs::path& filePath )
         Attribute{ "Path", pathStr } 
     };
 
-    auto it = pathToId.find( filePath );
+    auto it = m_pathToId.find( filePath );
 
-    if ( it != pathToId.end() ) 
+    if ( it != m_pathToId.end() ) 
     {
         Logger::trace( 
             "Found existing file in source manager",
@@ -62,8 +62,8 @@ FileId SourceManager::addFile( const fs::path& filePath )
         pathAttr
     );
 
-    files.emplace( data.getFileId(), std::move( data ) );
-    pathToId.emplace( filePath, data.getFileId() );
+    m_files.emplace( data.getFileId(), std::move( data ) );
+    m_pathToId.emplace( filePath, data.getFileId() );
 
     Logger::trace( 
         "Assigned file ID " + 
@@ -74,10 +74,10 @@ FileId SourceManager::addFile( const fs::path& filePath )
     return data.getFileId();
 }
 
-std::string_view SourceManager::getLine( FileId fileId, std::size_t lineNumber ) const
+const std::string SourceManager::getLine( FileId fileId, std::size_t lineNumber ) const
 {
-    auto it = files.find( fileId );
-    if ( it == files.end() ) 
+    auto it = m_files.find( fileId );
+    if ( it == m_files.end() ) 
     {
         Logger::trace( 
             "Attempted to fetch line " + 
@@ -145,4 +145,9 @@ std::string_view SourceManager::getLine( FileId fileId, std::size_t lineNumber )
     );
 
     return line;
+}
+
+void SourceManager::setModuleName( FileId id, std::string_view moduleName ) 
+{
+    m_files.at(id).setModuleName( moduleName );
 }

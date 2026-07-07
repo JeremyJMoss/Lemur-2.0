@@ -6,10 +6,9 @@ void ConfigResolver::mergeConfigurations( const BuildCLIConfig& bConfig, Compile
     if(bConfig.sourcePath.has_value()) cConfig.sourcePath = bConfig.sourcePath.value();
     if(bConfig.outputPath.has_value()) cConfig.outputPath = bConfig.outputPath.value();
     if(bConfig.entryModule.has_value()) {
-        auto maybeParsedModuleName = Tokenizer::parseModuleName(bConfig.entryModule.value());
-        if (!maybeParsedModuleName) {
-            throw maybeParsedModuleName.error();
-        }
+        auto maybeParsedModuleName = Tokenizer::parseModuleName( bConfig.entryModule.value() );
+        
+        if ( !maybeParsedModuleName ) throw maybeParsedModuleName.error();
 
         cConfig.entryModule = maybeParsedModuleName.value();
     } 

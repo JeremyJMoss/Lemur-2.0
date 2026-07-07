@@ -27,11 +27,12 @@ struct Statement;
 
 class CompilationUnit {
     public:
-        CompilationUnit( FileId fileId ) : m_fileId( fileId ) {
-            ScopeId scopeId = createScope( InvalidScopeId, ScopeOwnerKind::Global );
-            m_globalScope = scopeId;
-            m_currentScope = scopeId;
-        }
+        CompilationUnit( FileId fileId, std::string_view moduleName ) 
+            : m_fileId( fileId ), m_moduleName( moduleName ) {
+                ScopeId scopeId = createScope( InvalidScopeId, ScopeOwnerKind::Global );
+                m_globalScope = scopeId;
+                m_currentScope = scopeId;
+            }
 
         TokenId addToken( Token token ) {
             return m_tokens.add( std::move( token ) );
@@ -61,8 +62,9 @@ class CompilationUnit {
             m_nodeScopes.emplace( nodeId, scopeId );
         }
         
-
         FileId getFileId() const { return m_fileId; }
+
+        std::string_view getModuleName() const { return m_moduleName; }
 
         size_t getTokenCount() const { return m_tokens.count(); }
 
@@ -80,6 +82,7 @@ class CompilationUnit {
         void freeArena() { m_arena.reset(); }
     private:
         FileId m_fileId;
+        std::string_view m_moduleName;
         ScopeId m_globalScope;
         ScopeId m_currentScope;
 

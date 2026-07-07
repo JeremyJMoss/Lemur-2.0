@@ -14,11 +14,11 @@
 
 /* === Forward Declarations === */
 
-struct Token;
 struct Statement;
 
 class ErrorReporter;
 class CompilationUnit;
+class Token;
 
 /* === Parser === */
 

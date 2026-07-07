@@ -9,9 +9,9 @@
 
 struct Identifier : Expression 
 {
-    const std::string name;
-    explicit Identifier( std::string value ) 
-        : name( std::move( value ) ) {}
+    std::string_view name;
+    explicit Identifier( std::string_view value ) 
+        : name( value ) {}
     
     void accept( ASTVisitor& v ) const override 
     { 

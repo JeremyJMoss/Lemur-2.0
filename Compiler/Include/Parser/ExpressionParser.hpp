@@ -50,7 +50,7 @@ class ExpressionParser{
 
         void setStatementParser( StatementParser* stmtParser ) { m_stmtParser = stmtParser; }
 
-        std::expected<Expression*, ErrorVariant> parseExpression( std::size_t min_precedence = 0);
+        std::expected<Expression*, ErrorVariant> parseExpression( const std::size_t min_precedence = 0 );
 
         std::expected<Expression*, ErrorVariant> parsePostFixExpression();
 
@@ -83,7 +83,7 @@ class ExpressionParser{
         /// 
         /// @param op Operator to check precedence of
         /// @returns The precedence number of the operator passed in
-        std::size_t getPrecedence( TokenSymbol op );
+        std::size_t getPrecedence( const TokenSymbol op );
 
         std::string unescapeString( std::string_view raw );
 };

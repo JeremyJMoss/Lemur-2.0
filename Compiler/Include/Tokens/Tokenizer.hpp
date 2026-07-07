@@ -29,10 +29,11 @@ class Tokenizer
         static bool isIdentifierStartChar( char c );
         static bool isIdentifierPartChar( char c );
 
-        static std::string readIdentifier( const std::string& line, std::size_t pos );
-        static std::string readNumber( const std::string& line, std::size_t pos );
+        static std::string_view readIdentifier( std::string_view line, std::size_t& pos );
+        static std::string_view readNumber( std::string_view line, std::size_t& pos );
+        static std::string_view readSymbol( std::string_view line, std::size_t& pos, const std::unordered_map<std::string_view, TokenSymbol>& symbols );
 
-        static bool isValidIdentifier(std::string_view s);
+        static bool isValidIdentifier( std::string_view s );
 
         inline const static std::unordered_map<std::string_view, TokenKeyword> m_KEYWORDS = {
             { "lock",      TokenKeyword::Lock },

@@ -20,3 +20,5 @@
 #include "AST/Unary.hpp"
 #include "AST/VariableDeclaration.hpp"
 #include "AST/Parameter.hpp"
+#include "AST/ParsedType.hpp"
+#include "AST/ModuleDeclaration.hpp"

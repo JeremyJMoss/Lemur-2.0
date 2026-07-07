@@ -56,6 +56,8 @@ class StatementParser
 
         std::expected<ForLoop*, ErrorVariant> parseForLoop();
 
+        std::expected<ModuleDeclaration*, ErrorVariant> parseModuleDeclaration();
+
     private:
         Parser& m_parent;
         CompilationUnit& m_compUnit;
