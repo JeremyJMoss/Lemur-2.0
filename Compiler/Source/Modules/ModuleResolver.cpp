@@ -1,4 +1,4 @@
-#include "Modules/ModuleHeaderScanner.hpp"
+#include "Modules/ModuleResolver.hpp"
 
 #include <filesystem>
 #include <string>
@@ -11,9 +11,8 @@
 namespace fs = std::filesystem;
 using FileId = std::size_t;
 
-ModuleTable ModuleHeaderScanner::scan( const fs::path& sourcePath )
+void ModuleResolver::populate( const fs::path& sourcePath, ModuleTable& moduleTable )
 {
-    ModuleTable moduleTable;
     Logger::trace( "Started scanning file headers" );
 
     Logger::info( "Starting Module Resolution" );
@@ -51,7 +50,7 @@ ModuleTable ModuleHeaderScanner::scan( const fs::path& sourcePath )
                 )
             );
 
-            return {};
+            return;
         }
 
         FileId fileId = maybeFileId.value();
@@ -75,7 +74,7 @@ ModuleTable ModuleHeaderScanner::scan( const fs::path& sourcePath )
                     ErrorSeverity::Fatal
                 ) 
             );
-            return {};
+            return;
         }
 
         auto maybeModuleIdentifier = Tokenizer::readModuleHeader( fileStream );
@@ -118,6 +117,4 @@ ModuleTable ModuleHeaderScanner::scan( const fs::path& sourcePath )
             ));
         }
     }
-
-    return moduleTable;
 }

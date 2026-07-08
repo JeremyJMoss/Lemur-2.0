@@ -28,7 +28,7 @@ class SourceManager
             return m_files.at( fileId ).getFilePath().string();
         }
 
-        void setModuleInfo( ModuleInfo info );
+        void setModuleInfo( const ModuleInfo& info );
 
     private:
         std::unordered_map<FileId, FileData> m_files;

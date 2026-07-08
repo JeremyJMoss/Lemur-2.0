@@ -182,7 +182,7 @@ std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, st
     return line;
 }
 
-void SourceManager::setModuleInfo( ModuleInfo info ) 
+void SourceManager::setModuleInfo( const ModuleInfo& info ) 
 {
     try {
         m_files.at( info.id ).setModuleName( info.name );

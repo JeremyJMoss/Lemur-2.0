@@ -18,18 +18,18 @@ using ModuleId = std::size_t;
 class SourceManager;
 class ErrorReporter;
 
-/* === Module Header Scanner === */
+/* === Module Resolver === */
 
-class ModuleHeaderScanner {
+class ModuleResolver {
     public:
-        ModuleHeaderScanner(
+        ModuleResolver(
             SourceManager& srcManager,
             ErrorReporter& errReporter
         ) : 
         m_srcManager( srcManager ),
         m_errReporter( errReporter ) {}
 
-        ModuleTable scan( const fs::path& sourcePath );
+        void populate( const fs::path& sourcePath, ModuleTable& moduleTable );
 
     private:
         SourceManager& m_srcManager;

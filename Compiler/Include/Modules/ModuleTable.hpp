@@ -6,8 +6,8 @@
 #include <span>
 #include <unordered_map>
 #include <expected>
+#include <vector>
 #include "Tokens/Token.hpp"
-#include "Errors/Errors.hpp"
 
 using ModuleId = std::size_t;
 using FileId = std::size_t;
@@ -19,6 +19,7 @@ struct ModuleInfo
     ModuleId id;
     FileId fileId;
     std::string name;
+    std::vector<ModuleId> imports;
 };
 
 /* === Module Table === */
@@ -26,15 +27,18 @@ struct ModuleInfo
 class ModuleTable
 {
     public:
-        bool add( FileId fileId, std::string moduleName ) 
+        bool add(FileId fileId, std::string moduleName)
         {
             ModuleId id = m_modules.size();
-            
+
+            auto [it, inserted] = m_lookup.emplace(moduleName, id);
+
+            if (!inserted)
+                return false;
+
             m_modules.emplace_back( id, fileId, std::move( moduleName ) );
 
-            auto [it, inserted] = m_lookup.emplace( moduleName, id );
-
-            return inserted;
+            return true;
         }
 
         ModuleInfo& get( ModuleId id ) 
@@ -52,25 +56,16 @@ class ModuleTable
             return m_modules.size(); 
         }
 
-        std::expected<ModuleInfo, Diagnostic> find( std::string_view name ) const {
+        const ModuleInfo* find( std::string_view name ) const {
             auto it = m_lookup.find( std::string( name ) );
 
             if ( it != m_lookup.end() ) 
             {   
-                return m_modules[it->second];
+                return &m_modules[it->second];
             }
 
-            return std::unexpected( 
-                Diagnostic(
-                    "Could not find module name in module map lookup",
-                    ErrorCategory::Linking,
-                    ErrorSeverity::Fatal
-                ) 
-            );
+            return nullptr;
         }
-
-
-        ModuleTable() {}
 
     private:
         std::vector<ModuleInfo> m_modules;

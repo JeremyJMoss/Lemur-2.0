@@ -4,7 +4,7 @@
 #include "Errors/Errors.hpp"
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
-#include "Modules/ModuleHeaderScanner.hpp"
+#include "Modules/ModuleResolver.hpp"
 #include "Config/Config.hpp"
 #include "Utils/Output.hpp"
 #include <array>
@@ -48,13 +48,13 @@ void Driver::compile() {
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
 
-    ModuleHeaderScanner scanner = ModuleHeaderScanner( m_srcManager, m_errReporter );
+    ModuleResolver resolver = ModuleResolver( m_srcManager, m_errReporter );
 
-    m_modules = scanner.scan( m_config.sourcePath );
+    resolver.populate( m_config.sourcePath, m_modules );
 
     auto maybeModule = m_modules.find( m_config.entryModule );
 
-    if ( !maybeModule ) {
+    if ( maybeModule == nullptr ) {
         m_errReporter.report(
             Diagnostic(
                 std::format(
@@ -76,9 +76,9 @@ void Driver::compile() {
         return;
     }
 
-    m_srcManager.setModuleInfo( maybeModule.value() );
+    m_srcManager.setModuleInfo( *maybeModule );
 
-    auto compUnit = std::make_unique<CompilationUnit>( maybeModule.value() );
+    auto compUnit = std::make_unique<CompilationUnit>( *maybeModule );
 
     auto tokenStart = chrono::high_resolution_clock::now();
 
