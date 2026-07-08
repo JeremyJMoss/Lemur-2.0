@@ -14,6 +14,7 @@
 #include "AST/Identifier.hpp"
 #include "AST/Literal.hpp"
 #include "AST/Assignment.hpp"
+#include "AST/ASTPrinter.hpp"
 #include "Utils/Logger.hpp"
 
 #include <array>
@@ -25,7 +26,7 @@ size_t ExpressionParser::getPrecedence( const TokenSymbol op )
 {
     size_t prec = 0;
 
-    switch (op){
+    switch ( op ) {
         case TokenSymbol::Or:
             prec = 1;
             break;
@@ -55,7 +56,14 @@ size_t ExpressionParser::getPrecedence( const TokenSymbol op )
             break;
     }
 
-    Logger::trace( "Operator '" + toString( op ) + "' has precedence " + std::to_string( prec ) );
+    Logger::trace( 
+        std::format( 
+            "Operator '{}' has precedence {}", 
+            toString( op ), 
+            prec 
+        ) 
+    );
+
     return prec;
 }
 
@@ -108,12 +116,16 @@ std::string ExpressionParser::unescapeString( std::string_view raw )
 
 /* === Public Member Methods === */
 
-std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression( const std::size_t min_precedence ) 
+std::expected<Expression*, Diagnostic> ExpressionParser::parseExpression( const std::size_t min_precedence ) 
 {
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
     
     auto maybeLeft = parseUnary();
@@ -125,7 +137,11 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression( cons
         const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    current.getLocation() 
+                ) 
+            );
         }
 
         if ( current.checkMatches( TokenKind::Keyword, std::vector<TokenKeyword> { TokenKeyword::To, TokenKeyword::Until } ) ) 
@@ -156,7 +172,7 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parseExpression( cons
     return left;
 }
 
-std::expected<Expression*, ErrorVariant> ExpressionParser::parsePostFixExpression()
+std::expected<Expression*, Diagnostic> ExpressionParser::parsePostFixExpression()
 {
     auto maybeExpression = parsePrimaryLiteral();
     if ( !maybeExpression ) return std::unexpected( maybeExpression.error() );
@@ -169,7 +185,11 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePostFixExpressio
         const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    current.getLocation() 
+                ) 
+            );
         }
         
         if ( current.checkValueMatches( TokenSymbol::LParens ) ) 
@@ -194,12 +214,16 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePostFixExpressio
     return expr;
 }
 
-std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral() 
+std::expected<Expression*, Diagnostic> ExpressionParser::parsePrimaryLiteral() 
 {
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     // Handle parenthesized expressions
@@ -207,7 +231,6 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
     {
         // Peek ahead for function expression pattern
         // We need to look for the pattern '):' after parameters
-
         std::size_t currentPeekOffset = 0;
         int parenthesisCount = 0;
         bool isFunction = false;
@@ -217,7 +240,11 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
             const Token& token = m_tokenStream.peek(currentPeekOffset);
 
             if ( token.checkTypeMatches( TokenKind::EndOfFile )) {
-                return std::unexpected( UnexpectedEndOfInputError( token.getLocation() ) );
+                return std::unexpected( 
+                    UnexpectedEndOfInputDiagnostic( 
+                        token.getLocation() 
+                    ) 
+                );
             }
 
             if ( token.checkTypeMatches( TokenKind::Symbol ) ) 
@@ -231,11 +258,11 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
                     if ( --parenthesisCount < 0 )
                     {
                         return std::unexpected(
-                            CompilerError(
-                                "Unexpected closing parenthesis", 
+                            Diagnostic(
+                                "Unexpected closing parenthesis",
+                                ErrorCategory::Syntax,
                                 ErrorSeverity::Error,
-                                token.getLocation(),
-                                ErrorCategory::Syntax
+                                token.getLocation()
                             )
                         );
                     } 
@@ -253,11 +280,11 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
         if ( parenthesisCount > 0 ) 
         {
             return std::unexpected(
-                CompilerError(
-                    "Unclosed parenthesis in expression", 
+                Diagnostic(
+                    "Unclosed parenthesis in expression",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    m_tokenStream.peek(currentPeekOffset).getLocation(),
-                    ErrorCategory::Syntax
+                    m_tokenStream.peek(currentPeekOffset).getLocation()
                 )
             );
         }
@@ -286,7 +313,11 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
         const Token& next = m_tokenStream.peek( 1 );
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile ) ) {
-            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    next.getLocation() 
+                ) 
+            );
         }
 
         if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::LParens ) ) {
@@ -320,12 +351,16 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parsePrimaryLiteral()
  * 
  * @returns LiteralValue of the primitive type of the current token
  */
-std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
+std::expected<LiteralValue, Diagnostic> ExpressionParser::getLiteralValue()
 {
     const Token& current = m_tokenStream.peek();
 
     if ( current.checkTypeMatches( TokenKind::EndOfFile ) ) {
-        return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                current.getLocation() 
+            ) 
+        );
     }
 
     const std::array attrs = {
@@ -354,11 +389,11 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
         if (ec != std::errc{})
         {
             return std::unexpected(
-                CompilerError(
+                Diagnostic(
                     "Invalid float literal",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    current.getLocation(),
-                    ErrorCategory::Syntax
+                    current.getLocation()
                 )
             );
         }
@@ -387,11 +422,11 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
         if (ec != std::errc{})
         {
             return std::unexpected(
-                CompilerError(
+                Diagnostic(
                     "Invalid int literal",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    current.getLocation(),
-                    ErrorCategory::Syntax
+                    current.getLocation()
                 )
             );
         }
@@ -426,11 +461,11 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
         if ( val.empty() ) 
         {
             return std::unexpected(
-                CompilerError(
+                Diagnostic(
                     "'char' literal must not be empty",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    current.getLocation(),
-                    ErrorCategory::Syntax
+                    current.getLocation()
                 )
             );
         }
@@ -442,11 +477,11 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             if ( val.size() != 2 ) 
             {
                 return std::unexpected( 
-                    CompilerError(
-                        "Invalid escape sequence in 'char'", 
+                    Diagnostic(
+                        "Invalid escape sequence in 'char'",
+                        ErrorCategory::Syntax,
                         ErrorSeverity::Error,
-                        current.getLocation(),
-                        ErrorCategory::Syntax
+                        current.getLocation()
                     )
                 );
             }
@@ -462,11 +497,11 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
                 case '0':  resultChar = '\0'; break;
                 default: 
                     return std::unexpected( 
-                        CompilerError(
+                        Diagnostic(
                             "Unknown escape sequence in 'char'",
+                            ErrorCategory::Syntax,
                             ErrorSeverity::Error,
-                            current.getLocation(),
-                            ErrorCategory::Syntax
+                            current.getLocation()
                         )
                     );
             }
@@ -476,11 +511,11 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
             if ( val.size() != 1 ) 
             {
                 return std::unexpected(
-                    CompilerError(
-                        "'char' literal must be a single character", 
+                    Diagnostic(
+                        "'char' literal must be a single character",
+                        ErrorCategory::Syntax,
                         ErrorSeverity::Error,
-                        current.getLocation(),
-                        ErrorCategory::Syntax
+                        current.getLocation()
                     )
                 );
             }
@@ -510,7 +545,7 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
         const Token& strToken = m_tokenStream.consume();
 
         std::string_view raw = strToken.getValue();
-        raw = raw.substr(1, raw.length() - 2);
+        raw = raw.substr( 1, raw.length() - 2 );
         return unescapeString( raw );
     }
 
@@ -528,21 +563,28 @@ std::expected<LiteralValue, ErrorVariant> ExpressionParser::getLiteralValue()
     }
     
     return std::unexpected( 
-        CompilerError(
-            "Expected number, boolean, char or string literal, got '" + std::string( current.getValue() ) + "'", 
+        Diagnostic(
+            std::format(
+                "Expected number, boolean, char or string literal, got '{}'", 
+                current.getValue() 
+            ), 
+            ErrorCategory::Syntax,
             ErrorSeverity::Error,
-            current.getLocation(),
-            ErrorCategory::Syntax 
+            current.getLocation()
         )
     );
 }
 
-std::expected<Assignment*, ErrorVariant> ExpressionParser::parseAssignment() 
+std::expected<Assignment*, Diagnostic> ExpressionParser::parseAssignment() 
 {
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     auto maybeLExpression = parsePostFixExpression();
@@ -561,12 +603,16 @@ std::expected<Assignment*, ErrorVariant> ExpressionParser::parseAssignment()
     return assign;
 }
 
-std::expected<Expression*, ErrorVariant> ExpressionParser::parseUnary() 
+std::expected<Expression*, Diagnostic> ExpressionParser::parseUnary() 
 {
     const Token& front = m_tokenStream.peek();
    
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     if ( front.checkMatches( TokenKind::Symbol, std::vector<TokenSymbol> { TokenSymbol::Minus, TokenSymbol::Not } ) ) 
@@ -587,14 +633,18 @@ std::expected<Expression*, ErrorVariant> ExpressionParser::parseUnary()
     return parsePostFixExpression();
 }
 
-std::expected<Range*, ErrorVariant> ExpressionParser::parseRange( Expression* start ) 
+std::expected<Range*, Diagnostic> ExpressionParser::parseRange( Expression* start ) 
 {
     bool inclusive;
 
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     if ( front.checkValueMatches( TokenKeyword::To ) ) 
@@ -608,11 +658,14 @@ std::expected<Range*, ErrorVariant> ExpressionParser::parseRange( Expression* st
     else 
     {
         return std::unexpected(
-            CompilerError(
-                "Expected either 'to' or 'until' got " + std::string( front.getValue() ), 
+            Diagnostic(
+                std::format( 
+                    "Expected either 'to' or 'until' got '{}'",
+                    front.getValue() 
+                ),
+                ErrorCategory::Syntax,
                 ErrorSeverity::Error,
-                front.getLocation(),
-                ErrorCategory::Syntax
+                front.getLocation()
             ) 
         );
     }
@@ -638,7 +691,7 @@ std::expected<Range*, ErrorVariant> ExpressionParser::parseRange( Expression* st
     return rngExp;
 }
 
-std::expected<std::vector<Expression*>, ErrorVariant> ExpressionParser::parseFunctionCallArgs() 
+std::expected<std::vector<Expression*>, Diagnostic> ExpressionParser::parseFunctionCallArgs() 
 {
     std::vector<Expression*> params;
 
@@ -649,7 +702,11 @@ std::expected<std::vector<Expression*>, ErrorVariant> ExpressionParser::parseFun
         const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    current.getLocation() 
+                ) 
+            );
         }
 
         if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
@@ -667,7 +724,11 @@ std::expected<std::vector<Expression*>, ErrorVariant> ExpressionParser::parseFun
         const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    next.getLocation() 
+                ) 
+            );
         }
 
         if (next.checkTypeMatches( TokenKind::Symbol ) ) 
@@ -681,14 +742,20 @@ std::expected<std::vector<Expression*>, ErrorVariant> ExpressionParser::parseFun
     return params;
 }
 
-std::expected<FunctionCall*, ErrorVariant> ExpressionParser::parseFunctionCall() 
+std::expected<FunctionCall*, Diagnostic> ExpressionParser::parseFunctionCall() 
 {
     Logger::debug( "Parsing function call" );
 
     const Token& front = m_tokenStream.peek();
 
     if ( !front.checkTypeMatches( TokenKind::Identifier ) ) {
-        return std::unexpected( UnexpectedTypeError( TokenKind::Identifier, front.getType(), front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedTypeDiagnostic( 
+                TokenKind::Identifier, 
+                front.getType(), 
+                front.getLocation()
+            ) 
+        );
     }
 
     const Token& idToken = m_tokenStream.consume();
@@ -714,12 +781,12 @@ std::expected<FunctionCall*, ErrorVariant> ExpressionParser::parseFunctionCall()
     return funCall;
 }
 
-std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLiteral() 
+std::expected<FunctionLiteral*, Diagnostic> ExpressionParser::parseFunctionLiteral() 
 {
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile ) ) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( UnexpectedEndOfInputDiagnostic( front.getLocation() ) );
     }
 
     auto maybeParameters = m_paramParser.parseFunctionParameters();
@@ -734,7 +801,11 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
     const Token& current = m_tokenStream.peek();
 
     if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                current.getLocation() 
+            ) 
+        );
     }
 
     // after function expressions expect >> before body
@@ -746,7 +817,11 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
         const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    next.getLocation() 
+                ) 
+            );
         }
 
         // check if the > is directly preceded by another >
@@ -759,11 +834,11 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
         else 
         {
             return std::unexpected( 
-                CompilerError(
-                    "Expected '>>' after return value in function expression", 
+                Diagnostic(
+                    "Expected '>>' after return value in function expression",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    current.getLocation(),
-                    ErrorCategory::Syntax
+                    current.getLocation()
                 )
             );
         }
@@ -771,11 +846,11 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
     else 
     {
         return std::unexpected( 
-            CompilerError(
-                "Expected '>>' after return value in function expression", 
+            Diagnostic(
+                "Expected '>>' after return value in function expression",
+                ErrorCategory::Syntax,
                 ErrorSeverity::Error,
-                current.getLocation(),
-                ErrorCategory::Syntax
+                current.getLocation()
             )
         );
     }
@@ -784,11 +859,11 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
     if ( !maybeBody )
     {
         return std::unexpected(
-            CompilerError(
+            Diagnostic(
                 "Function Expressions must have function body",
+                ErrorCategory::Syntax,
                 ErrorSeverity::Error,
-                current.getLocation(),
-                ErrorCategory::Syntax
+                current.getLocation()
             )
         );
     }
@@ -804,7 +879,7 @@ std::expected<FunctionLiteral*, ErrorVariant> ExpressionParser::parseFunctionLit
     return funExpr;
 }
 
-std::expected<Expression*, ErrorVariant> ExpressionParser::parseInitialiser() {
+std::expected<Expression*, Diagnostic> ExpressionParser::parseInitialiser() {
     auto maybeAssignToken = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Assign );
     if ( !maybeAssignToken ) return std::unexpected( maybeAssignToken.error() );
 

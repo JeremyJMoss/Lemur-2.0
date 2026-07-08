@@ -15,8 +15,8 @@ class TokenStream {
         const Token& consume();
         void recoverFromError(); 
 
-        std::expected<std::reference_wrapper<const Token>, ErrorVariant> expect( TokenKind expectedType, TokenSymbol expectedValue );
-        std::expected<std::reference_wrapper<const Token>, ErrorVariant> expect( TokenKind expectedType, TokenKeyword expectedValue );
+        std::expected<std::reference_wrapper<const Token>, Diagnostic> expect( TokenKind expectedType, TokenSymbol expectedValue );
+        std::expected<std::reference_wrapper<const Token>, Diagnostic> expect( TokenKind expectedType, TokenKeyword expectedValue );
 
     private:
         std::span<const Token> m_tokens;

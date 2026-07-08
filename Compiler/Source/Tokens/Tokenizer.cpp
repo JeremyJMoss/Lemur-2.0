@@ -83,7 +83,7 @@ bool Tokenizer::isValidIdentifier( std::string_view s )
     return true;
 }
 
-std::expected<std::string, ConfigError> Tokenizer::parseModuleName( std::string_view input )
+std::expected<std::string, Diagnostic> Tokenizer::parseModuleName( std::string_view input )
 {
     std::string moduleName = "";
 
@@ -93,21 +93,28 @@ std::expected<std::string, ConfigError> Tokenizer::parseModuleName( std::string_
     {
         std::size_t end = input.find('.', start);
 
-        if (end == std::string_view::npos)
+        if ( end == std::string_view::npos )
             end = input.size();
 
-        std::string_view part = input.substr(start, end - start);
+        std::string_view part = input.substr( start, end - start );
 
-        if (!isValidIdentifier(part))
+        if ( !isValidIdentifier( part ) )
         {
             return std::unexpected(
-                ConfigError("Invalid module name: '" + std::string(input) + "'")
+                Diagnostic(
+                    std::format(
+                        "Invalid module name: '{}'",
+                        input
+                    ),
+                    ErrorCategory::Config,
+                    ErrorSeverity::Fatal
+                )
             );
         }
 
         moduleName += part;
 
-        if (end == input.size())
+        if ( end == input.size() )
             break;
 
         moduleName += '.';
@@ -118,7 +125,7 @@ std::expected<std::string, ConfigError> Tokenizer::parseModuleName( std::string_
     return moduleName;
 }
 
-std::expected<std::string, ModuleHeaderError> Tokenizer::readModuleHeader( std::istream& stream )
+std::expected<std::string, Diagnostic> Tokenizer::readModuleHeader( std::istream& stream )
 {
     std::string line;
     std::size_t pos = 0;
@@ -189,7 +196,13 @@ std::expected<std::string, ModuleHeaderError> Tokenizer::readModuleHeader( std::
                 if (state == State::Start)
                 {
                     if (id != "module")
-                        return std::unexpected(ModuleHeaderError("Invalid module header directive", ErrorSeverity::Error)); // invalid header
+                        return std::unexpected(
+                            Diagnostic(
+                                "Invalid module header directive",
+                                ErrorCategory::Linking,
+                                ErrorSeverity::Error
+                            )
+                        );
 
                     state = State::ExpectName;
                     continue;
@@ -202,14 +215,26 @@ std::expected<std::string, ModuleHeaderError> Tokenizer::readModuleHeader( std::
                     continue;
                 }
 
-                return ""; // invalid
+                return std::unexpected(
+                    Diagnostic(
+                        "Invalid module header directive",
+                        ErrorCategory::Linking,
+                        ErrorSeverity::Error
+                    )
+                );
             }
 
             // Dot (for module paths)
             if (c == '.')
             {
                 if (state != State::ExpectDotOrEnd)
-                    return std::unexpected(ModuleHeaderError("Malformed module header directive", ErrorSeverity::Error)); // invalid
+                    return std::unexpected(
+                        Diagnostic(
+                            "Malformed module header directive",
+                            ErrorCategory::Linking, 
+                            ErrorSeverity::Error
+                        )
+                    );
 
                 moduleName += '.';
                 state = State::ExpectName;
@@ -221,17 +246,35 @@ std::expected<std::string, ModuleHeaderError> Tokenizer::readModuleHeader( std::
             if (c == ';')
             {
                 if (state != State::ExpectDotOrEnd)
-                    return std::unexpected(ModuleHeaderError("Incomplete module header directive missing ending ';'", ErrorSeverity::Error)); // invalid incomplete module
+                    return std::unexpected(
+                        Diagnostic(
+                            "Incomplete module header directive missing ending ';'",
+                            ErrorCategory::Linking,
+                            ErrorSeverity::Error
+                        )
+                    );
 
                 return moduleName;
             }
 
             // Anything else is invalid
-            return std::unexpected(ModuleHeaderError("Invalid module header directive", ErrorSeverity::Error));
+            return std::unexpected(
+                Diagnostic(
+                    "Invalid module header directive", 
+                    ErrorCategory::Linking,
+                    ErrorSeverity::Error
+                )
+            );
         }
     }
 
-    return std::unexpected(ModuleHeaderError("No module directive found", ErrorSeverity::Warning)); // EOF without valid module header
+    return std::unexpected(
+        Diagnostic(
+            "No module directive found",
+            ErrorCategory::Linking,
+            ErrorSeverity::Warning
+        )
+    );
 }
 
 void Tokenizer::tokenizeStream( std::istream& stream ) 
@@ -434,13 +477,19 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 m_compUnit.getFileId()
             };
 
-            m_errReporter.report( CompilerError(
-                "Unexpected token at line " + std::to_string( m_lineNum ) +
-                " position " + std::to_string( pos ) + ": '" + std::string( 1, c ) + "'",
-                ErrorSeverity::Error,
-                errorLocation,
-                ErrorCategory::Lexical
-            ) );
+            m_errReporter.report( 
+                Diagnostic(
+                    std::format(
+                        "Unexpected token at line {} position {}: '{}'",
+                        m_lineNum,
+                        pos,
+                        c
+                    ),
+                    ErrorCategory::Lexical,
+                    ErrorSeverity::Error,
+                    errorLocation
+                ) 
+            );
 
             pos++;
         }
@@ -462,7 +511,7 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
 {
     if ( !m_inToken ) return;
 
-    std::size_t startLine = m_partialToken.getLocation().start.line;
+    const std::size_t startLine = m_partialToken.getLocation().start.line;
     
     SourceRange errorLocation = {
         m_partialToken.getLocation().start,
@@ -485,11 +534,12 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
         return;
     }
 
-    m_errReporter.report( CompilerError( 
+    m_errReporter.report( 
+        Diagnostic( 
             errorMessage,
+            ErrorCategory::Lexical,
             ErrorSeverity::Fatal,
-            errorLocation,
-            ErrorCategory::Lexical
+            errorLocation
         ) 
     );
 }

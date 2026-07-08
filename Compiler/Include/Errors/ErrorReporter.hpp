@@ -16,38 +16,24 @@ class SourceManager;
 class ErrorReporter 
 {
     public:
-        ErrorReporter( SourceManager& srcManager ) : m_srcManager( srcManager ) {};
+        ErrorReporter( SourceManager& srcManager ) 
+            : m_srcManager( srcManager ) {};
 
         void printErrorDiagnostic(
-            ErrorSeverity severity,
-            std::string_view message,
-            const SourceRange& range
-        ) const;
-
-        void printErrorDiagnostic(
-            CompilerError& compErr
+            Diagnostic& diagnostic
         ) const;
 
         void printAllDiagnostics();
 
-        void report( const ModuleHeaderError& modHeadErr );
-
-        void report( const CompilerError& compErr );
-
-        void report( const RuntimeError& runErr );
-
-        void report( const SemanticError& semErr );
-
-        bool hasFatalErrors() const;
+        void report( const Diagnostic& diagnostic );
 
         bool hasErrors() const;
+
+        bool hasDiagnostics() const;
 
         std::size_t getErrCount() const { return m_errCount; }
     private:
         SourceManager& m_srcManager;
-        std::vector<CompilerError> m_compilerErrors;
-        std::vector<RuntimeError> m_runtimeErrors;
-        std::vector<SemanticError> m_semanticErrors;
-        std::vector<ModuleHeaderError> m_moduleHeaderErrors;
+        std::vector<Diagnostic> m_diagnostics;
         std::size_t m_errCount = 0;
 };

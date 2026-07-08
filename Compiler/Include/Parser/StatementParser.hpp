@@ -44,19 +44,19 @@ class StatementParser
             m_exprParser = exprParser; 
         }
 
-        std::expected<FunctionDeclaration*, ErrorVariant> parseFunctionDeclaration( const bool isEntry = false );
+        std::expected<FunctionDeclaration*, Diagnostic> parseFunctionDeclaration( const bool isEntry = false );
 
-        std::expected<Block*, ErrorVariant> parseBlock();
+        std::expected<Block*, Diagnostic> parseBlock();
 
-        std::expected<VariableDeclaration*, ErrorVariant> parseVariableDeclaration( const bool locked = false );
+        std::expected<VariableDeclaration*, Diagnostic> parseVariableDeclaration( const bool locked = false );
 
-        std::expected<Return*, ErrorVariant> parseReturn();
+        std::expected<Return*, Diagnostic> parseReturn();
 
-        std::expected<IfConditional*, ErrorVariant> parseIfConditional( bool just_else = false );
+        std::expected<IfConditional*, Diagnostic> parseIfConditional( bool just_else = false );
 
-        std::expected<ForLoop*, ErrorVariant> parseForLoop();
+        std::expected<ForLoop*, Diagnostic> parseForLoop();
 
-        std::expected<ModuleDeclaration*, ErrorVariant> parseModuleDeclaration();
+        std::expected<ModuleDeclaration*, Diagnostic> parseModuleDeclaration();
 
     private:
         Parser& m_parent;

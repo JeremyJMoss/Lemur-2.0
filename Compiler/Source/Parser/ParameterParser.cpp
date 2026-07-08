@@ -6,7 +6,7 @@
 #include "AST/ParsedType.hpp"
 #include "AST/Parameter.hpp"
 
-std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunctionParameters() {    
+std::expected<std::vector<Parameter*>, Diagnostic> ParameterParser::parseFunctionParameters() {    
     auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
 
@@ -18,7 +18,11 @@ std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunct
         const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    next.getLocation() 
+                ) 
+            );
         }
 
         if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
@@ -51,11 +55,14 @@ std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunct
         else 
         {
             return std::unexpected(
-                CompilerError(
-                    "Expected ',' or ')' after parameter, got '" + std::string( seperator.getValue() ) + "'", 
+                Diagnostic(
+                    std::format(
+                        "Expected ',' or ')' after parameter, got '{}", 
+                        seperator.getValue() 
+                    ), 
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    seperator.getLocation(),
-                    ErrorCategory::Syntax
+                    seperator.getLocation()
                 )
             );
         }
@@ -64,12 +71,18 @@ std::expected<std::vector<Parameter*>, ErrorVariant> ParameterParser::parseFunct
     return parameters;
 }
 
-std::expected<Parameter*, ErrorVariant> ParameterParser::parseParameter() 
+std::expected<Parameter*, Diagnostic> ParameterParser::parseParameter() 
 {
     const Token& front = m_tokenStream.peek();
 
     if ( !front.checkTypeMatches( TokenKind::Identifier )) {
-        return std::unexpected( UnexpectedTypeError( TokenKind::Identifier, front.getType(), front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedTypeDiagnostic(
+                TokenKind::Identifier, 
+                front.getType(), 
+                front.getLocation() 
+            ) 
+        );
     }
 
     const Token& idToken = m_tokenStream.consume();

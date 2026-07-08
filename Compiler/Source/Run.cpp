@@ -18,7 +18,7 @@ namespace chrono = std::chrono;
 void build( const CLIConfig& config ) {
     auto start = chrono::high_resolution_clock::now();
 
-    BuildCLIConfig buildConfig = std::get<BuildCLIConfig>(config.data);
+    BuildCLIConfig buildConfig = std::get<BuildCLIConfig>( config.data );
 
     // configure logging setup
     Logger::setShouldLog(buildConfig.loggingEnabled.value_or(false));

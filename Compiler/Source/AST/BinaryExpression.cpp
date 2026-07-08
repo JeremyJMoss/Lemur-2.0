@@ -1,6 +1,7 @@
 #include <string>
 #include <unordered_map>
-#include <stdexcept>
+#include <format>
+#include "Errors/Errors.hpp"
 #include "AST/BinaryExpression.hpp"
 
 BinaryOperator BinaryExpression::parseOperator( std::string_view op ) 
@@ -28,5 +29,7 @@ BinaryOperator BinaryExpression::parseOperator( std::string_view op )
         return it->second;
     }
 
-    throw std::invalid_argument( "Invalid binary operator: " + std::string( op ) );
+    throw InternalCompilerError( 
+        std::format( "Invalid binary operator: {}", op )
+    );
 }

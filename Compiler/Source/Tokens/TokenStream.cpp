@@ -13,7 +13,7 @@ const Token& TokenStream::peek( const std::size_t offset ) const
     size_t index = m_pos + offset;
 
     // clamp to EOF instead of failing
-    if (index >= m_tokens.size())
+    if ( index >= m_tokens.size() )
         return m_tokens[m_tokens.size() - 1]; // EOF
 
     return m_tokens[index];
@@ -36,13 +36,13 @@ const Token& TokenStream::consume()
     return m_tokens[m_pos++];
 }
 
-std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::expect( TokenKind expectedType, TokenSymbol expectedValue )
+std::expected<std::reference_wrapper<const Token>, Diagnostic> TokenStream::expect( TokenKind expectedType, TokenSymbol expectedValue )
 {
     Logger::trace(
         "Expecting token",
         std::to_array<Attribute>({
-            { "ExpectedType", "'" + toString( expectedType ) + "'" },
-            { "ExpectedValue", "'" + toString( expectedValue ) + "'" }
+            { "ExpectedType", std::format( "'{}'", toString( expectedType ) ) },
+            { "ExpectedValue", std::format( "'{}'", toString( expectedValue ) ) }
         })
     );
 
@@ -50,20 +50,28 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
 
     if ( peekedToken.checkTypeMatches( TokenKind::EndOfFile ) ) 
     {
-        return std::unexpected( UnexpectedEndOfInputError( peekedToken.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                peekedToken.getLocation() 
+            ) 
+        );
     }
 
     if ( !peekedToken.checkTypeMatches( expectedType ) ) {
         Logger::trace(
             "Expect mismatch",
             std::to_array<Attribute>({
-                { "ExpectedType", "'" + toString( expectedType ) + "'" },
-                { "Type", "'" + toString( peekedToken.getType() ) + "'" }
+                { "ExpectedType", std::format( "'{}'", toString( expectedType ) ) },
+                { "Type", std::format( "'{}'", toString( peekedToken.getType() ) ) }
             })
         );
 
         return std::unexpected(
-            UnexpectedTypeError( expectedType, peekedToken.getType(), peekedToken.getLocation() )
+            UnexpectedTypeDiagnostic( 
+                expectedType, 
+                peekedToken.getType(), 
+                peekedToken.getLocation() 
+            )
         );
     }
 
@@ -72,13 +80,17 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
         Logger::trace(
             "Expect mismatch. Token type matched but value mismatch.",
             std::to_array<Attribute>({ 
-                { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + std::string( peekedToken.getValue() ) + "'" }
+                { "ExpectedValue", std::format( "'{}'", toString( expectedValue ) ) },
+                { "Value", std::format(  "'{}'", peekedToken.getValue() ) }
             })
         );
 
         return std::unexpected(
-            UnexpectedValueError( expectedValue, peekedToken.getSymbol(), peekedToken.getLocation())
+            UnexpectedValueDiagnostic( 
+                expectedValue, 
+                peekedToken.getSymbol(), 
+                peekedToken.getLocation()
+            )
         );
     }
 
@@ -87,21 +99,21 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
     Logger::trace(
         "Expect succeeded",
         std::to_array<Attribute>({
-            { "Type", "'" + toString( token.getType() ) + "'" },
-            { "Value", "'" + std::string( token.getValue() ) + "'" }
+            { "Type", std::format( "'{}'", toString( token.getType() ) ) },
+            { "Value", std::format( "'{}'", token.getValue() ) }
         })
     );
 
-    return std::cref(token);
+    return std::cref( token );
 }
 
-std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::expect( TokenKind expectedType, TokenKeyword expectedValue )
+std::expected<std::reference_wrapper<const Token>, Diagnostic> TokenStream::expect( TokenKind expectedType, TokenKeyword expectedValue )
 {
     Logger::trace(
         "Expecting token",
         std::to_array<Attribute>({
-            { "ExpectedType", "'" + toString( expectedType ) + "'" },
-            { "ExpectedValue", "'" + toString( expectedValue ) + "'" }
+            { "ExpectedType", std::format( "'{}'", toString( expectedType ) ) },
+            { "ExpectedValue", std::format( "'{}'", toString( expectedValue ) ) }
         })
     );
 
@@ -109,20 +121,28 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
 
     if ( peekedToken.checkTypeMatches( TokenKind::EndOfFile ) ) 
     {
-        return std::unexpected( UnexpectedEndOfInputError( peekedToken.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                peekedToken.getLocation() 
+            ) 
+        );
     }
 
     if ( !peekedToken.checkTypeMatches( expectedType ) ) {
         Logger::trace(
             "Expect mismatch",
             std::to_array<Attribute>({
-                { "ExpectedType", "'" + toString( expectedType ) + "'" },
-                { "Type", "'" + toString( peekedToken.getType() ) + "'" }
+                { "ExpectedType", std::format( "'{}'", toString( expectedType ) ) },
+                { "Type", std::format( "'{}'", toString( peekedToken.getType() ) ) }
             })
         );
 
         return std::unexpected(
-            UnexpectedTypeError( expectedType, peekedToken.getType(), peekedToken.getLocation() )
+            UnexpectedTypeDiagnostic( 
+                expectedType, 
+                peekedToken.getType(), 
+                peekedToken.getLocation() 
+            )
         );
     }
 
@@ -131,13 +151,17 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
         Logger::trace(
             "Expect mismatch. Token type matched but value mismatch.",
             std::to_array<Attribute>({ 
-                { "ExpectedValue", "'" + toString( expectedValue ) + "'" },
-                { "Value", "'" + std::string( peekedToken.getValue() ) + "'" }
+                { "ExpectedValue", std::format( "'{}'", toString( expectedValue ) ) },
+                { "Value", std::format(  "'{}'", peekedToken.getValue() ) }
             })
         );
 
         return std::unexpected(
-            UnexpectedValueError( expectedValue, peekedToken.getKeyword(), peekedToken.getLocation() )
+            UnexpectedValueDiagnostic( 
+                expectedValue, 
+                peekedToken.getKeyword(), 
+                peekedToken.getLocation() 
+            )
         );
     }
 
@@ -146,12 +170,12 @@ std::expected<std::reference_wrapper<const Token>, ErrorVariant> TokenStream::ex
     Logger::trace(
         "Expect succeeded",
         std::to_array<Attribute>({
-            { "Type", "'" + toString( token.getType() ) + "'" },
-            { "Value", "'" + std::string( token.getValue() ) + "'" }
+            { "Type", std::format( "'{}'", toString( token.getType() ) ) },
+            { "Value", std::format( "'{}'", token.getValue() ) }
         })
     );
 
-    return std::cref(token);
+    return std::cref( token );
 }
 
 void TokenStream::recoverFromError() 
@@ -197,7 +221,7 @@ void TokenStream::recoverFromError()
 
         // setting up array for debugging purposes
         const std::array attrs = {
-            Attribute{ "Value", "'" + std::string( token.getValue() ) + "'" },
+            Attribute{ "Value", std::format( "'{}'", token.getValue() ) },
             Attribute{ "Position", std::to_string( m_pos ) },
             Attribute{ "Location", token.getLocation().toString() }
         };

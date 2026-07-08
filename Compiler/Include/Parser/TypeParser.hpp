@@ -19,11 +19,11 @@ class TypeParser{
         TypeParser( CompilationUnit& compUnit, TokenStream& tStream )
             :  m_compUnit( compUnit ), m_tokenStream( tStream ) {}
             
-        std::expected<ParsedType*, ErrorVariant> parseType();
+        std::expected<ParsedType*, Diagnostic> parseType();
 
-        std::expected<ParsedType*, ErrorVariant> parseNamedType();
+        std::expected<ParsedType*, Diagnostic> parseNamedType();
 
-        std::expected<std::vector<ParsedType*>, ErrorVariant> parseParameterTypes();
+        std::expected<std::vector<ParsedType*>, Diagnostic> parseParameterTypes();
 
     private:
         CompilationUnit& m_compUnit;

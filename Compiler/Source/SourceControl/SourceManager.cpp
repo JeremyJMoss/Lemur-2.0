@@ -10,9 +10,9 @@ namespace fs = std::filesystem;
 
 using FileId = std::size_t;
 
-FileId SourceManager::addFile( const fs::path& filePath )
+std::expected<FileId, Diagnostic> SourceManager::addFile( const fs::path& filePath )
 {
-    const auto pathStr = "'" + filePath.string() + "'";
+    const std::string pathStr = std::format( "'{}'", filePath.string() );
 
     const std::array pathAttr { 
         Attribute{ "Path", pathStr } 
@@ -37,7 +37,17 @@ FileId SourceManager::addFile( const fs::path& filePath )
             "Could not open file when attempting to add file to source manager",
             pathAttr
         );
-        throw std::runtime_error( "Could not open file: " + filePath.string() );
+
+        return std::unexpected(
+            Diagnostic( 
+                std::format(
+                    "Could not open file: {}",
+                    filePath.string()
+                ),
+                ErrorCategory::FileIO,
+                ErrorSeverity::Fatal
+            )
+        );
     }
 
     Logger::trace( 
@@ -45,7 +55,7 @@ FileId SourceManager::addFile( const fs::path& filePath )
         pathAttr
     );
 
-    auto data = FileData(filePath);
+    auto data = FileData( filePath );
 
     data.addLineOffset( file.tellg() );
 
@@ -56,9 +66,10 @@ FileId SourceManager::addFile( const fs::path& filePath )
     }
 
     Logger::trace( 
-        "Collected " + 
-        std::to_string( data.getLinesCollected() ) +
-        " line(s) for file",
+        std::format(
+            "Collected {} line(s) for file",
+            data.getLinesCollected()
+        ),
         pathAttr
     );
 
@@ -66,53 +77,70 @@ FileId SourceManager::addFile( const fs::path& filePath )
     m_pathToId.emplace( filePath, data.getFileId() );
 
     Logger::trace( 
-        "Assigned file ID " + 
-        std::to_string( data.getFileId() ) + 
-        " to " + filePath.string() 
+        std::format(
+            "Assigned file ID {} to {}",
+            data.getFileId(),
+            filePath.string()
+        )
     );
 
     return data.getFileId();
 }
 
-const std::string SourceManager::getLine( FileId fileId, std::size_t lineNumber ) const
+std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, std::size_t lineNumber ) const
 {
     auto it = m_files.find( fileId );
     if ( it == m_files.end() ) 
     {
-        Logger::trace( 
-            "Attempted to fetch line " + 
-            std::to_string( lineNumber ) +
-            " from invalid file ID",
+        Logger::trace(
+            std::format(
+                "Attempted to fetch line {} from invalid file ID",
+                lineNumber
+            ),
             std::to_array<Attribute>({
                 { "fileId", std::to_string( fileId ) }
             })
         );
 
-        throw std::runtime_error( "Invalid file ID" );
+        return std::unexpected( 
+            Diagnostic(
+                "Invalid file ID",
+                ErrorCategory::Linking,
+                ErrorSeverity::Fatal 
+            )
+        );
     }
 
     const FileData& data = it->second;
 
     const std::array pathAttr { 
-        Attribute{ "Path", "'" + data.getFilePath().string() + "'"} 
+        Attribute{ "Path", std::format( "'{}'", data.getFilePath().string() ) } 
     };
 
     if ( lineNumber == 0 || lineNumber > data.getLinesCollected() )
     {
         Logger::trace( 
-            "Line number " + 
-            std::to_string( lineNumber ) +
-            " out of range for file",
+            std::format(
+                "Line number {} out of range for file",
+                lineNumber
+            ),
             pathAttr
         );
 
-        throw std::out_of_range( "Line number out of range" );
+        return std::unexpected( 
+            Diagnostic(
+                "Line number out of range",
+                ErrorCategory::FileIO,
+                ErrorSeverity::Fatal 
+            )
+        );
     }
 
     Logger::trace( 
-        "Fetching line " + 
-        std::to_string( lineNumber ) +
-        " from file",
+        std::format(
+            "Fetching line {} from file",
+            lineNumber 
+        ),
         pathAttr
     );
 
@@ -125,7 +153,13 @@ const std::string SourceManager::getLine( FileId fileId, std::size_t lineNumber 
             pathAttr
         );
         
-        throw std::runtime_error( "Could not reopen file" );
+        return std::unexpected(
+            Diagnostic(
+                "Could not reopen file",
+                ErrorCategory::FileIO,
+                ErrorSeverity::Fatal
+            )
+        );
     }
 
     file.clear();
@@ -134,12 +168,13 @@ const std::string SourceManager::getLine( FileId fileId, std::size_t lineNumber 
     std::string line;
     std::getline( file, line );
 
-    Logger::trace( 
-        "Retrieved line " + 
-        std::to_string( lineNumber ) +
-        " from file",
+    Logger::trace(
+        std::format(
+            "Retrieved line {} from file",
+            lineNumber
+        ),
         std::to_array<Attribute>({
-            { "Path", "'" + data.getFilePath().string() + "'" },
+            { "Path", std::format( "'{}'", data.getFilePath().string() ) },
             { "Length", std::to_string( line.size() ) }
         })
     );
@@ -149,5 +184,9 @@ const std::string SourceManager::getLine( FileId fileId, std::size_t lineNumber 
 
 void SourceManager::setModuleName( FileId id, std::string_view moduleName ) 
 {
-    m_files.at(id).setModuleName( moduleName );
+    try {
+        m_files.at( id ).setModuleName( moduleName );
+    } catch ( std::out_of_range& error ) {
+        throw InternalCompilerError( "Tried to access out of range module name inside file map");
+    }
 }

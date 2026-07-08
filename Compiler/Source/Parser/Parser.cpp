@@ -6,7 +6,6 @@
 #include "Utils/Logger.hpp"
 #include <variant>
 
-
 Parser::Parser( CompilationUnit& compUnit, ErrorReporter& errReporter )
     : m_compUnit( compUnit ),
     m_errReporter( errReporter ),
@@ -28,9 +27,8 @@ Parser::Parser( CompilationUnit& compUnit, ErrorReporter& errReporter )
 void Parser::parse()
 {
     // while there are still tokens in the list continue parsing
-    while ( !m_tokenStream.peek().checkTypeMatches(TokenKind::EndOfFile) ) 
+    while ( !m_tokenStream.peek().checkTypeMatches( TokenKind::EndOfFile ) ) 
     {
-        if ( m_errReporter.hasFatalErrors() ) break;
         parseNextStatement();
     }
 }
@@ -55,12 +53,7 @@ void Parser::parseNextStatement()
             attrs
         );
 
-        std::visit(
-            [&](auto&& err) {
-                m_errReporter.report( std::move( err ) );
-            },
-            maybeStatement.error()
-        );
+        m_errReporter.report( maybeStatement.error() );
 
         m_tokenStream.recoverFromError();
         return;
@@ -74,7 +67,7 @@ void Parser::parseNextStatement()
     m_compUnit.addToAST( maybeStatement.value() );
 }
 
-std::expected<Statement*, ErrorVariant> Parser::createStatement( const Token& token ) 
+std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& token ) 
 {
     // setting up array for debugging purposes
     const std::array attrs = {
@@ -110,7 +103,7 @@ std::expected<Statement*, ErrorVariant> Parser::createStatement( const Token& to
     return parseExpressionStatement( token );
 }
 
-std::expected<Statement*, ErrorVariant> Parser::parseKeywordStatement( const Token& token ) 
+std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token& token ) 
 {
     // Constant declaration
     if ( token.checkValueMatches( TokenKeyword::Lock ) ) 
@@ -188,27 +181,27 @@ std::expected<Statement*, ErrorVariant> Parser::parseKeywordStatement( const Tok
     }
 
     return std::unexpected( 
-        CompilerError(
-            "Unknown keyword: '" + std::string( token.getValue() ) + "'", 
+        Diagnostic(
+            std::format(
+                "Unknown keyword: '{}'", 
+                token.getValue()
+            ),
+            ErrorCategory::Syntax,
             ErrorSeverity::Error,
-            token.getLocation(),
-            ErrorCategory::Syntax
+            token.getLocation()
         ) 
     );
 }
 
-std::expected<Statement*, ErrorVariant> Parser::parseIdentifierStatement( const Token& token )
+std::expected<Statement*, Diagnostic> Parser::parseIdentifierStatement( const Token& token )
 {
     const Token& next = m_tokenStream.peek(1);
     
     // Look ahead to see if this is a declaration like: x : int = ...
     if( next.checkTypeMatches(TokenKind::EndOfFile)) {
         return std::unexpected(
-            CompilerError(
-                "Unexpected end of input",
-                ErrorSeverity::Fatal,
-                next.getLocation(),
-                ErrorCategory::Syntax
+            UnexpectedEndOfInputDiagnostic(
+                next.getLocation()
             )
         );
     };
@@ -253,7 +246,7 @@ std::expected<Statement*, ErrorVariant> Parser::parseIdentifierStatement( const 
     return stmt;
 }
 
-std::expected<Statement*, ErrorVariant> Parser::parseExpressionStatement( const Token& token )
+std::expected<Statement*, Diagnostic> Parser::parseExpressionStatement( const Token& token )
 {
     // Generic Expression statement such as 1 + 12
     auto maybeExpression = m_exprParser.parseExpression();

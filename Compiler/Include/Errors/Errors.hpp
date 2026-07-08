@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 #include <variant>
+#include <optional>
+#include <format>
 #include "Tokens/Token.hpp"
 #include "AST/ASTNode.hpp"
 #include "SourceControl/SourceLocation.hpp"
@@ -12,11 +14,12 @@
 /* === Enum Declarations === */
 
 enum class ErrorCategory {
-    Lexical,     // tokenization
-    Syntax,      // parsing
-    Semantic,    // meaning / type checking
-    Internal,    // compiler bug / assertion
-    Linking      // Module resolution errors
+    Lexical,     // Tokenization
+    Syntax,      // Parsing
+    Semantic,    // mManing / type checking
+    Linking,     // Module resolution errors
+    Config,      // Project configuration Error
+    FileIO       // File opening/input/output
 };
 
 enum class ErrorSeverity {
@@ -28,28 +31,29 @@ enum class ErrorSeverity {
 
 /* === Utility === */
 
-inline std::string toString( ErrorCategory category )
+inline std::string_view toString( const ErrorCategory category )
 {
     switch( category )
     {
         case ErrorCategory::Lexical:     return "Lexical";
         case ErrorCategory::Syntax:      return "Syntax";
         case ErrorCategory::Semantic:    return "Semantic";
-        case ErrorCategory::Internal:    return "Internal";
-        case ErrorCategory::Linking:     return "Linking"; 
-        default:                         return "Uncategorised";  
+        case ErrorCategory::Linking:     return "Linking";
+        case ErrorCategory::Config:      return "Project Configuration";
+        case ErrorCategory::FileIO:      return "File I/O";
+        default:                         return "Uncategorised";
     }
 }
 
-inline std::string toString( ErrorSeverity severity )
+inline std::string_view toString( const ErrorSeverity severity )
 {
     switch( severity )
     {
         case ErrorSeverity::Note:    return "Note";
         case ErrorSeverity::Warning: return "Warning";
         case ErrorSeverity::Error:   return "Error";
-        case ErrorSeverity::Fatal:   return "Fatal Error";
-        default:                     return "Other"; 
+        case ErrorSeverity::Fatal:   return "Fatal";
+        default:                     return "Other";
     }
 }
 
@@ -68,122 +72,98 @@ class ConfigError : public std::exception
         }
 };
 
-class ModuleHeaderError : public std::exception
+class Diagnostic
 {
     public:
-        std::string message;
-        ErrorSeverity severity;
-        ModuleHeaderError( 
+        const std::string message;
+        const ErrorCategory category;
+        const ErrorSeverity severity;
+        std::optional<const SourceRange> range;
+
+        Diagnostic( 
             std::string message,
-            ErrorSeverity severity
-        ) : message( std::move( message ) ), severity( severity ) {}
-
-        const char* what() const noexcept override {
-            return message.c_str();
-        }
-};
-
-class CompilerError : public std::exception 
-{
-    public:
-        std::string message;
-        ErrorSeverity severity;
-        SourceRange range;
-        ErrorCategory category;
-
-        CompilerError( 
-            std::string message, 
+            ErrorCategory category, 
             ErrorSeverity severity,
-            SourceRange range, 
-            ErrorCategory category 
-        )   : message( std::move(  message  ) ), 
+            SourceRange range 
+        ) : message( std::move(  message  ) ), 
+            category( category ),
             severity( severity ), 
-            range( range ), 
-            category( category ) {}
-        
-        const char* what() const noexcept override {
-            return message.c_str();
-        }
+            range( range ) {}
+
+        Diagnostic(
+            std::string message,
+            ErrorCategory category,
+            ErrorSeverity severity
+        ) : message( std::move( message ) ),
+            category( category ),
+            severity( severity ) {}
 };
 
-class RuntimeError : public std::exception 
-{
-    public:
-        std::string message;
-        ErrorSeverity severity;
-
-        RuntimeError( std::string message, ErrorSeverity severity )
-            : message( std::move(  message  ) ), severity( severity ) {};
-
-        const char* what() const noexcept override {
-            return message.c_str();
-        }
-};
-
-struct SemanticError : public std::exception 
-{
-    std::string message;
-    SourceRange location;
-
-    SemanticError( std::string msg, SourceRange location ) : message( std::move(msg) ), location( location ) {}
-
-    const char* what() const noexcept override 
-    {
-        return message.c_str();
+struct CompilationAborted : std::exception {
+    const char* what() const noexcept override {
+        return "Compilation aborted";
     }
 };
 
-struct FatalCompilerError : std::runtime_error {
+struct InternalCompilerError : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-struct UnexpectedEndOfInputError : CompilerError {
-    UnexpectedEndOfInputError(SourceRange location) 
-        : CompilerError(
+struct UnexpectedEndOfInputDiagnostic : Diagnostic {
+    UnexpectedEndOfInputDiagnostic(
+        SourceRange location
+    ) : Diagnostic(
             "Unexpected end of input",
+            ErrorCategory::Syntax,
             ErrorSeverity::Fatal,
-            location,
-            ErrorCategory::Syntax
+            location
         ) {}
 };
 
-struct UnexpectedTypeError : CompilerError {
-    UnexpectedTypeError(TokenKind expectedType, TokenKind actualType, SourceRange location)
-        : CompilerError( 
-            "Expected '" + toString( expectedType ) + "' got " + toString( actualType ),
+struct UnexpectedTypeDiagnostic : Diagnostic {
+    UnexpectedTypeDiagnostic(
+        TokenKind expectedType, 
+        TokenKind actualType, 
+        SourceRange location
+    ) : Diagnostic( 
+            std::format(
+                "Expected '{}' got '{}'", 
+                toString(expectedType), 
+                toString( actualType )
+            ),
+            ErrorCategory::Syntax,
             ErrorSeverity::Error,
-            location,
-            ErrorCategory::Syntax 
+            location
         ) {}
 };
 
-struct UnexpectedValueError : CompilerError {
-    UnexpectedValueError( TokenSymbol expectedValue, TokenSymbol actualValue, SourceRange location)
-        : CompilerError(
-            "Expected '" + toString( expectedValue ) + "' got " + toString( actualValue ),
+struct UnexpectedValueDiagnostic : Diagnostic {
+    UnexpectedValueDiagnostic( 
+        TokenSymbol expectedValue, 
+        TokenSymbol actualValue, 
+        SourceRange location
+    ) : Diagnostic (
+            std::format(
+                "Expected '{}' got '{}'",
+                toString( expectedValue ),
+                toString( actualValue )
+            ),
+            ErrorCategory::Syntax,
             ErrorSeverity::Error,
-            location,
-            ErrorCategory::Syntax
+            location
         ) {}
-    UnexpectedValueError( TokenKeyword expectedValue, TokenKeyword actualValue, SourceRange location)
-        : CompilerError(
-            "Expected '" + toString( expectedValue ) + "' got " + toString( actualValue ),
+
+    UnexpectedValueDiagnostic( 
+        TokenKeyword expectedValue, 
+        TokenKeyword actualValue, SourceRange location
+    ) : Diagnostic(
+            std::format( 
+                "Expected '{}' got '{}'",
+                toString( expectedValue ),
+                toString( actualValue )
+            ),
+            ErrorCategory::Syntax,
             ErrorSeverity::Error,
-            location,
-            ErrorCategory::Syntax
+            location
         ) {}
-};
-
-struct ErrorVariant : public std::variant<CompilerError, SemanticError, RuntimeError>
-{
-    using Base = std::variant<CompilerError, SemanticError, RuntimeError>;
-    using Base::Base; // inherit variant's constructors
-
-    // Allow implicit construction from each alternative
-    ErrorVariant(const CompilerError& err)    : Base(err) {}
-    ErrorVariant(CompilerError&& err)         : Base(std::move(err)) {}
-    ErrorVariant(const RuntimeError& err)     : Base(err) {}
-    ErrorVariant(RuntimeError&& err)          : Base(std::move(err)) {}
-    ErrorVariant(const SemanticError& err)     : Base(err) {}
-    ErrorVariant(SemanticError&& err)          : Base(std::move(err)) {}
 };

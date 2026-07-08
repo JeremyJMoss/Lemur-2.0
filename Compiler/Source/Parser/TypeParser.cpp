@@ -4,12 +4,16 @@
 #include "AST/ParsedType.hpp"
 #include "AST/Identifier.hpp"
 
-std::expected<ParsedType*, ErrorVariant> TypeParser::parseType() 
+std::expected<ParsedType*, Diagnostic> TypeParser::parseType() 
 {
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile) ) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     if ( front.checkMatches( TokenKind::Keyword, TokenKeyword::Fn ) ) {
@@ -19,7 +23,11 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseType()
         const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile ) ) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    current.getLocation() 
+                ) 
+            );
         }
 
         std::vector<ParsedType*> params;
@@ -57,11 +65,14 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseType()
         else 
         {
             return std::unexpected( 
-                CompilerError(
-                    "Unexpected '" + std::string( current.getValue() ) + "' in function type declaration", 
+                Diagnostic(
+                    std::format( 
+                        "Unexpected '{}' in function type declaration",
+                        current.getValue()
+                    ), 
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    current.getLocation(),
-                    ErrorCategory::Syntax
+                    current.getLocation()
                 )
             );
         }
@@ -79,7 +90,13 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseType()
         const Token& peekToken = m_tokenStream.peek();
 
         if ( !peekToken.checkTypeMatches( TokenKind::Keyword )) {
-            return std::unexpected( UnexpectedTypeError(TokenKind::Keyword, peekToken.getType(), peekToken.getLocation() ));
+            return std::unexpected( 
+                UnexpectedTypeDiagnostic(
+                    TokenKind::Keyword, 
+                    peekToken.getType(), 
+                    peekToken.getLocation() 
+                )
+            );
         }
 
         auto ownershipKeyword = m_tokenStream.consume().getValue();
@@ -109,11 +126,14 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseType()
         else 
         {
             return std::unexpected( 
-                CompilerError(
-                    "Unexpected keyword " + std::string( front.getValue() ),
+                Diagnostic(
+                    std::format( 
+                        "Unexpected keyword '{}'", 
+                        front.getValue() 
+                    ),
+                    ErrorCategory::Syntax ,
                     ErrorSeverity::Error,
-                    front.getLocation(),
-                    ErrorCategory::Syntax 
+                    front.getLocation()
                 )
             );
         }
@@ -147,17 +167,17 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseType()
     else 
     {
         return std::unexpected(
-            CompilerError(
+            Diagnostic(
                 "Parsed type invalid",
+                ErrorCategory::Syntax,
                 ErrorSeverity::Error,
-                front.getLocation(),
-                ErrorCategory::Syntax
+                front.getLocation()
             ) 
         );
     }   
 }
 
-std::expected<ParsedType*, ErrorVariant> TypeParser::parseNamedType() 
+std::expected<ParsedType*, Diagnostic> TypeParser::parseNamedType() 
 {
     const Token& idToken = m_tokenStream.consume();
 
@@ -172,7 +192,7 @@ std::expected<ParsedType*, ErrorVariant> TypeParser::parseNamedType()
     return namedType;
 }
 
-std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameterTypes() 
+std::expected<std::vector<ParsedType*>, Diagnostic> TypeParser::parseParameterTypes() 
 {
     auto maybeFrontParens = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LParens );
     if ( !maybeFrontParens ) return std::unexpected( maybeFrontParens.error() );
@@ -184,7 +204,11 @@ std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameter
         const Token& current = m_tokenStream.peek();
 
         if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    current.getLocation() 
+                ) 
+            );
         }
 
         if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::RParens ) ) 
@@ -197,11 +221,14 @@ std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameter
         if ( current.checkTypeMatches( TokenKind::Symbol ) ) 
         {
             return std::unexpected( 
-                CompilerError(
-                    "Unexpected '" + std::string( current.getValue() ) + "' in function type declaration parameter list.", 
+                Diagnostic(
+                    std::format( 
+                        "Unexpected '{}' in function type declaration parameter list.",
+                        current.getValue()
+                    ),
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    current.getLocation(),
-                    ErrorCategory::Syntax
+                    current.getLocation()
                 )
             );
         }
@@ -214,7 +241,11 @@ std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameter
         const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    current.getLocation() 
+                ) 
+            );
         }
 
         if ( next.checkTypeMatches( TokenKind::Symbol ) ) 
@@ -226,11 +257,14 @@ std::expected<std::vector<ParsedType*>, ErrorVariant> TypeParser::parseParameter
             else if ( !next.checkValueMatches( TokenSymbol::Comma ) ) 
             {
                 return std::unexpected( 
-                    CompilerError(
-                        "Unexpected '" + std::string( next.getValue() ) + "' in function type declaration parameter list.", 
+                    Diagnostic(
+                        std::format( 
+                            "Unexpected '{}' in function type declaration parameter list.",
+                            next.getValue()
+                        ),
+                        ErrorCategory::Syntax,
                         ErrorSeverity::Error,
-                        next.getLocation(),
-                        ErrorCategory::Syntax
+                        next.getLocation()
                     )
                 );
             } 

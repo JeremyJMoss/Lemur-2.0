@@ -1,6 +1,7 @@
 #include "Utils/Output.hpp"
+#include <iostream>
 
-void Output::success( const std::string& msg, std::size_t indent ) 
+void Output::success( std::string_view msg, std::size_t indent ) 
 {
     auto indentation = std::string( indent * 4, ' ' );
     if ( !s_quiet ) 
@@ -9,7 +10,7 @@ void Output::success( const std::string& msg, std::size_t indent )
     }
 }
 
-void Output::info( const std::string& msg, std::size_t indent ) 
+void Output::info( std::string_view msg, std::size_t indent ) 
 {
     auto indentation = std::string( indent * 4, ' ' );
     if ( !s_quiet )
@@ -18,6 +19,6 @@ void Output::info( const std::string& msg, std::size_t indent )
     }
 }
 
-void Output::error( const std::string& error ) {
+void Output::error( std::string_view error ) {
     std::cerr << Console::Red << error << Console::Reset << std::endl;
 }

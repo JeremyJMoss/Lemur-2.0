@@ -25,7 +25,7 @@ class ParameterParser;
 class StatementParser;
 
 using LiteralValue = std::variant<
-    std::string_view, 
+    std::string, 
     char, 
     int, 
     float, 
@@ -50,13 +50,13 @@ class ExpressionParser{
 
         void setStatementParser( StatementParser* stmtParser ) { m_stmtParser = stmtParser; }
 
-        std::expected<Expression*, ErrorVariant> parseExpression( const std::size_t min_precedence = 0 );
+        std::expected<Expression*, Diagnostic> parseExpression( const std::size_t min_precedence = 0 );
 
-        std::expected<Expression*, ErrorVariant> parsePostFixExpression();
+        std::expected<Expression*, Diagnostic> parsePostFixExpression();
 
-        std::expected<Assignment*, ErrorVariant> parseAssignment();
+        std::expected<Assignment*, Diagnostic> parseAssignment();
 
-        std::expected<Expression*, ErrorVariant> parseInitialiser();
+        std::expected<Expression*, Diagnostic> parseInitialiser();
 
     private:
         CompilationUnit& m_compUnit;
@@ -65,19 +65,19 @@ class ExpressionParser{
         ParameterParser& m_paramParser;
         StatementParser* m_stmtParser = nullptr;
 
-        std::expected<LiteralValue, ErrorVariant> getLiteralValue();
+        std::expected<LiteralValue, Diagnostic> getLiteralValue();
 
-        std::expected<Expression*, ErrorVariant> parseUnary();
+        std::expected<Expression*, Diagnostic> parseUnary();
 
-        std::expected<Range*, ErrorVariant> parseRange( Expression* start );
+        std::expected<Range*, Diagnostic> parseRange( Expression* start );
 
-        std::expected<Expression*, ErrorVariant> parsePrimaryLiteral();
+        std::expected<Expression*, Diagnostic> parsePrimaryLiteral();
 
-        std::expected<std::vector<Expression*>, ErrorVariant> parseFunctionCallArgs();
+        std::expected<std::vector<Expression*>, Diagnostic> parseFunctionCallArgs();
 
-        std::expected<FunctionCall*, ErrorVariant> parseFunctionCall();
+        std::expected<FunctionCall*, Diagnostic> parseFunctionCall();
 
-        std::expected<FunctionLiteral*, ErrorVariant> parseFunctionLiteral();
+        std::expected<FunctionLiteral*, Diagnostic> parseFunctionLiteral();
 
         /// @brief Gets operator precedence
         /// 

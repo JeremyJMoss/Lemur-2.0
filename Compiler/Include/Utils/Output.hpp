@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <string>
 
 namespace Console 
@@ -17,11 +16,11 @@ class Output
 {
     public:
         // User-friendly messages
-        static void success( const std::string& msg, std::size_t indent = 0 );
+        static void success( std::string_view msg, std::size_t indent = 0 );
         
-        static void info( const std::string& msg, std::size_t indent = 0 );
+        static void info( std::string_view msg, std::size_t indent = 0 );
 
-        static void error( const std::string& msg );
+        static void error( std::string_view msg );
         
         // Quiet mode support
         static void setQuiet( bool quiet ) { s_quiet = quiet; }

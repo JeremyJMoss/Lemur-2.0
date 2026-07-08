@@ -18,18 +18,18 @@ fs::path findProjectRoot(fs::path start)
         if (start.has_parent_path())
             start = start.parent_path();
         else
-            throw std::runtime_error("No lemur.toml found in directory tree.");
+            throw InternalCompilerError( "No lemur.toml found in directory tree." );
     }
 }
 
-std::expected<CompilerConfig, ConfigError> TomlConfigHandler::parseOrFail() 
+std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail() 
 { 
     CompilerConfig config;
 
     try
     {
-        fs::path projectRoot = findProjectRoot(fs::current_path());
-        fs::path tomlFilePath = fs::absolute(projectRoot / "lemur.toml");
+        fs::path projectRoot = findProjectRoot( fs::current_path() );
+        fs::path tomlFilePath = fs::absolute( projectRoot / "lemur.toml" );
 
         toml::table tbl = toml::parse_file( tomlFilePath.string() );
 
@@ -39,8 +39,10 @@ std::expected<CompilerConfig, ConfigError> TomlConfigHandler::parseOrFail()
                 config.sourcePath = fs::absolute(projectRoot / src->get());
             } else {
                 return std::unexpected(
-                    ConfigError(
-                        "Missing required \"source\" configuration value in lemur.toml file"
+                    Diagnostic(
+                        "Missing required \"source\" configuration value in lemur.toml file",
+                        ErrorCategory::Config,
+                        ErrorSeverity::Fatal
                     )
                 );
             }
@@ -57,8 +59,10 @@ std::expected<CompilerConfig, ConfigError> TomlConfigHandler::parseOrFail()
                 config.entryModule = maybeParsedModuleName.value();
             } else {
                 return std::unexpected(
-                    ConfigError(
-                        "Missing required \"entry\" configuration value in lemur.toml file"
+                    Diagnostic(
+                        "Missing required \"entry\" configuration value in lemur.toml file",
+                        ErrorCategory::Linking,
+                        ErrorSeverity::Fatal
                     )
                 );
             }
@@ -67,8 +71,10 @@ std::expected<CompilerConfig, ConfigError> TomlConfigHandler::parseOrFail()
                 config.outputPath = fs::absolute(projectRoot / output->get());
             } else {
                 return std::unexpected(
-                    ConfigError(
-                        "Missing required \"output\" configuration value in lemur.toml file"
+                    Diagnostic(
+                        "Missing required \"output\" configuration value in lemur.toml file",
+                        ErrorCategory::Config,
+                        ErrorSeverity::Fatal
                     )
                 );
             }
@@ -85,18 +91,7 @@ std::expected<CompilerConfig, ConfigError> TomlConfigHandler::parseOrFail()
     }
     catch (const toml::parse_error& err)
     {
-        return std::unexpected(
-            ConfigError(
-                err.what()
-            )
-        );
-    }
-    catch (const std::runtime_error& err) {
-        return std::unexpected(
-            ConfigError(
-                err.what()
-            )
-        );
+        throw InternalCompilerError(err.what());
     }
 
     return config;
@@ -104,7 +99,7 @@ std::expected<CompilerConfig, ConfigError> TomlConfigHandler::parseOrFail()
 
 bool TomlConfigHandler::createTomlFile(std::string_view projectName) 
 {
-    fs::path tomlFilePath = fs::absolute(fs::current_path() / fs::path("lemur.toml"));
+    fs::path tomlFilePath = fs::absolute( fs::current_path() / fs::path("lemur.toml" ));
 
     try
     {

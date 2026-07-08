@@ -19,8 +19,8 @@ class Tokenizer
         Tokenizer( CompilationUnit& compUnit, ErrorReporter& errReporter ) 
             : m_compUnit( compUnit ), m_errReporter( errReporter ) {}
         void tokenizeStream( std::istream& stream );
-        static std::expected<std::string, ConfigError> parseModuleName( std::string_view input );
-        static std::expected<std::string, ModuleHeaderError> readModuleHeader( std::istream& stream );
+        static std::expected<std::string, Diagnostic> parseModuleName( std::string_view input );
+        static std::expected<std::string, Diagnostic> readModuleHeader( std::istream& stream );
         void checkIssueWithOutput( FileId fileId );
 
     private:

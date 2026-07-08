@@ -1,218 +1,126 @@
-#include <tuple>
-#include <iostream>
 #include <string>
 #include "Errors/ErrorReporter.hpp"
 #include "Errors/Errors.hpp"
 #include "SourceControl/SourceManager.hpp"
+#include "Utils/Output.hpp"
 
 void ErrorReporter::printErrorDiagnostic(
-    ErrorSeverity severity,
-    std::string_view message, 
-    const SourceRange& range
+    Diagnostic& diagnostic
 ) const
 {
-    std::size_t startLine = range.start.line;
-    std::size_t endLine   = range.end.line;
-    std::size_t startCol  = range.start.column;
-    std::size_t endCol    = range.end.column;
-    const std::string& filePath = m_srcManager.getFilePath( range.fileId );
-    
-    std::vector<std::tuple<std::string_view, std::size_t>> lines;
+    std::string buffer;
 
-    for ( std::size_t i = startLine; i <= endLine; i++ ) 
+    if ( diagnostic.range ) 
     {
-        lines.emplace_back( m_srcManager.getLine( range.fileId, i ), i );
-    }
+        const SourceRange& range = diagnostic.range.value();
+        std::size_t startLine = range.start.line;
+        std::size_t endLine   = range.end.line;
+        std::size_t startCol  = range.start.column;
+        std::size_t endCol    = range.end.column;
+        FileId fileId = range.fileId;
+        const fs::path& filePath = m_srcManager.getFilePath( fileId );
 
-    std::string lineNumberWidth = std::to_string( endLine );
-    std::size_t width = lineNumberWidth.length();
+        std::string lineNumberWidth = std::to_string( endLine );
+        std::size_t width = lineNumberWidth.length();
 
-    std::cerr << toString( severity ) << ": " << filePath << " " << "at line " << startLine << ", column " << ( startCol + 1 ) << ": " << message << std::endl;
+        std::format_to( 
+            std::back_inserter( buffer ),
+            "{} {}: {} at line {}, column {}: {}\n",
+            toString( diagnostic.category ),
+            toString( diagnostic.severity ),
+            filePath.string(),
+            startLine,
+            startCol + 1,
+            diagnostic.message
+        );
 
-    for ( const std::tuple<std::string_view, std::size_t>& line : lines ) 
-    {
-        std::size_t lineNo = std::get<1>(line);
-        std::string lineNoStr = std::to_string(lineNo);
-        std::string ind(width - lineNoStr.length(), ' ');
-        std::string_view lineStr = std::get<0>(line);
-
-        std::cerr << ind << lineNoStr << " | " << lineStr << std::endl;
-        std::cerr << std::string(width, ' ') << " | ";
-
-        if ( lineNo == startLine && lineNo == endLine ) 
+        for ( std::size_t lineNo = startLine; lineNo <= endLine; ++lineNo )
         {
-            // Single-line range
-            std::cerr << std::string(startCol, ' ') << std::string(std::max(1, (int) endCol - (int) startCol), '^');
-        } 
-        else if ( lineNo == startLine ) 
-        {
-            // First line of a multi-line range
-            std::cerr << std::string(startCol, ' ') << std::string(lineStr.size() - (startCol - 1), '^');
-        } 
-        else if ( lineNo == endLine ) 
-        {
-            // Last line of a multi-line range
-            std::cerr << std::string(0, ' ') << std::string(std::min((int) endCol - 1, (int)lineStr.size()), '^');
-        } 
-        else 
-        {
-            // Middle line
-            std::cerr << std::string(lineStr.size(), '^');
+            auto maybeLineStr = m_srcManager.getLine( fileId, lineNo );
+
+            if ( !maybeLineStr ) throw InternalCompilerError( maybeLineStr.error().message );
+
+            std::string lineStr = maybeLineStr.value();
+
+            const std::string lineNoStr = std::to_string( lineNo );
+
+            buffer.append(width - lineNoStr.length(), ' ');
+
+            std::format_to( 
+                std::back_inserter( buffer ), 
+                "{} | {}\n",
+                lineNoStr,
+                lineStr
+            );
+
+            buffer.append(width, ' ');
+            buffer += " | ";
+
+            if ( lineNo == startLine && lineNo == endLine ) 
+            {
+                // Single-line range
+                buffer.append( startCol, ' ' ); 
+                buffer.append( std::max( 1, ( int ) endCol - ( int ) startCol ), '^' );
+            } 
+            else if ( lineNo == startLine ) 
+            {
+                // First line of a multi-line range
+                buffer.append( startCol, ' ' );
+                buffer.append( lineStr.size() - ( startCol - 1 ), '^' );
+            } 
+            else if ( lineNo == endLine ) 
+            {
+                // Last line of a multi-line range
+                buffer.append( 0, ' ' );
+                buffer.append( std::min( ( int ) endCol - 1, ( int ) lineStr.size() ), '^' );
+            } 
+            else 
+            {
+                // Middle line
+                buffer.append(lineStr.size(), '^' );
+            }
         }
 
-        std::cerr << std::endl;
+    } else {
+        std::format_to( 
+            std::back_inserter( buffer ),
+            "{} {}: {}",
+            toString( diagnostic.category ),
+            toString( diagnostic.severity ),
+            diagnostic.message
+        );
     }
-}
-
-void ErrorReporter::printErrorDiagnostic(
-    CompilerError& compErr
-) const
-{
-    std::size_t startLine = compErr.range.start.line;
-    std::size_t endLine   = compErr.range.end.line;
-    std::size_t startCol  = compErr.range.start.column;
-    std::size_t endCol    = compErr.range.end.column;
-    const std::string& filePath = m_srcManager.getFilePath( compErr.range.fileId );
     
-    std::vector<std::tuple<std::string, std::size_t>> lines;
-
-    for ( std::size_t i = startLine; i <= endLine; i++ ) 
-    {
-        lines.emplace_back( m_srcManager.getLine( compErr.range.fileId, i ), i );
-    }
-
-    std::string lineNumberWidth = std::to_string( endLine );
-    std::size_t width = lineNumberWidth.length();
-
-    std::cerr << toString( compErr.category ) << " " << 
-        toString( compErr.severity ) << ": " << 
-        filePath << " at line " << startLine << 
-        ", column " << (startCol + 1) << ": " << 
-        compErr.message << std::endl;
-
-    for ( const std::tuple<std::string, std::size_t>& line : lines ) 
-    {
-        std::size_t lineNo = std::get<1>( line );
-        std::string lineNoStr = std::to_string( lineNo );
-        std::string ind( width - lineNoStr.length(), ' ' );
-        std::string lineStr = std::get<0>( line );
-
-        std::cerr << ind << lineNoStr << " | " << lineStr << std::endl;
-        std::cerr << std::string( width, ' ' ) << " | ";
-
-        if ( lineNo == startLine && lineNo == endLine ) 
-        {
-            // Single-line range
-            std::cerr << std::string( startCol, ' ' ) << std::string( std::max( 1, ( int ) endCol - ( int ) startCol ), '^' );
-        } 
-        else if ( lineNo == startLine ) 
-        {
-            // First line of a multi-line range
-            std::cerr << std::string( startCol, ' ' ) << std::string( lineStr.size() - ( startCol - 1 ), '^' );
-        } 
-        else if ( lineNo == endLine ) 
-        {
-            // Last line of a multi-line range
-            std::cerr << std::string( 0, ' ' ) << std::string( std::min( ( int ) endCol - 1, ( int ) lineStr.size() ), '^' );
-        } 
-        else 
-        {
-            // Middle line
-            std::cerr << std::string( lineStr.size(), '^' );
-        }
-
-        std::cerr << std::endl;
-    }
+    Output::info( buffer );
 }
 
 void ErrorReporter::printAllDiagnostics()
 {
-    for ( auto error: m_moduleHeaderErrors )
-    {
-        std::cerr << "[" << toString( error.severity ) << "] " << error.message << std::endl; 
-    }
-
-    m_moduleHeaderErrors.clear();
-
-    for ( auto error: m_runtimeErrors )
-    {
-        std::cerr << "[" << toString( error.severity ) << "] Internal compiler issue: " << error.message << std::endl;
-    }
-
-    m_runtimeErrors.clear();
-
-    for ( auto error : m_compilerErrors )
+    for ( Diagnostic& error: m_diagnostics )
     {
         printErrorDiagnostic( error );
     }
 
-    m_compilerErrors.clear();
+    m_diagnostics.clear();
 }
 
-void ErrorReporter::report( const ModuleHeaderError& modHeadErr ) 
+void ErrorReporter::report( const Diagnostic& diagnostic ) 
 {
-    if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
+    m_diagnostics.emplace_back( std::move( diagnostic ) );
 
-    m_moduleHeaderErrors.emplace_back( std::move( modHeadErr ) );
+    if ( diagnostic.severity >= ErrorSeverity::Error ) m_errCount++;
 
-    if ( modHeadErr.severity == ErrorSeverity::Fatal ) 
-    {
-        m_errCount++;
-        throw FatalCompilerError( "Fatal error caught during compilation" );
-    }
+    if ( m_errCount > 50 ) throw CompilationAborted();
 
-    if ( modHeadErr.severity == ErrorSeverity::Error ) m_errCount++;
-}
-
-void ErrorReporter::report( const CompilerError& compErr ) 
-{
-    if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
-
-    m_compilerErrors.emplace_back( std::move( compErr ) );
-
-    if ( compErr.severity == ErrorSeverity::Fatal ) 
-    {
-        m_errCount++;
-        throw FatalCompilerError( "Fatal error caught during compilation" );
-    }
-
-    if ( compErr.severity == ErrorSeverity::Error ) m_errCount++;
-}
-
-void ErrorReporter::report( const RuntimeError& runErr )
-{
-    if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
-
-    m_runtimeErrors.emplace_back( std::move( runErr ) );
-    
-    if ( runErr.severity == ErrorSeverity::Fatal ) 
-    {
-        m_errCount++;
-        throw FatalCompilerError( "Fatal error caught during compilation" );
-    }
-
-    if ( runErr.severity == ErrorSeverity::Error ) m_errCount++;
-}
-
-void ErrorReporter::report( const SemanticError& semErr ) 
-{
-    if ( m_errCount > 50 ) throw FatalCompilerError( "Too many errors to continue on." );
-
-    m_semanticErrors.emplace_back( std::move( semErr ) );
-}
-
-bool ErrorReporter::hasFatalErrors() const
-{
-    for ( const auto& err : m_compilerErrors )
-        if ( err.severity == ErrorSeverity::Fatal ) return true;
-    for ( const auto& err : m_runtimeErrors )
-        if ( err.severity == ErrorSeverity::Fatal ) return true;
-    for ( const auto& err : m_moduleHeaderErrors )
-        if (err .severity == ErrorSeverity::Fatal ) return true;
-    return false;
+    if ( diagnostic.severity == ErrorSeverity::Fatal ) throw CompilationAborted(); 
 }
 
 bool ErrorReporter::hasErrors() const
 {
     return m_errCount > 0;
+}
+
+bool ErrorReporter::hasDiagnostics() const
+{    
+    return m_diagnostics.size() > 0;
 }

@@ -12,13 +12,35 @@
 
 namespace chrono = std::chrono;
 
-void Driver::compileProgram() 
+void Driver::compileProgram()
 {
-    try {
+    try 
+    {
         compile();
+
+        if ( m_errReporter.hasDiagnostics() ) m_errReporter.printAllDiagnostics();
+    } 
+    catch ( const InternalCompilerError& error )
+    {
+        Output::error( error.what() );
+    } 
+    catch ( const CompilationAborted& error )
+    {
         m_errReporter.printAllDiagnostics();
-    } catch (const FatalCompilerError& error) {
-        m_errReporter.printAllDiagnostics();
+        Output::error( error.what() );
+    } 
+    catch ( const std::runtime_error& error )
+    {
+        Output::error(
+            std::format(
+                "Unknown runtime error occurred: {}", 
+                error.what()
+            )
+        );
+    } 
+    catch ( const std::exception& error )
+    {
+        Output::error("An unknown error occured");
     }
 }
 
@@ -34,11 +56,21 @@ void Driver::compile() {
 
     if ( !maybeFileId ) {
         m_errReporter.report(
-            ModuleHeaderError("Unable to find entry module \"" + m_config.entryModule + "\" within declared module", ErrorSeverity::Fatal)
+            Diagnostic(
+                std::format(
+                    "Unable to find entry module '{}' within declared module",
+                    m_config.entryModule
+                ),
+                ErrorCategory::Linking,
+                ErrorSeverity::Fatal
+            )
         );
         
-        Logger::error( 
-            "Unable to find entry module \"" + m_config.entryModule + "\" within declared modules" 
+        Logger::error(
+            std::format( 
+                "Unable to find entry module '{}' within declared modules",
+                m_config.entryModule
+            )
         );
 
         return;
@@ -57,14 +89,15 @@ void Driver::compile() {
     auto tokenEnd = chrono::high_resolution_clock::now();
     auto tokenDuration = duration_cast<chrono::microseconds>( tokenEnd - tokenStart );
 
-    std::cout << "Lexer Execution time: " << tokenDuration.count() << " µs\n";
+    Output::success( std::format( "Lexer Execution time: {} µs", tokenDuration.count() ) );
 
     if ( m_errReporter.hasErrors() )
     {
-        m_errReporter.printAllDiagnostics();
-
         Logger::error( 
-            std::to_string( m_errReporter.getErrCount() ) + " lexing error(s) found. Compilation terminated." 
+            std::format( 
+                "{} lexing error(s) found. Compilation terminated.", 
+                m_errReporter.getErrCount() 
+            )
         );
 
         return;
@@ -77,14 +110,20 @@ void Driver::compile() {
     auto parserEnd = chrono::high_resolution_clock::now();
     auto parserDuration = duration_cast<chrono::microseconds>( parserEnd - parserStart );
 
-    std::cout << "Parser Execution time: " << parserDuration.count() << " µs\n";
+    Output::success( 
+        std::format( 
+            "Parser Execution time: {} µs", 
+            parserDuration.count() 
+        ) 
+    );
 
     if ( m_errReporter.hasErrors() )
     {
-        m_errReporter.printAllDiagnostics();
-
         Logger::error( 
-            std::to_string( m_errReporter.getErrCount() ) + " parser error(s) found. Compilation terminated." 
+            std::format( 
+                "{} parser error(s) found. Compilation terminated.",  
+                m_errReporter.getErrCount() 
+            )
         );
 
         return;
@@ -96,9 +135,10 @@ void Driver::compile() {
     }
 
     Logger::debug( 
-        "AST generated with " +
-        std::to_string( compUnit->readStatements().size() ) + 
-        " top-level statements"
+        std::format(
+            "AST generated with {} top-level statements",
+            compUnit->readStatements().size()
+        )
     );
 
     Logger::debug( "Parsed file" );
@@ -108,13 +148,15 @@ void Driver::compile() {
 }
 
 void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
-    fs::path filePath = m_srcManager.getFilePath(compUnit.getFileId());
+    fs::path filePath = m_srcManager.getFilePath( compUnit.getFileId() );
     std::ifstream fileStream( filePath );
 
     if ( !fileStream.is_open() ) 
     {
-        m_errReporter.report( RuntimeError(
+        m_errReporter.report( 
+            Diagnostic (
                 "Error opening .lmur file",
+                ErrorCategory::FileIO,
                 ErrorSeverity::Fatal
             ) 
         );
@@ -132,7 +174,10 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
     if ( m_errReporter.hasErrors() ) return;
 
     Logger::trace( 
-        std::to_string( compUnit.getTokenCount() ) + " tokens generated"
+        std::format( 
+            "{} tokens generated", 
+            compUnit.getTokenCount() 
+        )
     );
 } 
 
@@ -145,6 +190,4 @@ void Driver::parseCompilationUnit( CompilationUnit& compUnit ) {
     Parser parser = Parser( compUnit, m_errReporter );
 
     parser.parse();
-
-    if ( m_errReporter.hasErrors() ) return;
 }

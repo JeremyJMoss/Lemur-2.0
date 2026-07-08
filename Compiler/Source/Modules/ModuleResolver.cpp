@@ -22,7 +22,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
     for ( const fs::directory_entry &file : fs::recursive_directory_iterator( sourcePath ) )
     {
         const fs::path path = file.path();
-        const std::string pathStr = "'" + path.string() + "'";
+        const std::string pathStr = std::format( "'{}'", path.string() );
 
         if ( !file.is_regular_file() ) {
             continue;
@@ -40,7 +40,21 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
             continue;
         }
 
-        FileId fileId = m_srcManager.addFile( path );
+        auto maybeFileId = m_srcManager.addFile( path );
+
+        if( !maybeFileId ) {
+            m_errReporter.report(
+                Diagnostic(
+                    "Error saving file to Source Manager",
+                    ErrorCategory::Linking,
+                    ErrorSeverity::Fatal
+                )
+            );
+
+            return;
+        }
+
+        FileId fileId = maybeFileId.value();
 
         Logger::debug(
             "File added to source manager",
@@ -54,8 +68,10 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
 
         if ( !fileStream.is_open() ) 
         {
-            m_errReporter.report( RuntimeError(
+            m_errReporter.report( 
+                Diagnostic(
                     "Error opening .lmur file",
+                    ErrorCategory::FileIO,
                     ErrorSeverity::Fatal
                 ) 
             );
@@ -66,8 +82,13 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
 
         if ( !maybeModuleIdentifier ) {
             m_errReporter.report( 
-                ModuleHeaderError(
-                    maybeModuleIdentifier.error().message + " for file path " + pathStr, 
+                Diagnostic(
+                    std::format(
+                        "{} for file path {}", 
+                        maybeModuleIdentifier.error().message, 
+                        pathStr 
+                    ), 
+                    maybeModuleIdentifier.error().category,
                     maybeModuleIdentifier.error().severity
                 ) 
             );
@@ -86,9 +107,14 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
 
         if ( !inserted )
         {
-            m_errReporter.report(RuntimeError(
-                "Duplicate module '" + maybeModuleIdentifier.value() + "'",
-                ErrorSeverity::Fatal
+            m_errReporter.report(
+                Diagnostic(
+                    std::format( 
+                        "Duplicate module '{}'", 
+                        maybeModuleIdentifier.value() 
+                    ),
+                    ErrorCategory::Linking,
+                    ErrorSeverity::Fatal
             ));
         }
     }
@@ -98,7 +124,7 @@ std::optional<FileId> ModuleResolver::resolveModuleFileId( const std::string& mo
 {
     auto it = m_moduleIndex.find( moduleName );
 
-    if (it == m_moduleIndex.end())
+    if ( it == m_moduleIndex.end() )
         return std::nullopt;
 
     return it->second;

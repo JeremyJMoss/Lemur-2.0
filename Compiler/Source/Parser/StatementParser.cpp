@@ -17,7 +17,7 @@
 #include <expected>
 #include <variant>
 
-std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunctionDeclaration( const bool isEntry ) 
+std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDeclaration( const bool isEntry ) 
 {
     Logger::debug( 
         "Parsing function declaration",
@@ -28,8 +28,12 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
 
     const Token& front = m_tokenStream.peek();
 
-    if (front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected(UnexpectedEndOfInputError(front.getLocation()));
+    if ( front.checkTypeMatches( TokenKind::EndOfFile ) ) {
+        return std::unexpected(
+            UnexpectedEndOfInputDiagnostic(
+                front.getLocation()
+            )
+        );
     }
 
     if ( isEntry ) 
@@ -39,11 +43,11 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
         {
             // Report entry keyword missing from entry function
             m_errReporter.report(
-                CompilerError(
+                Diagnostic(
                     "Entry keyword missing from entry function",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Warning,
-                    front.getLocation(),
-                    ErrorCategory::Syntax
+                    front.getLocation()
                 )
             );
         }
@@ -52,18 +56,20 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
     auto maybeFunctionKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Fn );
     if ( !maybeFunctionKeyword ) 
     {
-        std::visit( [&] ( auto&& err ) 
-            {
-                m_errReporter.report( std::move( err ) );
-            }, 
-            maybeFunctionKeyword.error()
-        );
+        m_errReporter.report( maybeFunctionKeyword.error() );
     }
 
     auto peekedToken = m_tokenStream.peek();
 
-    if (!peekedToken.checkTypeMatches(TokenKind::Identifier)) {
-        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, peekedToken.getType(), peekedToken.getLocation()));
+    if ( !peekedToken.checkTypeMatches( TokenKind::Identifier ) ) 
+    {
+        return std::unexpected(
+            UnexpectedTypeDiagnostic( 
+                TokenKind::Identifier, 
+                peekedToken.getType(), 
+                peekedToken.getLocation()
+            )
+        );
     }
 
     auto idToken = m_tokenStream.consume();
@@ -71,7 +77,7 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
     Logger::trace(
         "Function name parsed", 
         std::to_array<Attribute>({
-            { "Identifier", "'" + std::string( idToken.getValue() ) + "'" }
+            { "Identifier", std::format("'{}'", idToken.getValue() ) }
         })
     );
 
@@ -99,7 +105,7 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
     Logger::trace(
         "Return type parsed", 
         std::to_array<Attribute>({
-            { "Type", "'" + ASTPrinter::getParsedType( maybeReturnType.value()->kind ) + "'" }
+            { "Type", std::format( "'{}'", ASTPrinter::getParsedType( maybeReturnType.value()->kind ) ) }
         })
     );
 
@@ -125,19 +131,23 @@ std::expected<FunctionDeclaration*, ErrorVariant> StatementParser::parseFunction
     Logger::debug(
         "Function declaration parsed successfully",
         std::to_array<Attribute>({
-            { "Name", "'" + std::string( idToken.getValue() ) + "'" }
+            { "Name", std::format( "'{}'", idToken.getValue() ) }
         })
     );
 
     return funDec;
 }
 
-std::expected<Block*, ErrorVariant> StatementParser::parseBlock() 
+std::expected<Block*, Diagnostic> StatementParser::parseBlock() 
 {
     const Token& front = m_tokenStream.peek();
 
     if (front.checkTypeMatches( TokenKind::EndOfFile )){
-        return std::unexpected(UnexpectedEndOfInputError(front.getLocation()));
+        return std::unexpected(
+            UnexpectedEndOfInputDiagnostic(
+                front.getLocation()
+            )
+        );
     }
 
     Logger::debug(
@@ -158,8 +168,12 @@ std::expected<Block*, ErrorVariant> StatementParser::parseBlock()
 
     while ( true ) 
     {
-        if (current.checkTypeMatches( TokenKind::EndOfFile ) ) {
-            return std::unexpected(UnexpectedEndOfInputError(current.getLocation()));
+        if ( current.checkTypeMatches( TokenKind::EndOfFile ) ) {
+            return std::unexpected(
+                UnexpectedEndOfInputDiagnostic(
+                    current.getLocation()
+                ) 
+            );
         }
 
         if ( current.checkMatches( TokenKind::Symbol, TokenSymbol::RBrace ) ) 
@@ -180,10 +194,7 @@ std::expected<Block*, ErrorVariant> StatementParser::parseBlock()
         auto maybeStatement = m_parent.createStatement( current );
         if ( !maybeStatement ) 
         {
-            std::visit( [&] ( auto&& err ) 
-            {
-                m_errReporter.report( std::move( err ) );
-            }, maybeStatement.error() );
+            m_errReporter.report( maybeStatement.error() );
 
             Logger::trace( "Recovering from error inside block" );
 
@@ -198,8 +209,6 @@ std::expected<Block*, ErrorVariant> StatementParser::parseBlock()
         current = m_tokenStream.peek();
     }
 
-    size_t bodySize = body.size();
-
     auto block = m_compUnit.allocate<Block>( body );
 
     block->location = SourceRange::getLocation( front, current );
@@ -207,14 +216,14 @@ std::expected<Block*, ErrorVariant> StatementParser::parseBlock()
     Logger::debug( 
         "Parsing statements inside block successful",
         std::to_array<Attribute>({
-            { "StatementCount", std::to_string( bodySize ) }
+            { "StatementCount", std::to_string( block->statements.size() ) }
         })
     );
 
     return block;
 }
 
-std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariableDeclaration( const bool locked ) 
+std::expected<VariableDeclaration*, Diagnostic> StatementParser::parseVariableDeclaration( const bool locked ) 
 {
     Logger::debug(
         "Parsing variable declaration", 
@@ -225,8 +234,12 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
 
     const Token& front = m_tokenStream.peek();
 
-    if (front.checkTypeMatches( TokenKind::EndOfFile)) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+    if ( front.checkTypeMatches( TokenKind::EndOfFile ) ) {
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     if ( locked ) 
@@ -235,12 +248,12 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
         if ( !maybeLocked )
         {
             // Report locked variable missing lock keyword
-            m_errReporter.report(
-                CompilerError(
+            return std::unexpected(
+                Diagnostic(
                     "Locked variable missing lock keyword",
-                    ErrorSeverity::Warning,
-                    front.getLocation(),
-                    ErrorCategory::Syntax
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    front.getLocation()
                 )
             );
         }
@@ -249,7 +262,13 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     const Token& peekedToken = m_tokenStream.peek();
 
     if (!peekedToken.checkTypeMatches(TokenKind::Identifier)) {
-        return std::unexpected(UnexpectedTypeError( TokenKind::Identifier, peekedToken.getType(), peekedToken.getLocation()));
+        return std::unexpected(
+            UnexpectedTypeDiagnostic( 
+                TokenKind::Identifier, 
+                peekedToken.getType(), 
+                peekedToken.getLocation()
+            )
+        );
     }
 
     const Token& idToken = m_tokenStream.consume();
@@ -257,7 +276,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     Logger::trace(
         "Consumed variable identifier", 
         std::to_array<Attribute>({ 
-            { "Identifier", "'" + std::string( idToken.getValue() ) + "'" } 
+            { "Identifier", std::format( "'{}'", idToken.getValue() ) } 
         })
     );
 
@@ -271,11 +290,11 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     if ( !maybeParsedType )
     {
         return std::unexpected(
-            CompilerError(
+            Diagnostic(
                 "Could not parse type.",
+                ErrorCategory::Syntax,
                 ErrorSeverity::Error,
-                maybeColon.value().get().getLocation(),
-                ErrorCategory::Syntax
+                maybeColon.value().get().getLocation()
             )
         );
     }
@@ -285,14 +304,18 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     Logger::trace(
         "Parsed variable type", 
         std::to_array<Attribute>({ 
-            { "Type", "'" + ASTPrinter::getParsedType( varType->kind ) + "'" } 
+            { "Type", std::format("'{}'", ASTPrinter::getParsedType( varType->kind ) ) } 
         })
     );
 
     const Token& current = m_tokenStream.peek();
 
     if (current.checkTypeMatches(TokenKind::EndOfFile)) {
-        return std::unexpected(UnexpectedEndOfInputError( current.getLocation() ));
+        return std::unexpected(
+            UnexpectedEndOfInputDiagnostic( 
+                current.getLocation() 
+            )
+        );
     }
 
     Expression* initialiser = nullptr;
@@ -302,7 +325,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
         Logger::trace(
             "Detected assignment in variable declaration", 
             std::to_array<Attribute>({ 
-                { "Identifier", "'" + std::string( idToken.getValue() ) + "'" } 
+                { "Identifier", std::format( "'{}'", idToken.getValue() ) } 
             })
         );
 
@@ -332,7 +355,7 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     Logger::debug(
         "Completed variable declaration", 
         std::to_array<Attribute>({ 
-            { "Identifier", "'" + std::string( decl->identifier->name ) + "'" },
+            { "Identifier", std::format( "'{}'", decl->identifier->name ) },
             { "HasInitialiser", ( initialiser ? "true" : "false" ) }
         })
     );
@@ -340,14 +363,18 @@ std::expected<VariableDeclaration*, ErrorVariant> StatementParser::parseVariable
     return decl;
 }
 
-std::expected<Return*, ErrorVariant> StatementParser::parseReturn() 
+std::expected<Return*, Diagnostic> StatementParser::parseReturn() 
 {
     Logger::debug( "Parsing return statement" );
 
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     auto maybeReturnKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Return );
@@ -356,7 +383,11 @@ std::expected<Return*, ErrorVariant> StatementParser::parseReturn()
     const Token& next = m_tokenStream.peek();
 
     if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                next.getLocation() 
+            ) 
+        );
     }
 
     Expression* value = nullptr;
@@ -369,11 +400,11 @@ std::expected<Return*, ErrorVariant> StatementParser::parseReturn()
         if ( !maybeValue ) 
         {
             return std::unexpected( 
-                CompilerError(
+                Diagnostic(
                     "Unable to parse return statement. Malformed expression statement after return keyword",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    next.getLocation(),
-                    ErrorCategory::Syntax
+                    next.getLocation()
                 )
             );
         }
@@ -400,7 +431,7 @@ std::expected<Return*, ErrorVariant> StatementParser::parseReturn()
     return ret;
 }
 
-std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional( bool justElse ) 
+std::expected<IfConditional*, Diagnostic> StatementParser::parseIfConditional( bool justElse ) 
 {
     std::string stmtType = justElse ? "else" : "if";
     Logger::debug( "Parsing " + stmtType + " statement" );
@@ -408,7 +439,13 @@ std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional(
     const Token& front = m_tokenStream.peek();
 
     if ( !front.checkTypeMatches( TokenKind::Keyword )) {
-        return std::unexpected( UnexpectedTypeError( TokenKind::Keyword, front.getType(), front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedTypeDiagnostic( 
+                TokenKind::Keyword, 
+                front.getType(), 
+                front.getLocation() 
+            ) 
+        );
     }
 
     m_tokenStream.consume();
@@ -465,7 +502,11 @@ std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional(
     auto next = m_tokenStream.peek();
 
     if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                next.getLocation() 
+            )
+        );
     }
     
     if ( next.checkMatches( TokenKind::Keyword, TokenKeyword::Else ) ) 
@@ -475,7 +516,11 @@ std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional(
         next = m_tokenStream.peek( 1 );
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    next.getLocation() 
+                ) 
+            );
         }
 
         if ( next.checkMatches( TokenKind::Keyword, TokenKeyword::If ) ) 
@@ -513,7 +558,7 @@ std::expected<IfConditional*, ErrorVariant> StatementParser::parseIfConditional(
     return ifStmt;
 }
 
-std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop() 
+std::expected<ForLoop*, Diagnostic> StatementParser::parseForLoop() 
 {
     Logger::debug( "Parsing for loop statement" );
 
@@ -547,7 +592,11 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
     const Token& current = m_tokenStream.peek();
 
     if ( current.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( current.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                current.getLocation() 
+            ) 
+        );
     }
 
     if ( current.checkMatches( TokenKind::Keyword, TokenKeyword::Step ) ) 
@@ -561,11 +610,11 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
         if ( !maybeStep )
         {
             m_errReporter.report(
-                CompilerError(
+                Diagnostic(
                     "Malformed or missing step statement inside loop parameters",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    maybeStepKeyword.value().get().getLocation(),
-                    ErrorCategory::Syntax
+                    maybeStepKeyword.value().get().getLocation()
                 )
             );
         }
@@ -577,7 +626,11 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
         const Token& next = m_tokenStream.peek();
 
         if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
-            return std::unexpected( UnexpectedEndOfInputError( next.getLocation() ) );
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    next.getLocation() 
+                ) 
+            );
         }
 
         if ( next.checkMatches( TokenKind::Keyword, TokenKeyword::Where ) ) 
@@ -591,11 +644,11 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
             if ( !maybeWhere )
             {
                 m_errReporter.report(
-                    CompilerError(
+                    Diagnostic(
                         "Malformed or missing where statement inside loop parameters",
+                        ErrorCategory::Syntax,
                         ErrorSeverity::Error,
-                        maybeWhereKeyword.value().get().getLocation(),
-                        ErrorCategory::Syntax
+                        maybeWhereKeyword.value().get().getLocation()
                     )
                 );
             }
@@ -616,11 +669,11 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
         if ( !maybeWhere )
         {
             m_errReporter.report(
-                CompilerError(
+                Diagnostic(
                     "Malformed or missing where statement inside loop parameters",
+                    ErrorCategory::Syntax,
                     ErrorSeverity::Error,
-                    maybeWhereKeyword.value().get().getLocation(),
-                    ErrorCategory::Syntax
+                    maybeWhereKeyword.value().get().getLocation()
                 )
             );
         }
@@ -658,14 +711,18 @@ std::expected<ForLoop*, ErrorVariant> StatementParser::parseForLoop()
     return forLoop;
 }
 
-std::expected<ModuleDeclaration*, ErrorVariant> StatementParser::parseModuleDeclaration()
+std::expected<ModuleDeclaration*, Diagnostic> StatementParser::parseModuleDeclaration()
 {
     Logger::debug( "Parsing module declaration" );
 
     const Token& front = m_tokenStream.peek();
 
     if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
-        return std::unexpected( UnexpectedEndOfInputError( front.getLocation() ) );
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
     }
 
     auto maybeModuleKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Module );
@@ -703,20 +760,24 @@ std::expected<ModuleDeclaration*, ErrorVariant> StatementParser::parseModuleDecl
 
             if ( nextTokenTypeExpected == TokenKind::Symbol) {
                 return std::unexpected( 
-                    CompilerError(
+                    Diagnostic(
                         "Malformed module declaration statement. Missing terminating node.",
+                        ErrorCategory::Syntax,
                         ErrorSeverity::Error,
-                        next.getLocation(),
-                        ErrorCategory::Syntax
+                        next.getLocation()
                     ) 
                 );
             } else {
                 return std::unexpected(
-                    CompilerError(
-                        "Malformed module declaration statement. Expected " + toString( TokenKind::Identifier ) +  " got " + toString( next.getType() ),
+                    Diagnostic(
+                        std::format( 
+                            "Malformed module declaration statement. Expected '{}' got '{}'",
+                            toString( TokenKind::Identifier ),
+                            toString( next.getType() )
+                        ),
+                        ErrorCategory::Syntax,
                         ErrorSeverity::Error,
-                        next.getLocation(),
-                        ErrorCategory::Syntax
+                        next.getLocation()
                     )
                 );
             }
@@ -725,11 +786,11 @@ std::expected<ModuleDeclaration*, ErrorVariant> StatementParser::parseModuleDecl
 
     if ( builtModuleName.empty() ) {
         return std::unexpected(
-            CompilerError(
+            Diagnostic(
                 "Empty module declaration statement",
+                ErrorCategory::Syntax,
                 ErrorSeverity::Error,
-                front.getLocation(),
-                ErrorCategory::Syntax
+                front.getLocation()
             )
         );
     }
@@ -738,11 +799,11 @@ std::expected<ModuleDeclaration*, ErrorVariant> StatementParser::parseModuleDecl
         const Token& next = m_tokenStream.peek();
 
         return std::unexpected(
-            CompilerError(
+            Diagnostic(
                 "Module declaration statement does not match module name stored in resolved file",
+                ErrorCategory::Linking,
                 ErrorSeverity::Error,
-                { front.getLocation().start, next.getLocation().end, front.getLocation().fileId },
-                ErrorCategory::Syntax
+                { front.getLocation().start, next.getLocation().end, front.getLocation().fileId }
             )
         );
     }

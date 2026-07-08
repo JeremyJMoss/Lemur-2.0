@@ -22,12 +22,12 @@ class ParameterParser {
             m_tokenStream( tStream ), 
             m_typeParser( typeParser ) {}
 
-        std::expected<std::vector<Parameter*>, ErrorVariant> parseFunctionParameters();
+        std::expected<std::vector<Parameter*>, Diagnostic> parseFunctionParameters();
 
     private:
         CompilationUnit& m_compUnit;
         TokenStream& m_tokenStream;
         TypeParser& m_typeParser;
 
-        std::expected<Parameter*, ErrorVariant> parseParameter();
+        std::expected<Parameter*, Diagnostic> parseParameter();
 };

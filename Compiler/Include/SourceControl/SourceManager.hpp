@@ -5,7 +5,9 @@
 #include <string>
 #include <filesystem>
 #include <unordered_map>
+#include <expected>
 #include "SourceControl/FileData.hpp"
+#include "Errors/Errors.hpp"
 
 namespace fs = std::filesystem;
 
@@ -16,9 +18,9 @@ using FileId = size_t;
 class SourceManager 
 {
     public:
-        FileId addFile( const fs::path& filePath );
+        std::expected<FileId, Diagnostic> addFile( const fs::path& filePath );
 
-        const std::string getLine( FileId fileId, std::size_t lineNumber ) const;
+        std::expected<std::string, Diagnostic> getLine( FileId fileId, std::size_t lineNumber ) const;
 
         fs::path getFilePath( FileId fileId ) const
         {

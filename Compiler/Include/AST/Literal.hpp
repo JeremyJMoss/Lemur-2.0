@@ -9,7 +9,7 @@
 /* === Variant Declaration === */
 
 using LiteralValue = std::variant<
-    std::string_view, 
+    std::string, 
     char, 
     int, 
     float, 
