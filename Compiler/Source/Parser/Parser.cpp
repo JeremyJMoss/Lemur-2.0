@@ -42,7 +42,7 @@ void Parser::parseNextStatement()
     // setting up array for debugging
     const std::array attrs = {
         Attribute{ "Value", "'" + std::string( current.getValue() ) + "'" },
-        Attribute{ "Type", "'" + toString( current.getType() ) + "'" },
+        Attribute{ "Type", std::format( "'{}'", toString( current.getType() ) ) },
         Attribute{ "Location", current.getLocation().toString() }
     };
 

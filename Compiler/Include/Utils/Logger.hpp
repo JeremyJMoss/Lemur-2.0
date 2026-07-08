@@ -64,17 +64,15 @@ class Logger
 
         static LogLevel parseLogLevel( const std::string& levelStr );
 
-        static void setFile( fs::path filepath = DefaultLogFile ) {
-            fs::path path( filepath );
-
-            if ( path.has_parent_path() )
-                fs::create_directories(path.parent_path());
+        static void setFile( const fs::path& filepath = DefaultLogFile ) {
+            if ( filepath.has_parent_path() )
+                fs::create_directories(filepath.parent_path());
 
             if ( s_logFile.is_open() ) {
                 s_logFile.close();
             }
 
-            s_logFile.open(path, std::ios::app);
+            s_logFile.open(filepath, std::ios::app);
         }
 
         static void error( 

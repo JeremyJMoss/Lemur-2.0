@@ -1,7 +1,6 @@
-#include "Modules/ModuleResolver.hpp"
+#include "Modules/ModuleHeaderScanner.hpp"
 
 #include <filesystem>
-#include <optional>
 #include <string>
 #include <fstream>
 #include "Utils/Logger.hpp"
@@ -12,8 +11,9 @@
 namespace fs = std::filesystem;
 using FileId = std::size_t;
 
-void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
+ModuleTable ModuleHeaderScanner::scan( const fs::path& sourcePath )
 {
+    ModuleTable moduleTable;
     Logger::trace( "Started scanning file headers" );
 
     Logger::info( "Starting Module Resolution" );
@@ -51,7 +51,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
                 )
             );
 
-            return;
+            return {};
         }
 
         FileId fileId = maybeFileId.value();
@@ -75,7 +75,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
                     ErrorSeverity::Fatal
                 ) 
             );
-            return;
+            return {};
         }
 
         auto maybeModuleIdentifier = Tokenizer::readModuleHeader( fileStream );
@@ -103,7 +103,7 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
             })
         );
 
-        auto [it, inserted] = m_moduleIndex.emplace(maybeModuleIdentifier.value(), fileId);
+        bool inserted = moduleTable.add(fileId, maybeModuleIdentifier.value());
 
         if ( !inserted )
         {
@@ -118,14 +118,6 @@ void ModuleResolver::buildModuleIndex( const fs::path& sourcePath )
             ));
         }
     }
-}
 
-std::optional<FileId> ModuleResolver::resolveModuleFileId( const std::string& moduleName ) const
-{
-    auto it = m_moduleIndex.find( moduleName );
-
-    if ( it == m_moduleIndex.end() )
-        return std::nullopt;
-
-    return it->second;
+    return moduleTable;
 }

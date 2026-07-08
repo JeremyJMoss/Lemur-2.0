@@ -34,4 +34,5 @@ class Driver
         SourceManager m_srcManager;
         ErrorReporter m_errReporter;
         std::unordered_map<FileId, CompilationUnit> m_compilationUnits;
+        ModuleTable m_modules;
 };

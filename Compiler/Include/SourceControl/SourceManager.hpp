@@ -8,6 +8,7 @@
 #include <expected>
 #include "SourceControl/FileData.hpp"
 #include "Errors/Errors.hpp"
+#include "Modules/ModuleTable.hpp"
 
 namespace fs = std::filesystem;
 
@@ -27,7 +28,7 @@ class SourceManager
             return m_files.at( fileId ).getFilePath().string();
         }
 
-        void setModuleName( FileId id, std::string_view moduleName );
+        void setModuleInfo( ModuleInfo info );
 
     private:
         std::unordered_map<FileId, FileData> m_files;

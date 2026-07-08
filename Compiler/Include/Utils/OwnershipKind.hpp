@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 enum class OwnershipKind : std::uint8_t
 {
     Owned,    // Exclusive ownership (like unique_ptr)

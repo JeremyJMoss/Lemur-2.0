@@ -182,10 +182,10 @@ std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, st
     return line;
 }
 
-void SourceManager::setModuleName( FileId id, std::string_view moduleName ) 
+void SourceManager::setModuleInfo( ModuleInfo info ) 
 {
     try {
-        m_files.at( id ).setModuleName( moduleName );
+        m_files.at( info.id ).setModuleName( info.name );
     } catch ( std::out_of_range& error ) {
         throw InternalCompilerError( "Tried to access out of range module name inside file map");
     }

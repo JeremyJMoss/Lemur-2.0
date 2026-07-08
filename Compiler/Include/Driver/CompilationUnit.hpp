@@ -11,6 +11,7 @@
 #include "Scopes/ScopeTable.hpp"
 #include "Tokens/TokenTable.hpp"
 #include "DataStructures/Arena.hpp"
+#include "Modules/ModuleTable.hpp"
 
 using NodeId = std::size_t;
 using SymbolId = std::size_t;
@@ -27,8 +28,8 @@ struct Statement;
 
 class CompilationUnit {
     public:
-        CompilationUnit( FileId fileId, std::string_view moduleName ) 
-            : m_fileId( fileId ), m_moduleName( moduleName ) {
+        CompilationUnit( const ModuleInfo& moduleInfo ) 
+            : m_moduleInfo( moduleInfo ) {
                 ScopeId scopeId = createScope( InvalidScopeId, ScopeOwnerKind::Global );
                 m_globalScope = scopeId;
                 m_currentScope = scopeId;
@@ -62,9 +63,9 @@ class CompilationUnit {
             m_nodeScopes.emplace( nodeId, scopeId );
         }
         
-        FileId getFileId() const { return m_fileId; }
+        FileId getFileId() const { return m_moduleInfo.fileId; }
 
-        std::string_view getModuleName() const { return m_moduleName; }
+        std::string_view getModuleName() const { return m_moduleInfo.name; }
 
         size_t getTokenCount() const { return m_tokens.count(); }
 
@@ -81,8 +82,7 @@ class CompilationUnit {
 
         void freeArena() { m_arena.reset(); }
     private:
-        FileId m_fileId;
-        std::string_view m_moduleName;
+        const ModuleInfo& m_moduleInfo;
         ScopeId m_globalScope;
         ScopeId m_currentScope;
 

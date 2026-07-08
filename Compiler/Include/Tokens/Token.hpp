@@ -85,12 +85,14 @@ enum class TokenKeyword : u_int8_t
     Weak,
     In,
     Entry,
-    Module
+    Module,
+    Import,
+    From
 };
 
 /* === Utility === */
 
-inline std::string toString( const TokenKind kind ) 
+inline std::string_view toString( const TokenKind kind ) 
 {
     switch ( kind ) 
     {
@@ -110,7 +112,7 @@ inline std::string toString( const TokenKind kind )
     }
 }
 
-inline std::string toString( const TokenSymbol symbol ) 
+inline std::string_view toString( const TokenSymbol symbol ) 
 {
     switch ( symbol ) 
     {
@@ -145,7 +147,7 @@ inline std::string toString( const TokenSymbol symbol )
     }
 }
 
-inline std::string toString( const TokenKeyword keyword ) 
+inline std::string_view toString( const TokenKeyword keyword ) 
 {
     switch ( keyword ) 
     {
@@ -176,6 +178,8 @@ inline std::string toString( const TokenKeyword keyword )
         case TokenKeyword::In:         return "in";
         case TokenKeyword::Entry:      return "entry";
         case TokenKeyword::Module:     return "module";
+        case TokenKeyword::Import:     return "import";
+        case TokenKeyword::From:       return "from";
         default:                       return "Invalid Keyword";
     }
 }
