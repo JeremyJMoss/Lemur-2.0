@@ -11,7 +11,7 @@
 #include "Scopes/ScopeTable.hpp"
 #include "Tokens/TokenTable.hpp"
 #include "DataStructures/Arena.hpp"
-#include "Modules/ModuleTable.hpp"
+#include "Modules/ModuleInfo.hpp"
 
 using NodeId = std::size_t;
 using SymbolId = std::size_t;

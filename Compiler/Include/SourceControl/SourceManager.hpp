@@ -8,11 +8,14 @@
 #include <expected>
 #include "SourceControl/FileData.hpp"
 #include "Errors/Errors.hpp"
-#include "Modules/ModuleTable.hpp"
 
 namespace fs = std::filesystem;
 
 using FileId = size_t;
+
+/* === Forward Declarations === */
+
+struct ModuleInfo;
 
 /* === Source Manager === */
 

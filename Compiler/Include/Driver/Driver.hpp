@@ -6,6 +6,7 @@
 #include "Errors/ErrorReporter.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Driver/CompilationUnit.hpp"
+#include "Modules/ModuleTable.hpp"
 
 using FileId = std::size_t;
 

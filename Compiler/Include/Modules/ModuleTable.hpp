@@ -6,21 +6,11 @@
 #include <span>
 #include <unordered_map>
 #include <expected>
-#include <vector>
 #include "Tokens/Token.hpp"
+#include "Modules/ModuleInfo.hpp"
 
 using ModuleId = std::size_t;
 using FileId = std::size_t;
-
-/* === Module Info === */
-
-struct ModuleInfo
-{
-    ModuleId id;
-    FileId fileId;
-    std::string name;
-    std::vector<ModuleId> imports;
-};
 
 /* === Module Table === */
 

@@ -1,4 +1,6 @@
 #pragma once
+
+/* === Imports === */
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
@@ -7,20 +9,24 @@
 #include "SourceControl/SourceLocation.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Errors/Errors.hpp"
+#include "Modules/ModuleInfo.hpp"
 
 using FileId = std::size_t;
+
+/* === Forward Declarations === */
 
 class CompilationUnit;
 class ErrorReporter;
 
-class Tokenizer 
+/* === Tokenizer === */
+
+class Tokenizer
 {
     public:
         Tokenizer( CompilationUnit& compUnit, ErrorReporter& errReporter ) 
             : m_compUnit( compUnit ), m_errReporter( errReporter ) {}
         void tokenizeStream( std::istream& stream );
         static std::expected<std::string, Diagnostic> parseModuleName( std::string_view input );
-        static std::expected<std::string, Diagnostic> readModuleHeader( std::istream& stream );
         void checkIssueWithOutput( FileId fileId );
 
     private:

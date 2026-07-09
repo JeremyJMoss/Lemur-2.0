@@ -4,7 +4,7 @@
 #include "Errors/Errors.hpp"
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
-#include "Modules/ModuleResolver.hpp"
+#include "Modules/ModuleHeaderScanner.hpp"
 #include "Config/Config.hpp"
 #include "Utils/Output.hpp"
 #include <array>
@@ -48,9 +48,21 @@ void Driver::compile() {
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
 
-    ModuleResolver resolver = ModuleResolver( m_srcManager, m_errReporter );
+    ModuleHeaderScanner scanner = ModuleHeaderScanner( m_errReporter, m_srcManager );
 
-    resolver.populate( m_config.sourcePath, m_modules );
+    auto maybeScanSuccessful = scanner.scan( m_config.sourcePath );
+
+    if (!maybeScanSuccessful) {
+        m_errReporter.report(
+            Diagnostic(
+                "Failed to scan modules within source path folder tree",
+                ErrorCategory::Linking,
+                ErrorSeverity::Fatal
+            )
+        );
+    }
+
+    m_modules = maybeScanSuccessful.value();
 
     auto maybeModule = m_modules.find( m_config.entryModule );
 

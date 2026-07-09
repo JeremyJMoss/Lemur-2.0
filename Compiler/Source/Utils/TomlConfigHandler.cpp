@@ -50,7 +50,7 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
             if (auto entry = build->get_as<std::string>("entry")) {
                 std::string entryModuleString = entry->get();
                 
-                auto maybeParsedModuleName = Tokenizer::parseModuleName(entryModuleString);
+                auto maybeParsedModuleName = Tokenizer::parseModuleName( entryModuleString );
 
                 if (!maybeParsedModuleName) {
                     return std::unexpected(maybeParsedModuleName.error());
