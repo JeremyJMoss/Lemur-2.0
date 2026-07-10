@@ -88,7 +88,7 @@ void Driver::compile() {
         return;
     }
 
-    m_srcManager.setModuleInfo( *maybeModule );
+    m_srcManager.setModuleHeader( *maybeModule );
 
     auto compUnit = std::make_unique<CompilationUnit>( *maybeModule );
 

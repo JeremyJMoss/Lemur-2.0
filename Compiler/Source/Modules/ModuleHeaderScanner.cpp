@@ -145,8 +145,7 @@ std::expected<std::string, Diagnostic> ModuleHeaderScanner::parseModuleDirective
     {
         Start,
         ExpectName,
-        ExpectDotOrEnd,
-        ExpectImportKeyword
+        ExpectDotOrEnd
     };
 
     State state = State::Start;
@@ -285,4 +284,242 @@ std::expected<std::string, Diagnostic> ModuleHeaderScanner::parseModuleDirective
             ErrorSeverity::Warning
         )
     );
+}
+
+std::expected<std::vector<ImportDirective>, Diagnostic> ModuleHeaderScanner::parseImportDirectives()
+{
+    std::vector<ImportDirective> imports;
+
+    enum class State
+    {
+        ExpectImport,
+        ExpectTarget,
+        SkipBraceContents,
+        ExpectFrom,
+        ExpectName,
+        ExpectDotOrEnd,
+        ExpectAlias,
+        ExpectAliasEnd
+    };
+
+    State state = State::ExpectImport;
+
+    std::string importName = "";
+
+    m_braceDepth = 0;
+    
+    do {
+        while (m_pos < m_line.length())
+        {
+            char c = m_line[m_pos];
+
+            // Handle block comments
+            if ( m_inComment )
+            {
+                if (c == '*' && m_pos + 1 < m_line.length() && m_line[m_pos + 1] == '/')
+                {
+                    m_inComment = false;
+                    m_pos += 2;
+                }
+                else
+                {
+                    ++m_pos;
+                }
+                continue;
+            }
+
+            // Skip whitespace
+            if ( isWhitespaceChar( c ) )
+            {
+                ++m_pos;
+                continue;
+            }
+
+            // Skip line comment
+            if (c == '/' && m_pos + 1 < m_line.length() && m_line[m_pos + 1] == '/')
+            {
+                if (state != State::ExpectImport)
+                {
+                    return std::unexpected(
+                        Diagnostic(
+                            "Unexpected end of import directive",
+                            ErrorCategory::Linking,
+                            ErrorSeverity::Error
+                        )
+                    );
+                }
+
+                // Ignore rest of line
+                break;
+            }
+
+            // Enter multiline comment
+            if (c == '/' && m_pos + 1 < m_line.length() && m_line[m_pos + 1] == '*')
+            {
+                m_inComment = true;
+                m_pos += 2;
+                continue;
+            }
+
+            if (state == State::ExpectAlias)
+            {
+                if (isIdentifierStartChar(c))
+                {
+                    readIdentifier(m_line, m_pos);
+                    state = State::ExpectAliasEnd;
+                    continue;
+                }
+
+                return std::unexpected(
+                    Diagnostic(
+                        "Expected alias name",
+                        ErrorCategory::Linking,
+                        ErrorSeverity::Error
+                    )
+                );
+            }
+
+            // End of import directive
+            if (c == ';')
+            {
+                if (state != State::ExpectDotOrEnd && state != State::ExpectAliasEnd)
+                    return std::unexpected(
+                        Diagnostic(
+                            "Incomplete import directive",
+                            ErrorCategory::Linking,
+                            ErrorSeverity::Error
+                        )
+                    );
+
+                imports.emplace_back(importName);
+                importName.clear();
+                state = State::ExpectImport;
+                ++m_pos;
+                continue;
+            }
+
+            if (state == State::SkipBraceContents) 
+            {
+                if ( c == '{' ) {
+                    m_braceDepth++;
+                } else if ( c == '}' ) {
+                    if (--m_braceDepth == 0 ) {
+                        state = State::ExpectFrom;
+                    }
+                } 
+                
+                m_pos++;
+                continue;
+            }
+
+            if (c == '{')
+            {
+                if (state != State::ExpectTarget) {
+                    return std::unexpected(
+                        Diagnostic(
+                            "Malformed import header directive",
+                            ErrorCategory::Linking, 
+                            ErrorSeverity::Error
+                        )
+                    );
+                }
+
+                state = State::SkipBraceContents;
+                m_braceDepth++;
+                m_pos++;
+                continue;
+            }
+
+            // Identifier
+            if (isIdentifierStartChar(c))
+            {
+                std::string_view id = readIdentifier( m_line, m_pos );
+
+                if (state == State::ExpectImport)
+                {
+                    if (id != "import")
+                        return std::unexpected(
+                            Diagnostic(
+                                "Invalid import header directive",
+                                ErrorCategory::Linking,
+                                ErrorSeverity::Error
+                            )
+                        );
+
+                    state = State::ExpectTarget;
+                    continue;
+                }
+
+                if (state == State::ExpectTarget || state == State::ExpectName)
+                {
+                    importName.append( id );
+                    state = State::ExpectDotOrEnd;
+                    continue;
+                }
+
+                if (state == State::ExpectFrom && id == "from") {
+
+                    state = State::ExpectName;
+                    continue;
+                }
+
+                if (state == State::ExpectDotOrEnd && id == "as" ) {
+                    state = State::ExpectAlias;
+                    continue;
+                }
+
+                return std::unexpected(
+                    Diagnostic(
+                        "Invalid import header directive",
+                        ErrorCategory::Linking,
+                        ErrorSeverity::Error
+                    )
+                );
+            }
+
+            // Dot (for module paths)
+            if (c == '.')
+            {
+                if (state != State::ExpectDotOrEnd)
+                    return std::unexpected(
+                        Diagnostic(
+                            "Malformed import header directive",
+                            ErrorCategory::Linking, 
+                            ErrorSeverity::Error
+                        )
+                    );
+
+                importName.append( "." );
+                state = State::ExpectName;
+                ++m_pos;
+                continue;
+            }
+
+            if (state != State::ExpectImport) {
+                // Anything else is invalid
+                return std::unexpected(
+                    Diagnostic(
+                        "Invalid import header directive", 
+                        ErrorCategory::Linking,
+                        ErrorSeverity::Error
+                    )
+                );
+            }
+        }
+        m_pos = 0;
+    }
+    while( std::getline(m_stream, m_line) );
+
+    if (state != State::ExpectImport)
+    {
+        return std::unexpected(
+            Diagnostic(
+                "Unexpected end of file in import directive",
+                ErrorCategory::Linking,
+                ErrorSeverity::Error
+            )
+        );
+    }
+
+    return imports;
 }

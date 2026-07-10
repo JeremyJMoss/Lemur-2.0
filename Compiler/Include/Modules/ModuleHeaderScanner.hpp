@@ -5,9 +5,11 @@
 #include <expected>
 #include <fstream>
 #include <filesystem>
+#include <string>
+#include <vector>
 #include "Errors/Errors.hpp"
-#include "Modules/ModuleInfo.hpp"
 #include "Modules/ModuleTable.hpp"
+#include "Modules/ModuleHeader.hpp"
 
 namespace fs = std::filesystem;
 
@@ -24,7 +26,7 @@ class ModuleHeaderScanner {
             : m_errReporter( errReporter ), m_srcManager( srcManager ) {}
         std::expected<ModuleTable, Diagnostic> scan( const fs::path& sourcePath );
         std::expected<std::string, Diagnostic> parseModuleDirective();
-        std::expected<std::vector<std::string>, Diagnostic> parseImportStatements();
+        std::expected<std::vector<ImportDirective>, Diagnostic> parseImportDirectives();
     private:
         ErrorReporter& m_errReporter;
         SourceManager& m_srcManager;
@@ -34,6 +36,7 @@ class ModuleHeaderScanner {
         std::string m_line;
         std::size_t m_pos = 0;
         bool m_inComment = false;
+        std::size_t m_braceDepth = 0;
 
         std::string_view readIdentifier( std::string_view line, std::size_t& pos );
         bool isIdentifierPartChar( char c );

@@ -15,7 +15,7 @@ using FileId = size_t;
 
 /* === Forward Declarations === */
 
-struct ModuleInfo;
+struct ModuleHeader;
 
 /* === Source Manager === */
 
@@ -31,7 +31,7 @@ class SourceManager
             return m_files.at( fileId ).getFilePath().string();
         }
 
-        void setModuleInfo( const ModuleInfo& info );
+        void setModuleHeader( const ModuleHeader& info );
 
     private:
         std::unordered_map<FileId, FileData> m_files;

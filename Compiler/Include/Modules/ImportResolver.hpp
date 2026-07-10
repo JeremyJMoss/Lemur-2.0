@@ -7,7 +7,7 @@
 
 /* === Forward Declarations === */
 
-struct ModuleInfo;
+struct ModuleHeader;
 class SourceManager;
 class ErrorReporter;
 
@@ -22,7 +22,7 @@ class ImportResolver
         ) : m_srcManager( srcManager ), 
             m_errReporter( errReporter ) {}
 
-        DependencyGraph resolve( const ModuleInfo& entryModule );
+        DependencyGraph resolve( const ModuleHeader& entryModule );
     private:
         SourceManager& m_srcManager;
         ErrorReporter& m_errReporter;

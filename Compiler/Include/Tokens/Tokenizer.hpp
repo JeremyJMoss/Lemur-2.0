@@ -9,7 +9,7 @@
 #include "SourceControl/SourceLocation.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Errors/Errors.hpp"
-#include "Modules/ModuleInfo.hpp"
+#include "Modules/ModuleHeader.hpp"
 
 using FileId = std::size_t;
 

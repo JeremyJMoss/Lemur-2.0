@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <expected>
 #include "Tokens/Token.hpp"
-#include "Modules/ModuleInfo.hpp"
+#include "Modules/ModuleHeader.hpp"
 
 using ModuleId = std::size_t;
 using FileId = std::size_t;
@@ -31,12 +31,12 @@ class ModuleTable
             return true;
         }
 
-        ModuleInfo& get( ModuleId id ) 
+        ModuleHeader& get( ModuleId id ) 
         {
             return m_modules[id];
         }
 
-        const ModuleInfo& get( ModuleId id ) const 
+        const ModuleHeader& get( ModuleId id ) const 
         {
             return m_modules[id];
         }
@@ -46,7 +46,7 @@ class ModuleTable
             return m_modules.size(); 
         }
 
-        const ModuleInfo* find( std::string_view name ) const {
+        const ModuleHeader* find( std::string_view name ) const {
             auto it = m_lookup.find( std::string( name ) );
 
             if ( it != m_lookup.end() ) 
@@ -58,6 +58,6 @@ class ModuleTable
         }
 
     private:
-        std::vector<ModuleInfo> m_modules;
+        std::vector<ModuleHeader> m_modules;
         std::unordered_map<std::string, ModuleId> m_lookup;
 };

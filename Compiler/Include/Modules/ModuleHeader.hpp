@@ -7,20 +7,20 @@
 using ModuleId = std::size_t;
 using FileId = std::size_t;
 
-/* === Module Header === */
+/* === Import Directive === */
 
-struct ModuleHeader
+struct ImportDirective
 {
-    std::string moduleName;
-    std::vector<std::string> imports;
+    std::string name;
+    std::optional<ModuleId> resolvedModule;
 };
 
 /* === Module Info === */
 
-struct ModuleInfo
+struct ModuleHeader
 {
     ModuleId id;
     FileId fileId;
     std::string name;
-    std::vector<ModuleId> imports;
+    std::vector<ImportDirective> imports;
 };

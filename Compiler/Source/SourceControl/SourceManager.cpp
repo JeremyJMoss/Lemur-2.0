@@ -1,6 +1,6 @@
 #include "SourceControl/SourceManager.hpp"
 #include "Utils/Logger.hpp"
-#include "Modules/ModuleInfo.hpp"
+#include "Modules/ModuleHeader.hpp"
 #include <array>
 #include <string>
 #include <filesystem>
@@ -183,7 +183,7 @@ std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, st
     return line;
 }
 
-void SourceManager::setModuleInfo( const ModuleInfo& info ) 
+void SourceManager::setModuleHeader( const ModuleHeader& info ) 
 {
     try {
         m_files.at( info.id ).setModuleName( info.name );
