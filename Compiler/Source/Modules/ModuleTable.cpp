@@ -61,6 +61,8 @@ std::vector<ModuleId> ModuleTable::buildParseOrder( ModuleId entry )
         buildParseOrder( import.moduleId.value(), visited, order );
     }
 
+    order.push_back( entry );
+
     return order;
 }
 

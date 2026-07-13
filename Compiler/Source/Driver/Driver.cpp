@@ -104,7 +104,7 @@ void Driver::compile() {
     // unreachable modules from the enrty point
 
     std::vector<ModuleId> parseOrder = m_modules.buildParseOrder( entryModuleId );
-
+    
     for( ModuleId moduleId : parseOrder )
     {
         auto compUnit = std::make_unique<CompilationUnit>( m_modules.get( moduleId ) );
