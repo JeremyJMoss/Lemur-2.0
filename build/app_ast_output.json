@@ -1,0 +1,45 @@
+[
+  {
+    "id": 1,
+    "type": "Module Declaration",
+    "identifier": 
+      {
+        "id": 0,
+        "type": "Identifier",
+        "name": "app"
+      }
+  },
+  {
+    "id": 8,
+    "type": "Function Declaration",
+    "returnType": 
+      {
+        "id": 4,
+        "type": "Named",
+        "identifier": 
+          {
+            "id": 3,
+            "type": "Identifier",
+            "name": "int"
+          }
+      },
+    "parameters": [],
+    "body": 
+      {
+        "id": 7,
+        "type": "Block",
+        "statements": [
+          {
+            "id": 6,
+            "type": "Return",
+            "value": 
+              {
+                "id": 5,
+                "type": "Literal",
+                "value": 0
+              }
+          }
+        ]
+      }
+  }
+]

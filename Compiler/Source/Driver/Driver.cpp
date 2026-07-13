@@ -158,7 +158,7 @@ void Driver::compile() {
 
         if ( m_config.emitAST ) {
             ASTPrinter astPrinter = ASTPrinter();
-            astPrinter.print( compUnit->readStatements(), m_config.outputPath );
+            astPrinter.print( compUnit->readStatements(), m_config.outputPath, compUnit->getModuleName() );
         }
 
         Logger::debug( 

@@ -402,7 +402,8 @@ void ASTPrinter::visit(const ForLoop& forl ) {
     endBlock();
 }
 
-void ASTPrinter::visit( const Range& range ) {
+void ASTPrinter::visit( const Range& range ) 
+{
     startBlock();
     increaseIndent();
     writeField( "id", range.id );
@@ -414,7 +415,8 @@ void ASTPrinter::visit( const Range& range ) {
     endBlock();
 }
 
-void ASTPrinter::visit( const Unary& unary ) {
+void ASTPrinter::visit( const Unary& unary ) 
+{
     startBlock();
     increaseIndent();
     writeField( "id", unary.id );
@@ -425,7 +427,8 @@ void ASTPrinter::visit( const Unary& unary ) {
     endBlock();
 }
 
-void ASTPrinter::visit( const FunctionCall& funCall ) {
+void ASTPrinter::visit( const FunctionCall& funCall ) 
+{
     startBlock();
     increaseIndent();
     writeField( "id", funCall.id );
@@ -436,7 +439,8 @@ void ASTPrinter::visit( const FunctionCall& funCall ) {
     endBlock();
 }
 
-void ASTPrinter::visit( const Parameter& parameter ) {
+void ASTPrinter::visit( const Parameter& parameter ) 
+{
     startBlock();
     increaseIndent();
     writeField( "id", parameter.id );
@@ -450,7 +454,8 @@ void ASTPrinter::visit( const Parameter& parameter ) {
     endBlock();
 }
 
-void ASTPrinter::visit( const ModuleDeclaration& modDec ) {
+void ASTPrinter::visit( const ModuleDeclaration& modDec ) 
+{
     startBlock();
     increaseIndent();
     writeField( "id", modDec.id );
@@ -460,9 +465,10 @@ void ASTPrinter::visit( const ModuleDeclaration& modDec ) {
     endBlock();
 }
 
-void ASTPrinter::print( const std::vector<const Statement*>& statements, const fs::path& outputPath )
+void ASTPrinter::print( const std::vector<const Statement*>& statements, const fs::path& outputPath, const std::string_view moduleName )
 {
-    std::ofstream outFile( outputPath / "ast_output.json", std::ios::out | std::ios::binary );
+    std::string fileName = std::string( moduleName ) + "_ast_output.json";
+    std::ofstream outFile( outputPath / fileName, std::ios::out | std::ios::binary );
     outFile.rdbuf()->pubsetbuf( nullptr, 1 << 20 ); // 1MB buffer
 
     m_out = &outFile;

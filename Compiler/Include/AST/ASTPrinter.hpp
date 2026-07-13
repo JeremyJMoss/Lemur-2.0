@@ -53,7 +53,7 @@ class ASTPrinter : public ASTVisitor {
         /// @brief Prints the AST rooted at the supplied statements.
         ///
         /// @param statements statements to loop over to print
-        void print( const std::vector<const Statement*>& statements, const fs::path& outputPath );
+        void print( const std::vector<const Statement*>& statements, const fs::path& outputPath, const std::string_view moduleName );
         
         /* === Visitors for each AST Node === */
         void visit( const Literal& lit ) override;
@@ -105,7 +105,6 @@ class ASTPrinter : public ASTVisitor {
         /// @param value variant value of multiple literal types
         /// @return textual representation of variant LiteralValue.
         static std::string getLiteralValue( const LiteralValue& value );
-
     private:
         std::ostream* m_out;
         std::int16_t m_indent = 0;
