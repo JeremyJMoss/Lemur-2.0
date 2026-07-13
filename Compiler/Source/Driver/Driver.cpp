@@ -70,7 +70,7 @@ void Driver::compile() {
         m_errReporter.report(
             Diagnostic(
                 std::format(
-                    "Unable to find entry module '{}' within declared module",
+                    "Unable to find entry module '{}' within declared modules",
                     m_config.entryModule
                 ),
                 ErrorCategory::Linking,
@@ -88,73 +88,93 @@ void Driver::compile() {
         return;
     }
 
-    m_srcManager.setModuleHeader( *maybeModule );
+    ModuleId entryModuleId = maybeModule->id;
 
-    auto compUnit = std::make_unique<CompilationUnit>( *maybeModule );
+    auto reachableModules = m_modules.resolveImports( entryModuleId );
 
-    auto tokenStart = chrono::high_resolution_clock::now();
-
-    tokenizeCompilationUnit( *compUnit );
-
-    auto tokenEnd = chrono::high_resolution_clock::now();
-    auto tokenDuration = duration_cast<chrono::microseconds>( tokenEnd - tokenStart );
-
-    Output::success( std::format( "Lexer Execution time: {} µs", tokenDuration.count() ) );
-
-    if ( m_errReporter.hasErrors() )
-    {
-        Logger::error( 
-            std::format( 
-                "{} lexing error(s) found. Compilation terminated.", 
-                m_errReporter.getErrCount() 
-            )
+    if (!reachableModules) {
+        m_errReporter.report(
+            reachableModules.error()
         );
 
         return;
     }
 
-    auto parserStart = chrono::high_resolution_clock::now();
+    // TODO do something about reachable vs unreachable modules maybe throw a warning on the screen for
+    // unreachable modules from the enrty point
 
-    parseCompilationUnit( *compUnit );
+    std::vector<ModuleId> parseOrder = m_modules.buildParseOrder( entryModuleId );
 
-    auto parserEnd = chrono::high_resolution_clock::now();
-    auto parserDuration = duration_cast<chrono::microseconds>( parserEnd - parserStart );
-
-    Output::success( 
-        std::format( 
-            "Parser Execution time: {} µs", 
-            parserDuration.count() 
-        ) 
-    );
-
-    if ( m_errReporter.hasErrors() )
+    for( ModuleId moduleId : parseOrder )
     {
-        Logger::error( 
+        auto compUnit = std::make_unique<CompilationUnit>( m_modules.get( moduleId ) );
+
+        auto tokenStart = chrono::high_resolution_clock::now();
+
+        tokenizeCompilationUnit( *compUnit );
+
+        auto tokenEnd = chrono::high_resolution_clock::now();
+        auto tokenDuration = duration_cast<chrono::microseconds>( tokenEnd - tokenStart );
+
+        Output::success( std::format( "Lexer Execution time: {} µs", tokenDuration.count() ) );
+
+        if ( m_errReporter.hasErrors() )
+        {
+            Logger::error( 
+                std::format( 
+                    "{} lexing error(s) found. Compilation terminated.", 
+                    m_errReporter.getErrCount() 
+                )
+            );
+
+            return;
+        }
+
+        auto parserStart = chrono::high_resolution_clock::now();
+
+        parseCompilationUnit( *compUnit );
+
+        auto parserEnd = chrono::high_resolution_clock::now();
+        auto parserDuration = duration_cast<chrono::microseconds>( parserEnd - parserStart );
+
+        Output::success( 
             std::format( 
-                "{} parser error(s) found. Compilation terminated.",  
-                m_errReporter.getErrCount() 
+                "Parser Execution time: {} µs", 
+                parserDuration.count() 
+            ) 
+        );
+
+        if ( m_errReporter.hasErrors() )
+        {
+            Logger::error( 
+                std::format( 
+                    "{} parser error(s) found. Compilation terminated.",  
+                    m_errReporter.getErrCount() 
+                )
+            );
+
+            return;
+        }
+
+        if ( m_config.emitAST ) {
+            ASTPrinter astPrinter = ASTPrinter();
+            astPrinter.print( compUnit->readStatements(), m_config.outputPath );
+        }
+
+        Logger::debug( 
+            std::format(
+                "AST generated with {} top-level statements",
+                compUnit->readStatements().size()
             )
         );
 
-        return;
+        Logger::debug( "Parsed file" );
+
+        // free all memory within Compilation Unit
+        compUnit->freeArena();
     }
 
-    if ( m_config.emitAST ) {
-        ASTPrinter astPrinter = ASTPrinter();
-        astPrinter.print( compUnit->readStatements(), m_config.outputPath );
-    }
-
-    Logger::debug( 
-        std::format(
-            "AST generated with {} top-level statements",
-            compUnit->readStatements().size()
-        )
-    );
-
-    Logger::debug( "Parsed file" );
-
-    // free all memory within Compilation Unit
-    compUnit->freeArena();
+    
 }
 
 void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {

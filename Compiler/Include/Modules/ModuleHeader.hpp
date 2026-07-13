@@ -11,8 +11,8 @@ using FileId = std::size_t;
 
 struct ImportDirective
 {
-    std::string name;
-    std::optional<ModuleId> resolvedModule;
+    std::string moduleName;
+    std::optional<ModuleId> moduleId;
 };
 
 /* === Module Info === */

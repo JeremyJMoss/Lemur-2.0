@@ -164,8 +164,8 @@ class ASTPrinter : public ASTVisitor {
                 }
                 decreaseIndent();
                 *m_out << "\n";
+                writeIndent();
             }
-            writeIndent();
             *m_out << "]";
 
             if ( hasComma ){

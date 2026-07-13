@@ -6,6 +6,8 @@
 #include <span>
 #include <unordered_map>
 #include <expected>
+#include <unordered_set>
+#include "Errors/Errors.hpp"
 #include "Tokens/Token.hpp"
 #include "Modules/ModuleHeader.hpp"
 
@@ -57,7 +59,13 @@ class ModuleTable
             return nullptr;
         }
 
+        std::expected<std::unordered_set<ModuleId>, Diagnostic> resolveImports( ModuleId entry );
+
+        std::vector<ModuleId> buildParseOrder( ModuleId entry );
+
     private:
         std::vector<ModuleHeader> m_modules;
         std::unordered_map<std::string, ModuleId> m_lookup;
+
+        void buildParseOrder( ModuleId id, std::unordered_set<ModuleId>& visited, std::vector<ModuleId>& order );
 };

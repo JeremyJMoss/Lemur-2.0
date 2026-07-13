@@ -163,6 +163,18 @@
 
 <break-stmt> ::= "break" ";"
 
+/* === Module System === */
+
+<module-name> ::= <identifier> ( "." <identifier> )*
+
+<module-declaration> ::= "module" <module-name> ";"
+
+<import-statement> ::= "import" <import-specifier> ";"
+
+<import-specifier> ::= <module-name> [<import-alias>] | "{" <identifier> [<import-alias>] ( "," <identifier> [<import-alias>] )* "}" "from" <module-name>
+
+<import-alias> ::= "as" <identifier>
+
 /* === Control Flow === */
 
 <if-stmt> ::= "if" "(" <expression> ")" <block> [ <else-stmt> ]
@@ -228,9 +240,3 @@
 <class-member> ::= <class-property> | <class-method>
 
 <class-body> ::= "{" (<class-member>)* "}"
-
-<import-statement> ::= "import" <import-specifier> ";"
-
-<import-specifier> ::= "{" <identifier> ( "," <identifier> )* "}" <identifier> | "from" <identifier>
-
-<module-declaration> ::= "module" <identifier> ";"

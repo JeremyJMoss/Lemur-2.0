@@ -87,7 +87,8 @@ enum class TokenKeyword : u_int8_t
     Entry,
     Module,
     Import,
-    From
+    From,
+    As
 };
 
 /* === Utility === */
@@ -180,6 +181,7 @@ inline std::string_view toString( const TokenKeyword keyword )
         case TokenKeyword::Module:     return "module";
         case TokenKeyword::Import:     return "import";
         case TokenKeyword::From:       return "from";
+        case TokenKeyword::As:         return "as";
         default:                       return "Invalid Keyword";
     }
 }
