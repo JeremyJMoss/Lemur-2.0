@@ -5,4 +5,5 @@ ast_output.json
 .vscode
 Compiler/Build/*
 src
+build
 lemur.toml
