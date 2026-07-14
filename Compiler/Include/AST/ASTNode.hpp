@@ -28,6 +28,9 @@ struct FunctionCall;
 struct ParsedType;
 struct Parameter;
 struct ModuleDeclaration;
+struct ImportedSymbol;
+struct Import;
+struct QualifiedName;
 
 /* === Visitor === */
 
@@ -54,10 +57,22 @@ struct ASTVisitor
     virtual void visit(const ParsedType&) = 0;
     virtual void visit(const Parameter&) = 0;
     virtual void visit(const ModuleDeclaration&) = 0;
+    virtual void visit(const ImportedSymbol&) = 0;
+    virtual void visit(const Import&) = 0;
+    virtual void visit(const QualifiedName&) = 0;
     virtual ~ASTVisitor() = default;
 };
 
+/* === Enum Declaration === */
+
+enum class DeclarationVisibility: u_int8_t
+{
+    Private,
+    Public
+};
+
 /* === Base AST Node === */
+
 using NodeId = std::size_t;
 
 struct ASTNode 
@@ -81,7 +96,9 @@ struct Expression : ASTNode {};
 struct Statement : ASTNode {};
 
 // Declares a symbol (e.g. variable, function, type, or module) within a scope.
-struct Declaration : Statement {};
+struct Declaration : Statement {
+    DeclarationVisibility visibility = DeclarationVisibility::Private;
+};
 
 /* === Abstract Syntax Tree === */
 

@@ -11,6 +11,6 @@ UnaryOperator Unary::parseUnaryOperator( std::string_view op )
         return UnaryOperator::Negate;
     else 
         throw InternalCompilerError( 
-            std::format( "Invalid unary operator: ", op ) 
+            std::format( "Invalid unary operator: {}.\nPlease report this bug.", op ) 
         );
 }

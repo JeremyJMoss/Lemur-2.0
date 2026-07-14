@@ -22,3 +22,6 @@
 #include "AST/Parameter.hpp"
 #include "AST/ParsedType.hpp"
 #include "AST/ModuleDeclaration.hpp"
+#include "AST/ImportedSymbol.hpp"
+#include "AST/Import.hpp"
+#include "AST/QualifiedName.hpp"

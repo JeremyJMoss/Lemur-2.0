@@ -82,6 +82,7 @@ std::expected<ModuleTable, Diagnostic> ModuleHeaderScanner::scan( const fs::path
             })
         );
 
+        m_stream.close();
         m_stream.open( path );
 
         if ( !m_stream.is_open() ) 
@@ -94,6 +95,8 @@ std::expected<ModuleTable, Diagnostic> ModuleHeaderScanner::scan( const fs::path
                 ) 
             );
         }
+
+        Logger::trace( "Parsing Module Header Directive" );
 
         auto maybeModuleIdentifier = parseModuleDirective();
 
@@ -120,7 +123,24 @@ std::expected<ModuleTable, Diagnostic> ModuleHeaderScanner::scan( const fs::path
             })
         );
 
-        bool inserted = moduleTable.add( fileId, maybeModuleIdentifier.value() );
+        auto maybeImports = parseImportDirectives();
+
+        if ( !maybeImports ) {
+            m_errReporter.report( 
+                Diagnostic(
+                    std::format(
+                        "{} for file path {}", 
+                        maybeImports.error().message, 
+                        pathStr 
+                    ), 
+                    maybeImports.error().category,
+                    maybeImports.error().severity
+                ) 
+            );
+            continue;
+        }
+
+        bool inserted = moduleTable.add( fileId, maybeModuleIdentifier.value(), maybeImports.value() );
 
         if ( !inserted )
         {
@@ -437,14 +457,7 @@ std::expected<std::vector<ImportDirective>, Diagnostic> ModuleHeaderScanner::par
 
                 if (state == State::ExpectImport)
                 {
-                    if (id != "import")
-                        return std::unexpected(
-                            Diagnostic(
-                                "Invalid import header directive",
-                                ErrorCategory::Linking,
-                                ErrorSeverity::Error
-                            )
-                        );
+                    if ( id != "import" ) return imports;
 
                     state = State::ExpectTarget;
                     continue;
@@ -510,7 +523,7 @@ std::expected<std::vector<ImportDirective>, Diagnostic> ModuleHeaderScanner::par
     }
     while( std::getline(m_stream, m_line) );
 
-    if (state != State::ExpectImport)
+    if ( state != State::ExpectImport )
     {
         return std::unexpected(
             Diagnostic(

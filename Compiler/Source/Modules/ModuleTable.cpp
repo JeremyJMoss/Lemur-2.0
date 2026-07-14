@@ -1,12 +1,14 @@
 #include "Modules/ModuleTable.hpp"
 
+#include "Utils/Logger.hpp"
 #include <queue>
-#include <cassert>
 
 using ModuleId = std::size_t;
 
 std::expected<std::unordered_set<ModuleId>, Diagnostic> ModuleTable::resolveImports( ModuleId entry ) 
 {
+    Logger::trace( "Resolving Imports for Module" );
+
     std::queue<ModuleId> pending;
     std::unordered_set<ModuleId> visited;
 
@@ -24,11 +26,16 @@ std::expected<std::unordered_set<ModuleId>, Diagnostic> ModuleTable::resolveImpo
         {
             const ModuleHeader* imported = this->find( import.moduleName );
 
-            if ( !imported )
+            if ( imported == nullptr )
             {
                 return std::unexpected(
                     Diagnostic(
-                        "Imported Module could not be found in module resolution tree",
+                        std::format(
+                            "Importing module '{}' into module '{}' failed. Unable to resolve module '{}'",
+                            import.moduleName,
+                            module.name,
+                            import.moduleName
+                        ),
                         ErrorCategory::Linking,
                         ErrorSeverity::Error
                     )
@@ -56,7 +63,9 @@ std::vector<ModuleId> ModuleTable::buildParseOrder( ModuleId entry )
 
     for( ImportDirective import : entryModuleHeader.imports )
     {
-        assert( import.moduleId.has_value() );
+        if( !import.moduleId.has_value() ) {
+            throw new InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
+        }
 
         buildParseOrder( import.moduleId.value(), visited, order );
     }
@@ -73,7 +82,9 @@ void ModuleTable::buildParseOrder( ModuleId id, std::unordered_set<ModuleId>& vi
     ModuleHeader& module = get( id );
 
     for ( ImportDirective& import : module.imports ) {
-        assert( import.moduleId.has_value());
+        if( !import.moduleId.has_value() ) {
+            throw new InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
+        }
 
         buildParseOrder( import.moduleId.value(), visited, order );
     }

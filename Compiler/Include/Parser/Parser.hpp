@@ -29,7 +29,7 @@ class Parser
         
         void parse();
 
-        std::expected<Statement*, Diagnostic> createStatement( const Token& token );
+        std::expected<Statement*, Diagnostic> createStatement( const Token& token, DeclarationVisibility visibility = DeclarationVisibility::Private );
 
     private:
         CompilationUnit& m_compUnit;
@@ -42,9 +42,9 @@ class Parser
 
         void parseNextStatement();
 
-        std::expected<Statement*, Diagnostic> parseKeywordStatement( const Token& token );
+        std::expected<Statement*, Diagnostic> parseKeywordStatement( const Token& token, DeclarationVisibility visibility = DeclarationVisibility::Private );
 
-        std::expected<Statement*, Diagnostic> parseIdentifierStatement( const Token& token );
+        std::expected<Statement*, Diagnostic> parseIdentifierStatement( const Token& token, DeclarationVisibility visibility = DeclarationVisibility::Private );
 
         std::expected<Statement*, Diagnostic> parseExpressionStatement( const Token& token );
 };

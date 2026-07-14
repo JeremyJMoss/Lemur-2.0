@@ -31,6 +31,7 @@ struct Return;
 struct Unary;
 struct VariableDeclaration;
 struct ModuleDeclaration;
+struct Import;
 
 enum class BinaryOperator : std::uint8_t;
 enum class OwnershipKind : std::uint8_t;
@@ -76,6 +77,9 @@ class ASTPrinter : public ASTVisitor {
         void visit( const Parameter& parameter ) override;
         void visit( const ParsedType& parsedType ) override;
         void visit( const ModuleDeclaration& modDec ) override;
+        void visit( const ImportedSymbol& importSymbol ) override;
+        void visit( const Import& import ) override;
+        void visit( const QualifiedName& qualName ) override;
 
         /// @brief Converts a binary operator enum to its textual representation.
         /// @param op binary operator enum

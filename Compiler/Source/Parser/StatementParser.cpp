@@ -12,12 +12,15 @@
 #include "AST/IfConditional.hpp"
 #include "AST/ForLoop.hpp"
 #include "AST/ModuleDeclaration.hpp"
+#include "AST/Import.hpp"
+#include "AST/ImportedSymbol.hpp"
+#include "AST/QualifiedName.hpp"
 #include "Driver/CompilationUnit.hpp"
 
 #include <expected>
 #include <variant>
 
-std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDeclaration( const bool isEntry ) 
+std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDeclaration( const bool isEntry, DeclarationVisibility visibility ) 
 {
     Logger::debug( 
         "Parsing function declaration",
@@ -128,6 +131,8 @@ std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDe
 
     funDec->location = { front.getLocation().start, funDec->body->location.end, front.getLocation().fileId};
 
+    funDec->visibility = visibility;
+
     Logger::debug(
         "Function declaration parsed successfully",
         std::to_array<Attribute>({
@@ -223,7 +228,7 @@ std::expected<Block*, Diagnostic> StatementParser::parseBlock()
     return block;
 }
 
-std::expected<VariableDeclaration*, Diagnostic> StatementParser::parseVariableDeclaration( const bool locked ) 
+std::expected<VariableDeclaration*, Diagnostic> StatementParser::parseVariableDeclaration( const bool locked, DeclarationVisibility visibility ) 
 {
     Logger::debug(
         "Parsing variable declaration", 
@@ -352,11 +357,14 @@ std::expected<VariableDeclaration*, Diagnostic> StatementParser::parseVariableDe
 
     decl->location = {front.getLocation().start, endLocation, front.getLocation().fileId };
 
+    decl->visibility = visibility;
+
     Logger::debug(
         "Completed variable declaration", 
         std::to_array<Attribute>({ 
             { "Identifier", std::format( "'{}'", decl->identifier->name ) },
-            { "HasInitialiser", ( initialiser ? "true" : "false" ) }
+            { "HasInitialiser", ( initialiser ? "true" : "false" ) },
+            { "Exported", ( visibility == DeclarationVisibility::Public ? "true" : "false" ) }
         })
     );
 
@@ -728,6 +736,39 @@ std::expected<ModuleDeclaration*, Diagnostic> StatementParser::parseModuleDeclar
     auto maybeModuleKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Module );
     if ( !maybeModuleKeyword ) return std::unexpected( maybeModuleKeyword.error() );
 
+    auto maybeBuiltModuleName = parseModuleName();
+
+    if ( !maybeBuiltModuleName ) {
+        return std::unexpected( maybeBuiltModuleName.error() );
+    }
+
+    if ( m_compUnit.getModuleName() != maybeBuiltModuleName.value() ) {
+        throw InternalCompilerError( "Module declaration differs from header scan.\nPlease report this bug." );
+    }
+
+    QualifiedName* moduleName = m_compUnit.allocate<QualifiedName>( std::string( m_compUnit.getModuleName() ) );
+
+    ModuleDeclaration* modDec = m_compUnit.allocate<ModuleDeclaration>( moduleName );
+
+    modDec->location = { front.getLocation().start, modDec->name->location.end, front.getLocation().fileId };
+
+    Logger::debug( "Successfully parsed module declaration statement" );
+
+    return modDec;
+}
+
+std::expected<std::string, Diagnostic> StatementParser::parseModuleName()
+{
+    const Token& front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
+    }
+
     TokenKind nextTokenTypeExpected = TokenKind::Identifier;
 
     std::string builtModuleName = "";
@@ -755,6 +796,10 @@ std::expected<ModuleDeclaration*, Diagnostic> StatementParser::parseModuleDeclar
             }
 
             if ( nextTokenTypeExpected == TokenKind::Symbol && next.checkValueMatches( TokenSymbol::SemiColon ) ) {
+                break;
+            }
+
+            if ( nextTokenTypeExpected == TokenKind::Symbol && next.checkMatches( TokenKind::Keyword, TokenKeyword::As )) {
                 break;
             }
 
@@ -795,26 +840,248 @@ std::expected<ModuleDeclaration*, Diagnostic> StatementParser::parseModuleDeclar
         );
     }
 
-    if ( m_compUnit.getModuleName() != builtModuleName ) {
-        const Token& next = m_tokenStream.peek();
+    return builtModuleName;
+}
 
+std::expected<Import*, Diagnostic> StatementParser::parseImport()
+{
+    Logger::debug( "Parsing import statement" );
+
+    const Token& front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
+    }
+
+    auto maybeImportKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Import );
+    if ( !maybeImportKeyword ) return std::unexpected( maybeImportKeyword.error() );
+
+    const Token& next = m_tokenStream.peek();
+
+    std::string moduleName = "";
+    std::vector<ImportedSymbol*> importedSymbols;
+    std::optional<Identifier*> alias;
+
+    if ( next.checkTypeMatches( TokenKind::EndOfFile ) ) {
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
+    } else if ( next.checkTypeMatches( TokenKind::Identifier ) ) {
+        auto maybeBuiltModuleName = parseModuleName();
+
+        if ( !maybeBuiltModuleName ) {
+            return std::unexpected( maybeBuiltModuleName.error() );
+        }
+
+        moduleName = maybeBuiltModuleName.value();
+
+        const Token& current = m_tokenStream.peek();
+
+        if ( current.checkMatches( TokenKind::Keyword, TokenKeyword::As ))
+        {
+            auto maybeAsKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::As );
+            if ( !maybeAsKeyword ) return std::unexpected( maybeAsKeyword.error() );
+
+            const Token& aliasToken = m_tokenStream.peek();
+
+            if (!aliasToken.checkTypeMatches(TokenKind::Identifier)) {
+                return std::unexpected(
+                    UnexpectedTypeDiagnostic( 
+                        TokenKind::Identifier, 
+                        aliasToken.getType(), 
+                        aliasToken.getLocation()
+                    )
+                );
+            }
+
+            m_tokenStream.consume();
+
+            Identifier* aliasIdentifier = m_compUnit.allocate<Identifier>( aliasToken.getValue() );
+
+            aliasIdentifier->location = SourceRange::getLocation(aliasToken);
+
+            alias = aliasIdentifier;
+        }
+    } else if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::LBrace ) ) {
+        auto maybeImportedSymbols = parseImportedSymbols();
+
+        if ( !maybeImportedSymbols ) return std::unexpected( maybeImportedSymbols.error() );
+
+        importedSymbols = std::move( maybeImportedSymbols.value() );
+
+        auto maybeFromKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::From );
+        if ( !maybeFromKeyword ) return std::unexpected( maybeFromKeyword.error() );
+
+        auto maybeBuiltModuleName = parseModuleName();
+
+        if ( !maybeBuiltModuleName ) {
+            return std::unexpected( maybeBuiltModuleName.error() );
+        }
+
+        moduleName = maybeBuiltModuleName.value();
+    } else {
         return std::unexpected(
             Diagnostic(
-                "Module declaration statement does not match module name stored in resolved file",
-                ErrorCategory::Linking,
+                "Expected module name or import symbol list",
+                ErrorCategory::Syntax,
                 ErrorSeverity::Error,
-                { front.getLocation().start, next.getLocation().end, front.getLocation().fileId }
+                next.getLocation()
             )
         );
     }
 
-    Identifier* identifier = m_compUnit.allocate<Identifier>( m_compUnit.getModuleName() );
+    QualifiedName* qualName = m_compUnit.allocate<QualifiedName>( moduleName );
 
-    ModuleDeclaration* modDec = m_compUnit.allocate<ModuleDeclaration>( identifier );
+    const Token& endingToken = m_tokenStream.peek();
 
-    modDec->location = { front.getLocation().start, modDec->identifier->location.end, front.getLocation().fileId };
+    Import* importStmt = m_compUnit.allocate<Import>( qualName, alias, importedSymbols );
 
-    Logger::debug( "Successfully parsed module declaration statement" );
+    importStmt->location = SourceRange::getLocation( front, endingToken );
 
-    return modDec;
+    return importStmt;
+}
+
+std::expected<std::vector<ImportedSymbol*>, Diagnostic> StatementParser::parseImportedSymbols()
+{
+    Logger::debug( "Parsing imported symbols" );
+
+    const Token& front = m_tokenStream.peek();
+
+    if ( front.checkTypeMatches( TokenKind::EndOfFile )) {
+        return std::unexpected( 
+            UnexpectedEndOfInputDiagnostic( 
+                front.getLocation() 
+            ) 
+        );
+    }
+
+    auto maybeLBrace = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::LBrace );
+    if ( !maybeLBrace ) return std::unexpected( maybeLBrace.error() );
+
+    if ( m_tokenStream.peek().checkMatches( TokenKind::Symbol, TokenSymbol::RBrace ) )
+    {
+        return std::unexpected(
+            Diagnostic(
+                "Import list cannot be empty",
+                ErrorCategory::Syntax,
+                ErrorSeverity::Error,
+                front.getLocation()
+            )
+        );
+    }
+
+    std::vector<ImportedSymbol*> importedSymbols;
+
+    while(true)
+    {
+        const Token& next = m_tokenStream.peek();
+
+        if ( next.checkTypeMatches( TokenKind::EndOfFile )) {
+            return std::unexpected( 
+                UnexpectedEndOfInputDiagnostic( 
+                    next.getLocation() 
+                ) 
+            );
+        }
+
+        if ( next.checkMatches( TokenKind::Symbol, TokenSymbol::RBrace ) )
+        {
+            // End of Symbol List
+            auto maybeRBrace = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::RBrace );
+            if ( !maybeRBrace ) return std::unexpected( maybeRBrace.error() );
+            break;
+        }
+
+        auto maybeSymbol = parseSymbolImport();
+        if ( !maybeSymbol ) return std::unexpected( maybeSymbol.error() );
+
+        importedSymbols.push_back( std::move( maybeSymbol.value() ) );
+
+        const Token& seperator = m_tokenStream.peek();
+
+        if ( seperator.checkMatches( TokenKind::Symbol, TokenSymbol::Comma ) ) 
+        {
+            auto maybeCommaToken = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Comma );
+            if ( !maybeCommaToken ) return std::unexpected( maybeCommaToken.error() );
+            continue;
+        } 
+        else if ( seperator.checkMatches( TokenKind::Symbol, TokenSymbol::RBrace ) ) 
+        {
+            // will be handled next loop iteration
+            continue;
+        } 
+        else 
+        {
+            return std::unexpected(
+                Diagnostic(
+                    std::format(
+                        "Expected ',' or '}}' after imported symbol, got '{}'", 
+                        seperator.getValue() 
+                    ), 
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    seperator.getLocation()
+                )
+            );
+        }
+    }
+
+    return importedSymbols;
+}
+
+std::expected<ImportedSymbol*, Diagnostic> StatementParser::parseSymbolImport()
+{
+    const Token& front = m_tokenStream.peek();
+
+    if ( !front.checkTypeMatches( TokenKind::Identifier )) {
+        return std::unexpected( 
+            UnexpectedTypeDiagnostic(
+                TokenKind::Identifier, 
+                front.getType(), 
+                front.getLocation() 
+            ) 
+        );
+    }
+
+    const Token& idToken = m_tokenStream.consume();
+
+    Identifier* identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+
+    identifier->location = SourceRange::getLocation( idToken );
+
+    std::optional<Identifier*> alias;
+
+    if ( m_tokenStream.peek().checkMatches( TokenKind::Keyword, TokenKeyword::As ))
+    {
+        auto maybeAsKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::As );
+        if ( !maybeAsKeyword ) return std::unexpected( maybeAsKeyword.error() );
+
+        const Token& peekedToken = m_tokenStream.peek();
+
+        if ( !peekedToken.checkTypeMatches( TokenKind::Identifier ) ) {
+            return std::unexpected(
+                UnexpectedTypeDiagnostic( 
+                    TokenKind::Identifier, 
+                    peekedToken.getType(), 
+                    peekedToken.getLocation()
+                )
+            );
+        }
+
+        const Token& aliasToken = m_tokenStream.consume();
+
+        Identifier* aliasIdentifier = m_compUnit.allocate<Identifier>( aliasToken.getValue() );
+
+        aliasIdentifier->location = SourceRange::getLocation( aliasToken );
+
+        alias = aliasIdentifier;
+    }
+
+    return m_compUnit.allocate<ImportedSymbol>( identifier, alias );
 }

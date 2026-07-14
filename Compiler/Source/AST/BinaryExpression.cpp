@@ -30,6 +30,6 @@ BinaryOperator BinaryExpression::parseOperator( std::string_view op )
     }
 
     throw InternalCompilerError( 
-        std::format( "Invalid binary operator: {}", op )
+        std::format( "Invalid binary operator: {}.\nPlease report this bug.", op )
     );
 }

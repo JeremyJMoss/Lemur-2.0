@@ -1,7 +1,11 @@
 #pragma once
 
 #include <expected>
+#include <vector>
+#include <string>
 #include "Errors/Errors.hpp"
+#include "AST/Import.hpp"
+#include "AST/ASTNode.hpp"
 
 /* === Forward Declarations === */
 
@@ -11,6 +15,7 @@ struct FunctionDeclaration;
 struct IfConditional;
 struct Return;
 struct VariableDeclaration;
+struct Import;
 
 class CompilationUnit;
 class ExpressionParser;
@@ -44,11 +49,11 @@ class StatementParser
             m_exprParser = exprParser; 
         }
 
-        std::expected<FunctionDeclaration*, Diagnostic> parseFunctionDeclaration( const bool isEntry = false );
+        std::expected<FunctionDeclaration*, Diagnostic> parseFunctionDeclaration( const bool isEntry = false, DeclarationVisibility visibility = DeclarationVisibility::Private );
 
         std::expected<Block*, Diagnostic> parseBlock();
 
-        std::expected<VariableDeclaration*, Diagnostic> parseVariableDeclaration( const bool locked = false );
+        std::expected<VariableDeclaration*, Diagnostic> parseVariableDeclaration( const bool locked = false, DeclarationVisibility visibility = DeclarationVisibility::Private );
 
         std::expected<Return*, Diagnostic> parseReturn();
 
@@ -58,6 +63,8 @@ class StatementParser
 
         std::expected<ModuleDeclaration*, Diagnostic> parseModuleDeclaration();
 
+        std::expected<Import*, Diagnostic> parseImport();
+
     private:
         Parser& m_parent;
         CompilationUnit& m_compUnit;
@@ -66,4 +73,10 @@ class StatementParser
         TypeParser& m_typeParser;
         ParameterParser& m_paramParser;
         ExpressionParser* m_exprParser = nullptr;
+
+        std::expected<std::string, Diagnostic> parseModuleName();
+
+        std::expected<std::vector<ImportedSymbol*>, Diagnostic> parseImportedSymbols();
+
+        std::expected<ImportedSymbol*, Diagnostic> parseSymbolImport();
 };

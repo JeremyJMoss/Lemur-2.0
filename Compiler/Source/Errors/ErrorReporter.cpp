@@ -18,7 +18,7 @@ void ErrorReporter::printErrorDiagnostic(
         std::size_t startCol  = range.start.column;
         std::size_t endCol    = range.end.column;
         FileId fileId = range.fileId;
-        const fs::path& filePath = m_srcManager.getFilePath( fileId );
+        const fs::path filePath = m_srcManager.getFilePath( fileId );
 
         std::string lineNumberWidth = std::to_string( endLine );
         std::size_t width = lineNumberWidth.length();
@@ -38,7 +38,7 @@ void ErrorReporter::printErrorDiagnostic(
         {
             auto maybeLineStr = m_srcManager.getLine( fileId, lineNo );
 
-            if ( !maybeLineStr ) throw InternalCompilerError( maybeLineStr.error().message );
+            if ( !maybeLineStr ) throw InternalCompilerError( "Failure to get source line from source manager: " + maybeLineStr.error().message + ".\nPlease report this bug." );
 
             std::string lineStr = maybeLineStr.value();
 

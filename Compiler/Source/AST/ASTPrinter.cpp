@@ -155,7 +155,7 @@ std::string ASTPrinter::getLiteralValue( const LiteralValue& value )
 
         else if constexpr ( std::is_same_v<T, std::monostate> ) return "null";
         
-        throw InternalCompilerError( "Unclassified literal value" );
+        throw InternalCompilerError( "Unclassified literal value.\nPlease report this bug." );
 
     }, value );
 }
@@ -344,6 +344,7 @@ void ASTPrinter::visit( const VariableDeclaration& varDec ) {
     increaseIndent();
     writeField( "id", varDec.id );
     writeField( "type", std::string_view( "Variable Declaration" ) );
+    writeField( "exported", varDec.visibility == DeclarationVisibility::Private ? "false" : "true" );
     writeRawField( "locked", varDec.locked ? "true" : "false" );
     writeNodeField( "varType", *varDec.varType );
     writeNodeField( "identifier", *varDec.identifier );
@@ -357,6 +358,7 @@ void ASTPrinter::visit( const FunctionDeclaration& funDec ) {
     increaseIndent();
     writeField( "id", funDec.id );
     writeField( "type", std::string_view( "Function Declaration" ) );
+    writeField( "exported", funDec.visibility == DeclarationVisibility::Private ? "false" : "true" );
     writeNodeField( "returnType", *funDec.returnType );
     writeArrayField( "parameters", funDec.parameters );
     writeNodeField( "body", *funDec.body, false );
@@ -460,7 +462,52 @@ void ASTPrinter::visit( const ModuleDeclaration& modDec )
     increaseIndent();
     writeField( "id", modDec.id );
     writeField( "type", std::string_view("Module Declaration") );
-    writeNodeField( "identifier", *modDec.identifier, false );
+    writeNodeField( "name", *modDec.name, false );
+    decreaseIndent();
+    endBlock();
+}
+
+void ASTPrinter::visit( const Import& import ) 
+{
+    startBlock();
+    increaseIndent();
+    writeField( "id", import.id );
+    writeField( "type", std::string_view("Import") );
+    writeNodeField( "moduleName", *import.moduleName, import.alias.has_value() || !import.importedSymbols.empty() );
+    if ( import.alias.has_value() ) 
+    {
+        writeNodeField( "alias", *import.alias.value(), import.importedSymbols.empty() );
+    }
+    if ( !import.importedSymbols.empty() )
+    {
+        writeArrayField("importedSymbols", import.importedSymbols, false);
+    }
+    decreaseIndent();
+    endBlock();
+}
+
+void ASTPrinter::visit( const ImportedSymbol& importSymbol )
+{
+    startBlock();
+    increaseIndent();
+    writeField( "id", importSymbol.id );
+    writeField( "type", std::string_view( "Import Symbol" ) );
+    writeNodeField( "name", *importSymbol.name, importSymbol.alias.has_value() );
+    if ( importSymbol.alias.has_value() )
+    {
+        writeNodeField( "alias", *importSymbol.alias.value(), false );
+    }
+    decreaseIndent();
+    endBlock();
+}
+
+void ASTPrinter::visit( const QualifiedName& qualName )
+{
+    startBlock();
+    increaseIndent();
+    writeField( "id", qualName.id );
+    writeField( "type", std::string_view( "Qualified Name" ) );
+    writeField( "name", qualName.name, false );
     decreaseIndent();
     endBlock();
 }

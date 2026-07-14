@@ -67,7 +67,7 @@ void Parser::parseNextStatement()
     m_compUnit.addToAST( maybeStatement.value() );
 }
 
-std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& token ) 
+std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& token, DeclarationVisibility visibility ) 
 {
     // setting up array for debugging purposes
     const std::array attrs = {
@@ -82,7 +82,7 @@ std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& toke
             attrs
         );
 
-        return parseKeywordStatement( token );
+        return parseKeywordStatement( token, visibility );
     }
 
     if ( token.checkTypeMatches( TokenKind::Identifier ) ) 
@@ -92,7 +92,7 @@ std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& toke
             attrs
         );
 
-        return parseIdentifierStatement( token );
+        return parseIdentifierStatement( token, visibility );
     }
 
     Logger::trace( 
@@ -100,15 +100,27 @@ std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& toke
         attrs
     );
 
+    if (DeclarationVisibility::Public == visibility)
+    {
+        return std::unexpected(
+            Diagnostic(
+                "'export' cannot be applied to expression",
+                ErrorCategory::Syntax,
+                ErrorSeverity::Error,
+                token.getLocation()
+            )
+        );
+    }
+
     return parseExpressionStatement( token );
 }
 
-std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token& token ) 
+std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token& token, DeclarationVisibility visibility ) 
 {
     // Constant declaration
     if ( token.checkValueMatches( TokenKeyword::Lock ) ) 
     {
-        auto maybeDeclaration = m_stmtParser.parseVariableDeclaration( true );
+        auto maybeDeclaration = m_stmtParser.parseVariableDeclaration( true, visibility );
         if ( !maybeDeclaration ) return std::unexpected( maybeDeclaration.error() );
 
         auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
@@ -117,9 +129,43 @@ std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token
         return maybeDeclaration.value();
     }
 
+    // Function declaration
+    if ( token.checkValueMatches( TokenKeyword::Fn ) ) {
+        return m_stmtParser.parseFunctionDeclaration( false, visibility );
+    }
+
+    // Entry Function Declaration
+    if ( token.checkValueMatches( TokenKeyword::Entry ) ) {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to entry point function",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
+        return m_stmtParser.parseFunctionDeclaration( true );
+    }
+
     // Return statement
     if ( token.checkValueMatches( TokenKeyword::Return ) ) 
     {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to return statement",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
         auto maybeReturn = m_stmtParser.parseReturn();
         if ( !maybeReturn ) return std::unexpected( maybeReturn.error() );
 
@@ -130,14 +176,54 @@ std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token
     }
 
     // If statement
-    if ( token.checkValueMatches( TokenKeyword::If ) ) return m_stmtParser.parseIfConditional();
+    if ( token.checkValueMatches( TokenKeyword::If ) ) {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to if statement",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
+        return m_stmtParser.parseIfConditional();
+    }
 
     // For loop
-    if ( token.checkValueMatches( TokenKeyword::For ) ) return m_stmtParser.parseForLoop();
+    if ( token.checkValueMatches( TokenKeyword::For ) ) {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to for loop",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
+        return m_stmtParser.parseForLoop();
+    }
 
     // Break statement
     if ( token.checkValueMatches( TokenKeyword::Break ) ) 
     {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to break statement",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
         auto maybeBreak = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Break );
         if ( !maybeBreak ) return std::unexpected( maybeBreak.error() );
 
@@ -153,6 +239,18 @@ std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token
     // Continue Statement
     if ( token.checkValueMatches( TokenKeyword::Continue ) ) 
     {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to continue statement",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
         auto maybeContinue = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Continue );
         if ( !maybeContinue ) return std::unexpected( maybeContinue.error() );
 
@@ -165,12 +263,71 @@ std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token
         return stmt;
     }
 
-    // Function declaration
-    if ( token.checkValueMatches( TokenKeyword::Fn ) ) return m_stmtParser.parseFunctionDeclaration();
+    if ( token.checkValueMatches( TokenKeyword::Export ) ) 
+    {
+        if ( DeclarationVisibility::Public == visibility )
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied more than once",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
 
-    if ( token.checkValueMatches( TokenKeyword::Entry ) ) return m_stmtParser.parseFunctionDeclaration( true );
+        auto maybeExport = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Export );
+        
+        if ( !maybeExport ) 
+        {
+            return std::unexpected( maybeExport.error() );
+        }
+
+        const Token& current = m_tokenStream.peek();
+
+        auto stmt = createStatement(current, DeclarationVisibility::Public);
+
+        if (!stmt) return std::unexpected( stmt.error() );
+
+        return stmt;
+    }
+
+    if ( token.checkValueMatches( TokenKeyword::Import ) ) {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to import header directive",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
+        auto maybeImportStatement = m_stmtParser.parseImport();
+        if ( !maybeImportStatement ) return std::unexpected( maybeImportStatement.error() );
+
+        auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
+        if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
+
+        return maybeImportStatement.value();
+    }
 
     if ( token.checkValueMatches( TokenKeyword::Module ) ) {
+        if (DeclarationVisibility::Public == visibility)
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to module header directive",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
         auto maybeDeclaration = m_stmtParser.parseModuleDeclaration();
         if ( !maybeDeclaration ) return std::unexpected( maybeDeclaration.error() );
 
@@ -183,7 +340,7 @@ std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token
     return std::unexpected( 
         Diagnostic(
             std::format(
-                "Unknown keyword: '{}'", 
+                "Unknown keyword: '{}'",
                 token.getValue()
             ),
             ErrorCategory::Syntax,
@@ -193,7 +350,7 @@ std::expected<Statement*, Diagnostic> Parser::parseKeywordStatement( const Token
     );
 }
 
-std::expected<Statement*, Diagnostic> Parser::parseIdentifierStatement( const Token& token )
+std::expected<Statement*, Diagnostic> Parser::parseIdentifierStatement( const Token& token, DeclarationVisibility visibility )
 {
     const Token& next = m_tokenStream.peek(1);
     
@@ -208,7 +365,7 @@ std::expected<Statement*, Diagnostic> Parser::parseIdentifierStatement( const To
 
     if ( next.checkValueMatches( TokenSymbol::Colon ) ) 
     {
-        auto maybeDeclaration = m_stmtParser.parseVariableDeclaration();
+        auto maybeDeclaration = m_stmtParser.parseVariableDeclaration( false, visibility );
         if ( !maybeDeclaration ) return std::unexpected( maybeDeclaration.error() );
 
         auto maybeEndingNode = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::SemiColon );
@@ -217,6 +374,18 @@ std::expected<Statement*, Diagnostic> Parser::parseIdentifierStatement( const To
         return maybeDeclaration.value();
     } else if (next.checkValueMatches( TokenSymbol::Assign ) ) 
     {
+        if ( DeclarationVisibility::Public == visibility )
+        {
+            return std::unexpected(
+                Diagnostic(
+                    "'export' cannot be applied to assignment statement",
+                    ErrorCategory::Syntax,
+                    ErrorSeverity::Error,
+                    token.getLocation()
+                )
+            );
+        }
+
         auto maybeAssignment = m_exprParser.parseAssignment();
         if ( ! maybeAssignment ) return std::unexpected( maybeAssignment.error() );
 
@@ -228,6 +397,18 @@ std::expected<Statement*, Diagnostic> Parser::parseIdentifierStatement( const To
         stmt->location = SourceRange::getLocation( token, maybeEndingNode.value() );
 
         return stmt;
+    }
+
+    if (DeclarationVisibility::Public == visibility)
+    {
+        return std::unexpected(
+            Diagnostic(
+                "'export' cannot be applied to expression",
+                ErrorCategory::Syntax,
+                ErrorSeverity::Error,
+                token.getLocation()
+            )
+        );
     }
 
     // Parse a postfix expression starting at the identifier.

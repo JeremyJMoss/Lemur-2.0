@@ -4,17 +4,17 @@
 
 #include "AST/ASTNode.hpp"
 
-/* === Forward Declaration === */
+/* === Forward Declarations === */
 
-struct Identifier;
+struct QualifiedName;
 
 /* === Module Declaration === */
 
 struct ModuleDeclaration : Statement {
-    const Identifier* identifier;
+    QualifiedName* name;
 
-    ModuleDeclaration( const Identifier* identifier )
-        : identifier( identifier ) {}
+    ModuleDeclaration( QualifiedName* name )
+        : name( name ) {}
 
     void accept( ASTVisitor& v ) const override 
     { 

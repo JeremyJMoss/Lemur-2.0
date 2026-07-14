@@ -19,16 +19,16 @@ using FileId = std::size_t;
 class ModuleTable
 {
     public:
-        bool add(FileId fileId, std::string moduleName)
+        bool add(FileId fileId, std::string moduleName, std::vector<ImportDirective> imports )
         {
             ModuleId id = m_modules.size();
 
-            auto [it, inserted] = m_lookup.emplace(moduleName, id);
+            auto [it, inserted] = m_lookup.emplace(moduleName, id );
 
             if (!inserted)
                 return false;
 
-            m_modules.emplace_back( id, fileId, std::move( moduleName ) );
+            m_modules.emplace_back( id, fileId, std::move( moduleName ), std::move( imports ) );
 
             return true;
         }

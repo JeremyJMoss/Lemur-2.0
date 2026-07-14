@@ -63,7 +63,11 @@ class Tokenizer
             { "weak",      TokenKeyword::Weak },
             { "in",        TokenKeyword::In },
             { "entry",     TokenKeyword::Entry },
-            { "module",    TokenKeyword::Module }
+            { "module",    TokenKeyword::Module },
+            { "import",    TokenKeyword::Import },
+            { "from",      TokenKeyword::From },
+            { "as",        TokenKeyword::As },
+            { "export",    TokenKeyword::Export }
         };
 
         inline const static std::unordered_map<std::string_view, TokenSymbol> m_SYMBOLS = {

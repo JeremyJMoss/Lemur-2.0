@@ -1,24 +1,31 @@
 #include "Utils/TomlConfigHandler.hpp"
+
 #include "Config/Config.hpp"
 #include "Errors/Errors.hpp"
 #include "Tokens/Tokenizer.hpp"
 #include <toml++/toml.hpp>
-#include <expected>
 #include <filesystem>
+#include <expected>
 
 namespace fs = std::filesystem;
 
-fs::path findProjectRoot(fs::path start)
+std::expected<fs::path, Diagnostic> TomlConfigHandler::findProjectRoot( fs::path start )
 {
     while (true)
     {
-        if (fs::exists(start / "lemur.toml"))
+        if ( fs::exists( start / "lemur.toml" ) )
             return start;
 
-        if (start.has_parent_path())
+        if ( start.has_parent_path() )
             start = start.parent_path();
         else
-            throw InternalCompilerError( "No lemur.toml found in directory tree." );
+            return std::unexpected( 
+                Diagnostic( 
+                    "No lemur.toml found in directory tree.",
+                    ErrorCategory::FileIO,
+                    ErrorSeverity::Fatal
+                ) 
+            );
     }
 }
 
@@ -28,7 +35,14 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
 
     try
     {
-        fs::path projectRoot = findProjectRoot( fs::current_path() );
+        auto maybeProjectRoot = findProjectRoot( fs::current_path() );
+
+        if ( !maybeProjectRoot ) {
+            return std::unexpected( maybeProjectRoot.error() );
+        }
+
+        const fs::path projectRoot = std::move(maybeProjectRoot.value());
+
         fs::path tomlFilePath = fs::absolute( projectRoot / "lemur.toml" );
 
         toml::table tbl = toml::parse_file( tomlFilePath.string() );
@@ -89,9 +103,9 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
 
         }
     }
-    catch (const toml::parse_error& err)
+    catch ( const toml::parse_error& err )
     {
-        throw InternalCompilerError(err.what());
+        throw InternalCompilerError( "Toml Parsing Failed: " + std::string( err.what() ) );
     }
 
     return config;

@@ -1,4 +1,6 @@
 #include "Driver/Driver.hpp"
+
+/* === Project Dependencies === */
 #include "Tokens/Tokenizer.hpp"
 #include "Parser/Parser.hpp"
 #include "Errors/Errors.hpp"
@@ -7,10 +9,16 @@
 #include "Modules/ModuleHeaderScanner.hpp"
 #include "Config/Config.hpp"
 #include "Utils/Output.hpp"
+
+/* === Dependencies === */
+
 #include <array>
 #include <chrono>
+#include <format>
 
 namespace chrono = std::chrono;
+
+/* === Driver Methods === */
 
 void Driver::compileProgram()
 {
@@ -47,6 +55,8 @@ void Driver::compileProgram()
 void Driver::compile() {
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
+
+    auto moduleScanStart = chrono::high_resolution_clock::now();
 
     ModuleHeaderScanner scanner = ModuleHeaderScanner( m_errReporter, m_srcManager );
 
@@ -92,7 +102,17 @@ void Driver::compile() {
 
     auto reachableModules = m_modules.resolveImports( entryModuleId );
 
-    if (!reachableModules) {
+    auto moduleScanEnd = chrono::high_resolution_clock::now();
+    auto ModuleScanDuration = duration_cast<chrono::microseconds>( moduleScanEnd - moduleScanStart );
+
+    Output::success( 
+        std::format( 
+            "Module Scan Execution time: {} µs", 
+            ModuleScanDuration.count() 
+        ) 
+    );
+
+    if ( !reachableModules ) {
         m_errReporter.report(
             reachableModules.error()
         );
@@ -163,12 +183,13 @@ void Driver::compile() {
 
         Logger::debug( 
             std::format(
-                "AST generated with {} top-level statements",
+                "AST generated for module {} with {} top-level statements",
+                compUnit->getModuleName(),
                 compUnit->readStatements().size()
             )
         );
 
-        Logger::debug( "Parsed file" );
+        Logger::debug( "Parsed module" );
 
         // free all memory within Compilation Unit
         compUnit->freeArena();
@@ -194,7 +215,7 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
     }
 
     Logger::debug( 
-        "Lexing tokens for file"
+        "Lexing tokens for module " + std::string( compUnit.getModuleName() )
     );
 
     Tokenizer tokenizer = Tokenizer( compUnit, m_errReporter );
@@ -214,7 +235,7 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
 void Driver::parseCompilationUnit( CompilationUnit& compUnit ) {
     
     Logger::debug( 
-        "Parsing tokens for file"
+        "Parsing tokens for module " + std::string( compUnit.getModuleName() )
     );
 
     Parser parser = Parser( compUnit, m_errReporter );
