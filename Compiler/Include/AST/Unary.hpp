@@ -1,11 +1,14 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
+
+/* === Imports === */
+
 #include "AST/ASTNode.hpp"
 
-/* === Enums === */
+/* === Enum Declaration === */
 
 enum class UnaryOperator : std::uint8_t
 {

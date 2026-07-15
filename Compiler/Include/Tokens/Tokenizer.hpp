@@ -1,17 +1,22 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
 #include <expected>
+
+/* === Imports === */
+
 #include "Tokens/Token.hpp"
+#include "Tokens/TokenKeyword.hpp"
+#include "Tokens/TokenKind.hpp"
+#include "Tokens/TokenSymbol.hpp"
 #include "SourceControl/SourceLocation.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Errors/Errors.hpp"
 #include "Modules/ModuleHeader.hpp"
-
-using FileId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Forward Declarations === */
 

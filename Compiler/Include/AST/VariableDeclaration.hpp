@@ -1,6 +1,6 @@
 #pragma once
 
-/* === Imports === */
+/* === Imports ===*/
 
 #include "AST/ASTNode.hpp"
 
@@ -9,7 +9,7 @@
 struct Identifier;
 struct ParsedType;
 
-/* === VariableDeclaration === */
+/* === Variable Declaration === */
 
 struct VariableDeclaration : Declaration 
 {

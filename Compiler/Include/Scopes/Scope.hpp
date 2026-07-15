@@ -1,8 +1,8 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
-#include "Scopes/NameBinding.hpp"
+#include "Core/Ids.hpp"
 
 using ScopeId = size_t;
 constexpr ScopeId InvalidScopeId = static_cast<ScopeId>(-1);

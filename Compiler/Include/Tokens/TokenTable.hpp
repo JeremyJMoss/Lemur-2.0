@@ -1,12 +1,11 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <vector>
 #include <span>
 #include "Tokens/Token.hpp"
-
-using TokenId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Token Table === */
 

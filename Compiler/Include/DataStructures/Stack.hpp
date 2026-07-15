@@ -1,6 +1,10 @@
 #pragma once
 
+/* === Dependencies === */
+
 #include <stdexcept>
+
+/* === Stack Node === */
 
 template <typename U>
 struct StackNode 
@@ -9,6 +13,8 @@ struct StackNode
     StackNode<U>* next;
     StackNode( const U& d ) : data( d ), next( nullptr ) {}
 };
+
+/* === Stack === */
 
 template <typename T>
 class Stack 
@@ -35,7 +41,8 @@ class Stack
         StackNode<T>* m_top;
 };
 
-// ---- DEFINITIONS ----
+/* === Method Definitions === */
+
 template <typename T>
 void Stack<T>::push( const T& value ) 
 {

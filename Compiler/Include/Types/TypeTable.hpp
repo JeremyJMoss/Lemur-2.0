@@ -1,7 +1,6 @@
 #include <vector>
 #include "Types/Type.hpp"
-
-using TypeId = std::size_t;
+#include "Core/Ids.hpp"
 
 class TypeTable {
     public:

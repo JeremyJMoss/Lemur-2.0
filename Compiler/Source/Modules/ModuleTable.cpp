@@ -2,8 +2,7 @@
 
 #include "Utils/Logger.hpp"
 #include <queue>
-
-using ModuleId = std::size_t;
+#include "Core/Ids.hpp"
 
 std::expected<std::unordered_set<ModuleId>, Diagnostic> ModuleTable::resolveImports( ModuleId entry ) 
 {

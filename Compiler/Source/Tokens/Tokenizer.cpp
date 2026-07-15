@@ -6,8 +6,6 @@
 #include <expected>
 #include <iostream>
 
-using FileId = std::size_t;
-
 bool Tokenizer::isWhitespaceChar( char c ) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f';
 }

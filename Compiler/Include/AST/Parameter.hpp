@@ -1,12 +1,13 @@
 #pragma once
 
-/* === Imports === */
+/* === Imports ===*/
 
 #include "AST/ASTNode.hpp"
 
 /* === Forward Declarations === */
 
 struct ParsedType;
+struct Identifier;
 
 /* === Parameter === */
 

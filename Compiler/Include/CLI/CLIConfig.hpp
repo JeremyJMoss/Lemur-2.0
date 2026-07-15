@@ -1,19 +1,20 @@
 #pragma once
 
+/* === Dependencies ===*/
+
 #include <optional>
-#include <variant>
-#include <filesystem>
-#include <vector>
 #include <string>
-#include "Utils/Logger.hpp"
+#include <filesystem>
+#include <variant>
 
 namespace fs = std::filesystem;
 
-enum class Command {
-    Build,
-    Init,
-    Unknown
-};
+/* === Imports === */
+
+#include "Utils/Logger.hpp"
+#include "Config/Command.hpp"
+
+/* === Build CLI Config === */
 
 struct BuildCLIConfig {
     std::optional<bool> optimize;
@@ -26,9 +27,13 @@ struct BuildCLIConfig {
     std::optional<std::string> entryModule;
 };
 
+/* === Init CLI Config === */
+
 struct InitCLIConfig {
     std::string name;
 };
+
+/* === CLI Config === */
 
 struct CLIConfig {
     Command command = Command::Unknown;
@@ -39,12 +44,4 @@ struct CLIConfig {
         BuildCLIConfig,
         InitCLIConfig
     > data;
-};
-
-struct CompilerConfig {
-    bool optimize = false;
-    bool emitAST = false;
-    fs::path sourcePath;
-    fs::path outputPath;
-    std::string entryModule;
 };

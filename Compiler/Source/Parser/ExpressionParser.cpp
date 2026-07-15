@@ -1,4 +1,15 @@
+/* === Main Import === */
+
 #include "Parser/ExpressionParser.hpp"
+
+/* === Dependencies === */
+
+#include <array>
+#include <charconv>
+#include <string>
+#include <format>
+
+/* === Imports === */
 
 #include "Tokens/TokenStream.hpp"
 #include "Driver/CompilationUnit.hpp"
@@ -16,9 +27,6 @@
 #include "AST/Assignment.hpp"
 #include "AST/ASTPrinter.hpp"
 #include "Utils/Logger.hpp"
-
-#include <array>
-#include <charconv>
 
 /* === Helper Methods === */
 

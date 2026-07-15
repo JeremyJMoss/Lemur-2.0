@@ -1,6 +1,6 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include "AST/ASTNode.hpp"
 

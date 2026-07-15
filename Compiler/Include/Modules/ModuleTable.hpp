@@ -1,32 +1,32 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <vector>
 #include <span>
 #include <unordered_map>
 #include <expected>
 #include <unordered_set>
+
+/* === Imports === */
+
 #include "Errors/Errors.hpp"
 #include "Tokens/Token.hpp"
 #include "Modules/ModuleHeader.hpp"
-
-using ModuleId = std::size_t;
-using FileId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Module Table === */
 
 class ModuleTable
 {
     public:
-        bool add(FileId fileId, std::string moduleName, std::vector<ImportDirective> imports )
+        bool add( FileId fileId, std::string moduleName, std::vector<ImportDirective> imports )
         {
             ModuleId id = m_modules.size();
 
             auto [it, inserted] = m_lookup.emplace(moduleName, id );
 
-            if (!inserted)
-                return false;
+            if ( !inserted ) return false;
 
             m_modules.emplace_back( id, fileId, std::move( moduleName ), std::move( imports ) );
 

@@ -1,26 +1,29 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <vector>
+#include <string>
+#include <optional>
 
-using ModuleId = std::size_t;
-using FileId = std::size_t;
+/* === Imports === */
+
+#include "Core/Ids.hpp"
 
 /* === Import Directive === */
 
 struct ImportDirective
 {
-    std::string moduleName;
+    const std::string moduleName;
     std::optional<ModuleId> moduleId;
 };
 
-/* === Module Info === */
+/* === Module Header === */
 
 struct ModuleHeader
 {
     ModuleId id;
     FileId fileId;
-    std::string name;
+    const std::string name;
     std::vector<ImportDirective> imports;
 };

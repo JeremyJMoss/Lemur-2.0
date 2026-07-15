@@ -1,9 +1,12 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
 #include <vector>
+
+/* === Imports === */
+
 #include "Errors/Errors.hpp"
 
 /* === Forward Declarations === */

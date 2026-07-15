@@ -1,11 +1,10 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <vector>
 #include "Scopes/Scope.hpp"
-
-using ScopeId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Scope Table === */
 

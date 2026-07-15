@@ -1,6 +1,6 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 #include <expected>
 #include <vector>
 #include "Errors/Errors.hpp"

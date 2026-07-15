@@ -1,4 +1,10 @@
+#pragma once
+
+/* === Dependencies === */
+
 #include <vector>
+
+/* === Arena === */
 
 class Arena {
     public:

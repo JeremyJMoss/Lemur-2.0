@@ -9,8 +9,6 @@
 
 namespace fs = std::filesystem;
 
-using FileId = std::size_t;
-
 std::expected<FileId, Diagnostic> SourceManager::addFile( const fs::path& filePath )
 {
     const std::string pathStr = std::format( "'{}'", filePath.string() );

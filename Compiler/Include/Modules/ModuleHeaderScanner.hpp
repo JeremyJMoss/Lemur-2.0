@@ -1,17 +1,20 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <expected>
 #include <fstream>
 #include <filesystem>
 #include <string>
 #include <vector>
+
+namespace fs = std::filesystem;
+
+/* === Imports === */
+
 #include "Errors/Errors.hpp"
 #include "Modules/ModuleTable.hpp"
 #include "Modules/ModuleHeader.hpp"
-
-namespace fs = std::filesystem;
 
 /* === Forward Declarations === */
 

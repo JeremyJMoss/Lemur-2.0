@@ -2,9 +2,9 @@
 
 ## Introduction
 
-This document outlines the semantic specifications of **Lemur**—a multipurpose, statically typed, imperative, object-oriented programming language inspired by low-level systems languages like C++ and Rust.
+This document outlines the semantic specifications of **Lemur** - a multipurpose, statically typed, imperative, object-oriented programming language inspired by low-level systems languages like C++ and Rust.
 
-Lemur was designed as a platform to explore the inner workings of language tooling, including tokenization, semantic analysis, scope resolution, intermediate representation (IR) generation, and direct assembly output. It intuitive ownership semantics, aiming to strike a balance between control and usability—giving you the low-level power you need, without the boilerplate or baggage.
+Lemur was designed as a platform to explore the inner workings of language tooling, including tokenization, semantic analysis, scope resolution, intermediate representation (IR) generation, and direct assembly output. It has intuitive ownership semantics, aiming to strike a balance between control and usability, giving you the low-level power you need, without the boilerplate or baggage.
 
 ---
 
@@ -112,7 +112,7 @@ Do you want full ownership of the data?
   * `own` types are freed when they go out of scope.
   * `shared` types are freed when the reference count drops to zero.
 
-* **Primitive types** (e.g., `int`, `bool`, `float`, `char`) are always stack-allocated and copied by default.
+* **Primitive types** ( e.g., `int`, `bool`, `float`, `char` ) are always stack-allocated and copied by default.
 
   * Attempting to `move` a primitive triggers a compile-time error.
 
@@ -128,7 +128,7 @@ z: shared int = 5;                 // shared heap allocation
 a: rref int = y;                   // immutable borrow
 b: wref int = y;                   // mutable borrow
 
-c: weak int = z;                   // weak reference to z
+c: weak int = z;                   // weak reference to shared heap allocation
 ```
 
 ---

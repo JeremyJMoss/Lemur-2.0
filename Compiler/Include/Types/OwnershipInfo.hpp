@@ -1,10 +1,9 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include "Utils/OwnershipKind.hpp"
-
-using TypeId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Ownership Type === */
 

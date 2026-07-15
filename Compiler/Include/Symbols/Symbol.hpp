@@ -1,18 +1,17 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
 #include <ostream>
 
-using SymbolId = std::size_t;
-using TypeId = std::size_t;
+/* === Imports === */
 
-constexpr SymbolId InvalidSymbolId = static_cast<std::size_t>(-1);
+#include "Core/Ids.hpp"
 
 /* === Enum Declarations === */
 
-enum class SymbolType 
+enum class SymbolKind : u_int8_t
 {
     Variable,
     Function,
@@ -24,29 +23,30 @@ enum class SymbolType
 struct Symbol 
 {
     // Symbolid assigned via Symbol Table
-    SymbolId m_id;
-    TypeId m_typeId;
-    const std::string m_name;
-    SymbolType m_kind;
+    SymbolId id;
+    const std::string name;
+    SymbolKind kind;
     
-    void setId( SymbolId symbolId ) { m_id = symbolId; }
+    void setId( SymbolId symbolId ) { id = symbolId; }
 
     virtual ~Symbol() = default;
 
     Symbol( 
         std::string name,
-        const SymbolType& kind,
+        const SymbolKind& kind,
         TypeId typeId
-    ) : m_id( InvalidSymbolId ), 
-        m_typeId( typeId ),
-        m_name( std::move( name ) ), 
-        m_kind( kind ) {}
+    ) : id( InvalidSymbolId ),
+        name( std::move( name ) ), 
+        kind( kind ) {}
         
 };
 
 struct VariableSymbol : Symbol {
     bool isMutable;
     bool isTemporary;
+
+    ScopeId scope;
+    bool isParameter;
 
     VariableSymbol(
         std::string name,
@@ -55,7 +55,7 @@ struct VariableSymbol : Symbol {
         bool isTemporary = false
     ) : Symbol( 
             std::move( name ), 
-            SymbolType::Variable, 
+            SymbolKind::Variable, 
             typeId 
         ), 
         isMutable( isMutable ), 
@@ -68,7 +68,7 @@ struct FunctionSymbol : Symbol {
         TypeId typeId
     ) : Symbol( 
             std::move(name), 
-            SymbolType::Function, 
+            SymbolKind::Function, 
             typeId 
         ) {}
 };
@@ -79,20 +79,20 @@ struct TypeSymbol : Symbol {
         TypeId typeId
     ) : Symbol( 
             std::move( name ), 
-            SymbolType::Type, 
+            SymbolKind::Type, 
             typeId 
         ) {}
 };
 
 /* === Utility === */
 
-inline const std::string toString( SymbolType kind ) 
+inline const std::string toString( SymbolKind kind ) 
 {
     switch ( kind ) 
     {
-        case SymbolType::Variable:    return "Variable";
-        case SymbolType::Function:    return "Function";
-        case SymbolType::Type:        return "Type";
+        case SymbolKind::Variable:    return "Variable";
+        case SymbolKind::Function:    return "Function";
+        case SymbolKind::Type:        return "Type";
         default:                      return "Unknown";
     }
 }
@@ -101,9 +101,9 @@ inline std::ostream& operator<< ( std::ostream& os, const Symbol& symbol )
 {
     const std::string ind( 4, ' ' );
     os << "Symbol {" << std::endl;
-    os << ind << "id: " << symbol.m_id << std::endl;
-    os << ind << "name: " << symbol.m_name << std::endl;
-    os << ind << "kind: " << toString( symbol.m_kind ) << std::endl;
+    os << ind << "id: " << symbol.id << std::endl;
+    os << ind << "name: " << symbol.name << std::endl;
+    os << ind << "kind: " << toString( symbol.kind ) << std::endl;
     os << "}";
     return os;
 }

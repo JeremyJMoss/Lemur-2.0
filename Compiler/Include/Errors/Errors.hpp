@@ -1,15 +1,21 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <stdexcept>
 #include <string>
 #include <variant>
 #include <optional>
 #include <format>
-#include "Tokens/Token.hpp"
+
+/* === Imports === */
+
 #include "AST/ASTNode.hpp"
 #include "SourceControl/SourceLocation.hpp"
+#include "Tokens/TokenKeyword.hpp"
+#include "Tokens/TokenKind.hpp"
+#include "Tokens/TokenSymbol.hpp"
+#include "Tokens/TokenUtils.hpp"
 
 /* === Enum Declarations === */
 
@@ -128,7 +134,7 @@ struct UnexpectedTypeDiagnostic : Diagnostic {
     ) : Diagnostic( 
             std::format(
                 "Expected '{}' got '{}'", 
-                toString(expectedType), 
+                toString( expectedType ), 
                 toString( actualType )
             ),
             ErrorCategory::Syntax,

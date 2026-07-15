@@ -1,5 +1,6 @@
-#include "Config/ConfigResolver.hpp"
-#include "Config/Config.hpp"
+#include "Utils/ConfigResolver.hpp"
+#include "CLI/CLIConfig.hpp"
+#include "Config/CompilerConfig.hpp"
 #include "Tokens/Tokenizer.hpp"
 
 void ConfigResolver::mergeConfigurations( const BuildCLIConfig& bConfig, CompilerConfig& cConfig ) {

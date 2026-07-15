@@ -1,14 +1,16 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <unordered_map>
+
+/* === Imports === */
+
 #include "Errors/ErrorReporter.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Driver/CompilationUnit.hpp"
 #include "Modules/ModuleTable.hpp"
-
-using FileId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Forward Declarations === */
 

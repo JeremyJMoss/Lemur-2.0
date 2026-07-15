@@ -1,10 +1,12 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <optional>
-#include <string>
 #include <vector>
+
+/* === Imports === */
+
 #include "AST/ASTNode.hpp"
 
 /* === Forward Declarations === */

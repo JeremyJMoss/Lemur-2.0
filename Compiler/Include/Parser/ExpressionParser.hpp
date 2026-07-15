@@ -1,16 +1,20 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <expected>
 #include <vector>
 #include <string>
 #include <variant>
+
+/* === Imports === */
+
 #include "Errors/Errors.hpp"
 
 /* === Forward Declarations === */
 
 struct ASTNode;
+struct Expression;
 struct Assignment;
 struct Range;
 struct FunctionLiteral;
@@ -33,7 +37,7 @@ using LiteralValue = std::variant<
     std::monostate
 >;
 
-/* === Expression Statement === */
+/* === Expression Parser === */
 
 class ExpressionParser{
     public:

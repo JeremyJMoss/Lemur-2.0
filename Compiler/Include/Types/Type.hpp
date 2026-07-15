@@ -1,9 +1,10 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
 #include <variant>
+#include "Core/Ids.hpp"
 
 /* === Enum Declarations === */
 
@@ -39,9 +40,6 @@ using TypeData = std::variant<
     OwnershipInfo*,
     ArrayInfo*
 >;
-
-using TypeId = std::size_t;
-constexpr TypeId InvalidTypeId = static_cast<std::size_t>(-1);
 
 /* === Utility === */
 

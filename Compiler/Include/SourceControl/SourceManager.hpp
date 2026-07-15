@@ -1,6 +1,6 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
 #include <filesystem>

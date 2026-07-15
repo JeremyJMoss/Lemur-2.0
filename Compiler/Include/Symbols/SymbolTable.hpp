@@ -1,11 +1,10 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <vector>
 #include "Symbols/Symbol.hpp"
-
-using SymbolId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === SymbolTable === */
 

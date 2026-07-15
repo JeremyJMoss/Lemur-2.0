@@ -1,10 +1,20 @@
 #pragma once
 
+/* === Dependencies === */
+
 #include <span>
 #include <expected>
 #include <functional>
+
+/* === Imports === */
+
 #include "Tokens/Token.hpp"
+#include "Tokens/TokenKind.hpp"
+#include "Tokens/TokenSymbol.hpp"
+#include "Tokens/TokenKeyword.hpp"
 #include "Errors/Errors.hpp"
+
+/* === Token Stream === */
 
 class TokenStream {
     public:

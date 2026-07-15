@@ -1,10 +1,9 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <vector>
-
-using TypeId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Function Info === */
 

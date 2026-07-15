@@ -1,6 +1,6 @@
 #include "Utils/TomlConfigHandler.hpp"
 
-#include "Config/Config.hpp"
+#include "Config/CompilerConfig.hpp"
 #include "Errors/Errors.hpp"
 #include "Tokens/Tokenizer.hpp"
 #include <toml++/toml.hpp>

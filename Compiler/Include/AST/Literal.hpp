@@ -1,9 +1,12 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
 #include <variant>
+
+/* === Imports === */
+
 #include "AST/ASTNode.hpp"
 
 /* === Variant Declaration === */

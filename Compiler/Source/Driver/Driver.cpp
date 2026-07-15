@@ -1,13 +1,14 @@
 #include "Driver/Driver.hpp"
 
 /* === Project Dependencies === */
+
 #include "Tokens/Tokenizer.hpp"
 #include "Parser/Parser.hpp"
 #include "Errors/Errors.hpp"
 #include "Utils/Logger.hpp"
 #include "AST/ASTPrinter.hpp"
 #include "Modules/ModuleHeaderScanner.hpp"
-#include "Config/Config.hpp"
+#include "Config/CompilerConfig.hpp"
 #include "Utils/Output.hpp"
 
 /* === Dependencies === */

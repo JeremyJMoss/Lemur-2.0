@@ -1,13 +1,17 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies === */
+
 #include <string>
 #include <expected>
 #include <filesystem>
-#include "Errors/Errors.hpp"
-#include "Config/Config.hpp"
 
 namespace fs = std::filesystem;
+
+/* === Imports === */
+
+#include "Errors/Errors.hpp"
+#include "CLI/CLIConfig.hpp"
 
 /* === Enum Declaration === */
 

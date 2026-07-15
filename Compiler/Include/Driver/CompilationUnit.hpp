@@ -1,10 +1,13 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <vector>
 #include <unordered_map>
 #include <span>
+
+/* === Imports === */
+
 #include "Symbols/Symbol.hpp"
 #include "Symbols/SymbolTable.hpp"
 #include "Types/TypeTable.hpp"
@@ -12,13 +15,7 @@
 #include "Tokens/TokenTable.hpp"
 #include "DataStructures/Arena.hpp"
 #include "Modules/ModuleHeader.hpp"
-
-using NodeId = std::size_t;
-using SymbolId = std::size_t;
-using TypeId = std::size_t;
-using ScopeId = std::size_t;
-using FileId = std::size_t;
-using TokenId = std::size_t;
+#include "Core/Ids.hpp"
 
 /* === Forward Declarations === */
 

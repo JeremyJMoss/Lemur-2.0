@@ -1,9 +1,12 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
 #include <vector>
+
+/* === Imports === */
+
 #include "AST/ASTNode.hpp"
 #include "Utils/OwnershipKind.hpp"
 

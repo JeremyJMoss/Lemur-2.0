@@ -1,4 +1,4 @@
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include "Symbols/SymbolTable.hpp"
 

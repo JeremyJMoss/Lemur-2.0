@@ -7,9 +7,9 @@
 #include "Utils/Output.hpp"
 #include "Utils/Logger.hpp"
 #include "CLI/CommandLineTools.hpp"
-#include "Config/Config.hpp"
+#include "CLI/CLIConfig.hpp"
 #include "Utils/TomlConfigHandler.hpp"
-#include "Config/ConfigResolver.hpp"
+#include "Utils/ConfigResolver.hpp"
 
 namespace fs = std::filesystem;
 

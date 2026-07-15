@@ -1,10 +1,14 @@
 #pragma once
 
-/* === Imports === */
+/* === Dependencies ===*/
 
 #include <string>
 #include <vector>
+
+/* === Imports === */
+
 #include "SourceControl/SourceLocation.hpp"
+#include "Core/Ids.hpp"
 
 /* === Forward Declarations === */
 
@@ -72,8 +76,6 @@ enum class DeclarationVisibility: u_int8_t
 };
 
 /* === Base AST Node === */
-
-using NodeId = std::size_t;
 
 struct ASTNode 
 {

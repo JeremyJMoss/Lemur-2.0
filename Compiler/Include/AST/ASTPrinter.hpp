@@ -1,13 +1,18 @@
 #pragma once
 
+/* === Dependencies === */
+
 #include <ostream>
 #include <string>
 #include <vector>
 #include <variant>
 #include <filesystem>
-#include "AST/ASTNode.hpp"
 
 namespace fs = std::filesystem;
+
+/* === Imports === */
+
+#include "AST/ASTNode.hpp"
 
 /* === Forward Declarations === */
 

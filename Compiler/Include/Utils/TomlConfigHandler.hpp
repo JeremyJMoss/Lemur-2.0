@@ -2,7 +2,7 @@
 
 #include <expected>
 #include <filesystem>
-#include "Config/Config.hpp"
+#include "Config/CompilerConfig.hpp"
 #include "Errors/Errors.hpp"
 
 namespace fs = std::filesystem;
