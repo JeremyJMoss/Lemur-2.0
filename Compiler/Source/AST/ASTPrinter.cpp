@@ -1,11 +1,21 @@
+/* === Main Import === */
+
 #include "AST/ASTPrinter.hpp"
-#include "AST/AllASTTypes.hpp"
-#include "Errors/Errors.hpp"
+
+/* === Dependencies === */
+
 #include <fstream>
 #include <filesystem>
 #include <format>
 
 namespace fs = std::filesystem;
+
+/* === Imports === */
+
+#include "AST/AllASTTypes.hpp"
+#include "Errors/Errors.hpp"
+
+/* === AST Printer Methods === */
 
 void ASTPrinter::writeIndent() const {
     static const char spaces[] = "                                                                "; // 64 spaces
@@ -514,8 +524,23 @@ void ASTPrinter::visit( const QualifiedName& qualName )
 
 void ASTPrinter::print( const std::vector<const Statement*>& statements, const fs::path& outputPath, const std::string_view moduleName )
 {
+    // Create the directory (and any missing parent directories)
+    std::error_code ec;
+    fs::create_directories( outputPath, ec );
+
+    if ( ec )
+    {
+        throw InternalCompilerError( "Failed to create output directory: " + ec.message() );
+    }
+
     std::string fileName = std::string( moduleName ) + "_ast_output.json";
     std::ofstream outFile( outputPath / fileName, std::ios::out | std::ios::binary );
+
+    if (!outFile)
+    {
+        throw InternalCompilerError( "Failed to open output file." );
+    }
+
     outFile.rdbuf()->pubsetbuf( nullptr, 1 << 20 ); // 1MB buffer
 
     m_out = &outFile;
