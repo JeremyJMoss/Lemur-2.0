@@ -10,6 +10,7 @@
 #include "SourceControl/SourceManager.hpp"
 #include "Driver/CompilationUnit.hpp"
 #include "Modules/ModuleTable.hpp"
+#include "Core/CompilerContext.hpp"
 #include "Core/Ids.hpp"
 
 /* === Forward Declarations === */
@@ -24,8 +25,7 @@ class Driver
         Driver( const CompilerConfig& config )
             : m_config( config ),
               m_srcManager(), 
-              m_errReporter( m_srcManager ),
-              m_modules() {}
+              m_errReporter( m_srcManager ) {}
 
         void compileProgram();
 
@@ -35,8 +35,9 @@ class Driver
         void parseCompilationUnit( CompilationUnit& compUnit );
         
         const CompilerConfig& m_config;
+        CompilerContext m_ctx;
         SourceManager m_srcManager;
         ErrorReporter m_errReporter;
-        ModuleTable m_modules;
+
         std::unordered_map<FileId, CompilationUnit> m_compilationUnits;
 };

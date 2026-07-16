@@ -1,17 +1,23 @@
 #pragma once
 
 /* === Dependencies ===*/
+
 #include <expected>
 #include <vector>
+
+/* === Imports === */
+
 #include "Errors/Errors.hpp"
 
 /* === Forward Declarations === */
+
 struct Parameter;
 class CompilationUnit;
 class TokenStream;
 class TypeParser;
 
 /* === Parameter Parser === */
+
 class ParameterParser {
     public:
         ParameterParser( 

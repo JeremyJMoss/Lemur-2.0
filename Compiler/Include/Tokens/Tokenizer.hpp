@@ -1,6 +1,7 @@
 #pragma once
 
-/* === Dependencies ===*/
+/* === Dependencies === */
+
 #include <string>
 #include <unordered_set>
 #include <unordered_map>

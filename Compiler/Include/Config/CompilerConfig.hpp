@@ -14,5 +14,5 @@ struct CompilerConfig {
     bool emitAST = false;
     fs::path sourcePath;
     fs::path outputPath;
-    const std::string entryModule;
+    std::string entryModule;
 };

@@ -1,10 +1,23 @@
+/* === Main Import === */
+
 #include "CLI/CommandLineTools.hpp"
-#include "Utils/Logger.hpp"
-#include "Utils/Output.hpp"
+
+/* === Dependencies === */
+
 #include <filesystem>
 #include <format>
+#include <expected>
+#include <string>
+#include <iostream>
 
 namespace fs = std::filesystem;
+
+/* === Imports === */
+
+#include "Logging/Logger.hpp"
+#include "Utils/Output.hpp"
+
+/* === Command Line Tools Methods === */
 
 std::expected<CLIConfig, CLIStatus> CommandLineTools::parse( int argc, char* argv[] ) 
 {

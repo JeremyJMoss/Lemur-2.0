@@ -4,12 +4,16 @@
 
 #include <string>
 
+/* === Imports === */
+
+#include "Types/BuiltInType.hpp"
+
 /* === Primitive Type === */
 
 struct PrimitiveInfo
 {
-    const std::string name;
+    const PrimitiveType name;
 
-    PrimitiveInfo( std::string name ) 
-        : name( std::move( name ) ) {}
+    PrimitiveInfo( PrimitiveType primType ) 
+        : name( name ) {}
 };

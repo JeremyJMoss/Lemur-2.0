@@ -1,8 +1,11 @@
 #pragma once
 
-/* === Dependencies ===*/
+/* === Dependencies === */
 
 #include <vector>
+
+/* === Imports === */
+
 #include "Symbols/Symbol.hpp"
 #include "Core/Ids.hpp"
 

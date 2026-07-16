@@ -1,5 +1,5 @@
 #include "Tokens/TokenStream.hpp"
-#include "Utils/Logger.hpp"
+#include "Logging/Logger.hpp"
 
 /**
  * Attempts to check the next token in the token list

@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 /* === Imports === */
 
-#include "Utils/Logger.hpp"
+#include "Logging/Logger.hpp"
 #include "Config/Command.hpp"
 
 /* === Build CLI Config === */

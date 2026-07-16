@@ -1,6 +1,6 @@
 #include "Parser/StatementParser.hpp"
 #include "Parser/Parser.hpp"
-#include "Utils/Logger.hpp"
+#include "Logging/Logger.hpp"
 #include "Errors/Errors.hpp"
 #include "Errors/ErrorReporter.hpp"
 #include "AST/ASTPrinter.hpp"

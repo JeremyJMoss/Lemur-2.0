@@ -6,12 +6,14 @@
 #include <filesystem>
 #include <unordered_map>
 #include <expected>
-#include "SourceControl/FileData.hpp"
-#include "Errors/Errors.hpp"
 
 namespace fs = std::filesystem;
 
-using FileId = size_t;
+/* === Imports === */
+
+#include "SourceControl/FileData.hpp"
+#include "Errors/Errors.hpp"
+#include "Core/Ids.hpp"
 
 /* === Source Manager === */
 

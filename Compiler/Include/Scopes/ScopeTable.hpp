@@ -3,6 +3,9 @@
 /* === Dependencies ===*/
 
 #include <vector>
+
+/* === Imports === */
+
 #include "Scopes/Scope.hpp"
 #include "Core/Ids.hpp"
 

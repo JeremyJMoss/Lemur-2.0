@@ -1,8 +1,11 @@
 #pragma once
 
-/* === Dependencies ===*/
+/* === Dependencies === */
 
 #include <optional>
+
+/* === Imports === */
+
 #include "Core/Ids.hpp"
 
 /* === Array Info === */

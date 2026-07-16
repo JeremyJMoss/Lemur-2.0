@@ -1,8 +1,47 @@
+/* === Main Import === */
+
 #include "Modules/ModuleTable.hpp"
 
-#include "Utils/Logger.hpp"
+/* === Dependencies === */
+
+#include <expected>
 #include <queue>
+#include <unordered_set>
+#include <format>
+#include <vector>
+
+/* === Imports === */
+
+#include "Logging/Logger.hpp"
 #include "Core/Ids.hpp"
+#include "Errors/Errors.hpp"
+
+/* === Module Table Methods === */
+
+bool ModuleTable::add( FileId fileId, std::string moduleName, std::vector<ImportDirective> imports )
+{
+    ModuleId id = m_modules.size();
+
+    auto [it, inserted] = m_lookup.emplace(moduleName, id );
+
+    if ( !inserted ) return false;
+
+    m_modules.emplace_back( id, fileId, std::move( moduleName ), std::move( imports ) );
+
+    return true;
+}
+
+const ModuleHeader* ModuleTable::find( std::string_view name ) const 
+{
+    auto it = m_lookup.find( std::string( name ) );
+
+    if ( it != m_lookup.end() ) 
+    {   
+        return &m_modules[it->second];
+    }
+
+    return nullptr;
+}
 
 std::expected<std::unordered_set<ModuleId>, Diagnostic> ModuleTable::resolveImports( ModuleId entry ) 
 {

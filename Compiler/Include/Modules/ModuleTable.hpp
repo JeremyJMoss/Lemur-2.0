@@ -11,7 +11,6 @@
 /* === Imports === */
 
 #include "Errors/Errors.hpp"
-#include "Tokens/Token.hpp"
 #include "Modules/ModuleHeader.hpp"
 #include "Core/Ids.hpp"
 
@@ -20,44 +19,15 @@
 class ModuleTable
 {
     public:
-        bool add( FileId fileId, std::string moduleName, std::vector<ImportDirective> imports )
-        {
-            ModuleId id = m_modules.size();
+        bool add( FileId fileId, std::string moduleName, std::vector<ImportDirective> imports );
 
-            auto [it, inserted] = m_lookup.emplace(moduleName, id );
+        ModuleHeader& get( ModuleId id ) { return m_modules[id]; }
 
-            if ( !inserted ) return false;
+        const ModuleHeader& get( ModuleId id ) const { return m_modules[id]; }
 
-            m_modules.emplace_back( id, fileId, std::move( moduleName ), std::move( imports ) );
+        size_t count() const { return m_modules.size(); }
 
-            return true;
-        }
-
-        ModuleHeader& get( ModuleId id ) 
-        {
-            return m_modules[id];
-        }
-
-        const ModuleHeader& get( ModuleId id ) const 
-        {
-            return m_modules[id];
-        }
-
-        size_t count() const 
-        { 
-            return m_modules.size(); 
-        }
-
-        const ModuleHeader* find( std::string_view name ) const {
-            auto it = m_lookup.find( std::string( name ) );
-
-            if ( it != m_lookup.end() ) 
-            {   
-                return &m_modules[it->second];
-            }
-
-            return nullptr;
-        }
+        const ModuleHeader* find( std::string_view name ) const;
 
         std::expected<std::unordered_set<ModuleId>, Diagnostic> resolveImports( ModuleId entry );
 

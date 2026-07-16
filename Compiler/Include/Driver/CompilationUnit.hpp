@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <span>
+#include <string>
 
 /* === Imports === */
 
@@ -20,49 +21,34 @@
 /* === Forward Declarations === */
 
 struct Statement;
+class CompilerContext;
 
 /* === Compilation Unit === */
 
 class CompilationUnit {
     public:
-        CompilationUnit( const ModuleHeader& ModuleHeader ) 
-            : m_ModuleHeader( ModuleHeader ) {
-                ScopeId scopeId = createScope( InvalidScopeId, ScopeOwnerKind::Global );
-                m_globalScope = scopeId;
-                m_currentScope = scopeId;
-            }
+        CompilationUnit( const ModuleHeader& moduleHeader, CompilerContext& ctx ) 
+            : m_moduleHeader( moduleHeader ), m_ctx( ctx ) {}
 
         TokenId addToken( Token token ) {
             return m_tokens.add( std::move( token ) );
-        }
-
-        SymbolId addSymbol( Symbol symbol ) {
-            return m_symbols.add( std::move( symbol ) );
         }
 
         void bindSymbol( NodeId nodeId, SymbolId symbolId ) {
             m_resolvedSymbols.emplace( nodeId, symbolId );
         }
 
-        TypeId addType( Type type ) {
-            return m_types.add( std::move( type ) );
-        }
-
         void bindType( NodeId nodeId, TypeId typeId ) {
             m_resolvedTypes.emplace( nodeId, typeId );
-        }
-
-        ScopeId createScope( ScopeId parent, ScopeOwnerKind kind ) {
-            return m_scopes.addScope( parent, kind );
         }
 
         void bindScope( NodeId nodeId, ScopeId scopeId ) {
             m_nodeScopes.emplace( nodeId, scopeId );
         }
         
-        FileId getFileId() const { return m_ModuleHeader.fileId; }
+        FileId getFileId() const { return m_moduleHeader.fileId; }
 
-        std::string_view getModuleName() const { return m_ModuleHeader.name; }
+        std::string_view getModuleName() const { return m_moduleHeader.name; }
 
         size_t getTokenCount() const { return m_tokens.count(); }
 
@@ -79,16 +65,12 @@ class CompilationUnit {
 
         void freeArena() { m_arena.reset(); }
     private:
-        const ModuleHeader& m_ModuleHeader;
-        ScopeId m_globalScope;
-        ScopeId m_currentScope;
+        const ModuleHeader& m_moduleHeader;
+        CompilerContext& m_ctx;
 
         Arena m_arena;
         TokenTable m_tokens;
         AST m_ast;
-        SymbolTable m_symbols;
-        TypeTable m_types;
-        ScopeTable m_scopes;
 
         std::unordered_map<NodeId, SymbolId> m_resolvedSymbols;
         std::unordered_map<NodeId, TypeId> m_resolvedTypes;

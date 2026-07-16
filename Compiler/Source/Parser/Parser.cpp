@@ -1,10 +1,24 @@
+/* === Main Import === */
+
 #include "Parser/Parser.hpp"
+
+/* === Dependencies === */
+
+#include <variant>
+#include <array>
+#include <string>
+#include <expected>
+
+/* === Imports === */
+
+#include "Tokens/TokenStream.hpp"
 #include "Driver/CompilationUnit.hpp"
 #include "AST/AllASTTypes.hpp"
 #include "Errors/Errors.hpp"
 #include "Errors/ErrorReporter.hpp"
-#include "Utils/Logger.hpp"
-#include <variant>
+#include "Logging/Logger.hpp"
+
+/* === Parser Methods === */
 
 Parser::Parser( CompilationUnit& compUnit, ErrorReporter& errReporter )
     : m_compUnit( compUnit ),
@@ -19,11 +33,6 @@ Parser::Parser( CompilationUnit& compUnit, ErrorReporter& errReporter )
     m_exprParser.setStatementParser( &m_stmtParser );
 }
 
-/**
- * Parses all tokens and turns them into a statement list
- *
- * @return std::vector<std::unique_ptr<Statement>> List of statements
- */
 void Parser::parse()
 {
     // while there are still tokens in the list continue parsing

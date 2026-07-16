@@ -2,10 +2,10 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include "Utils/Logger.hpp"
+#include "Logging/Logger.hpp"
 #include "Driver/Driver.hpp"
 #include "Utils/Output.hpp"
-#include "Utils/Logger.hpp"
+#include "Logging/Logger.hpp"
 #include "CLI/CommandLineTools.hpp"
 #include "CLI/CLIConfig.hpp"
 #include "Utils/TomlConfigHandler.hpp"

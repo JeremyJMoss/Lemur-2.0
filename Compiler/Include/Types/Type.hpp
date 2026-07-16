@@ -1,25 +1,36 @@
 #pragma once
 
-/* === Dependencies ===*/
+/* === Dependencies === */
 
 #include <string>
 #include <variant>
+
+/* === Imports === */
+
 #include "Core/Ids.hpp"
 
 /* === Enum Declarations === */
 
 enum class TypeKind 
 {
+    Unknown,
     Function,
     Primitive,
     Ownership,
-    Inferred,
     Array,
-    Null, 
+    Null,
+    Error
+};
+
+enum class TypeState 
+{
+    Resolved,
+    Inferred,
     Unresolved
 };
 
-enum class TypeOrigin {
+enum class TypeOrigin 
+{
     Builtin,
     UserDefined
 };
@@ -47,13 +58,13 @@ inline const std::string toString( const TypeKind kind )
 {
     switch ( kind ) 
     {
+        case TypeKind::Unknown:       return "Unknown";
         case TypeKind::Primitive:     return "Primitive";
         case TypeKind::Ownership:     return "Ownership";
-        case TypeKind::Inferred:      return "Inferred";
         case TypeKind::Array:         return "Array";
         case TypeKind::Function:      return "Function";
         case TypeKind::Null:          return "Null";
-        case TypeKind::Unresolved:    return "Unresolved";
+        case TypeKind::Error:         return "Error";
         default:                      return "Unknown";
     }
 };
@@ -62,19 +73,20 @@ inline const std::string toString( const TypeKind kind )
 
 struct Type
 {
-    TypeId m_id;
-    TypeKind m_kind;
-    std::size_t m_size;
-    TypeOrigin m_origin;
-    TypeData m_data;
+    TypeId id;
+    TypeKind kind;
+    TypeState state;
+    TypeOrigin origin;
+    TypeData data;
 
-    void setId( TypeId typeId ) { m_id = typeId; }
+    void setId( TypeId typeId ) { id = typeId; }
 
-    Type( TypeKind kind, TypeOrigin origin, TypeData data ) 
-        : m_id( InvalidTypeId ), 
-        m_kind( kind ), 
-        m_origin( origin ),
-        m_data( data ) {};
+    Type( TypeKind kind, TypeState state, TypeOrigin origin, TypeData data ) 
+        : id( InvalidTypeId ), 
+        kind( kind ),
+        state( state ),
+        origin( origin ),
+        data( data ) {};
 
     virtual ~Type() = default;
 };

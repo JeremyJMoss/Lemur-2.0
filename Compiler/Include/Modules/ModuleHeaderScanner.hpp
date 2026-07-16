@@ -14,12 +14,13 @@ namespace fs = std::filesystem;
 
 #include "Errors/Errors.hpp"
 #include "Modules/ModuleTable.hpp"
-#include "Modules/ModuleHeader.hpp"
+#include "Modules/ImportDirective.hpp"
 
 /* === Forward Declarations === */
 
 class ErrorReporter;
 class SourceManager;
+class CompilerContext;
 
 /* === Module Header Scanner === */
 
@@ -27,7 +28,7 @@ class ModuleHeaderScanner {
     public:
         ModuleHeaderScanner( ErrorReporter& errReporter, SourceManager& srcManager ) 
             : m_errReporter( errReporter ), m_srcManager( srcManager ) {}
-        std::expected<ModuleTable, Diagnostic> scan( const fs::path& sourcePath );
+        std::expected<int, Diagnostic> scan( const fs::path& sourcePath, CompilerContext& ctx );
         std::expected<std::string, Diagnostic> parseModuleDirective();
         std::expected<std::vector<ImportDirective>, Diagnostic> parseImportDirectives();
     private:

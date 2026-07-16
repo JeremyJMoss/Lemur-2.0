@@ -1,8 +1,13 @@
 #pragma once
 
+/* === Dependencies === */
+
 #include <expected>
 #include <vector>
 #include <string>
+
+/* === Imports === */
+
 #include "Errors/Errors.hpp"
 #include "AST/Import.hpp"
 #include "AST/ASTNode.hpp"

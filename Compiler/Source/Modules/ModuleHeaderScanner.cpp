@@ -1,12 +1,20 @@
+/* === Main Import === */
+
 #include "Modules/ModuleHeaderScanner.hpp"
+#include "Core/CompilerContext.hpp"
+
+/* === Depenencies === */
 
 #include <string>
 #include <format>
+
+/* === Imports === */
+
 #include "SourceControl/SourceManager.hpp"
 #include "Errors/ErrorReporter.hpp"
-#include "Utils/Logger.hpp"
+#include "Logging/Logger.hpp"
 
-/* === Utility Functions === */
+/* === Module Header Scanner Methods === */
 
 std::string_view ModuleHeaderScanner::readIdentifier( std::string_view line, std::size_t& pos ) {
     std::size_t start = pos;
@@ -30,10 +38,8 @@ bool ModuleHeaderScanner::isWhitespaceChar( char c ) {
 
 /* === Main Functions === */
 
-std::expected<ModuleTable, Diagnostic> ModuleHeaderScanner::scan( const fs::path& sourcePath )
+std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& sourcePath, CompilerContext& ctx )
 {   
-    ModuleTable moduleTable;
-
     Logger::trace( "Started scanning file headers" );
 
     Logger::info( "Starting Module Resolution" );
@@ -140,7 +146,7 @@ std::expected<ModuleTable, Diagnostic> ModuleHeaderScanner::scan( const fs::path
             continue;
         }
 
-        bool inserted = moduleTable.add( fileId, maybeModuleIdentifier.value(), maybeImports.value() );
+        bool inserted = ctx.addModule( fileId, maybeModuleIdentifier.value(), std::move( maybeImports.value() ) );
 
         if ( !inserted )
         {
@@ -156,7 +162,7 @@ std::expected<ModuleTable, Diagnostic> ModuleHeaderScanner::scan( const fs::path
         }
     }
 
-    return moduleTable;
+    return ctx.moduleCount();
 }
 
 std::expected<std::string, Diagnostic> ModuleHeaderScanner::parseModuleDirective()

@@ -1,5 +1,5 @@
 #include "SourceControl/SourceManager.hpp"
-#include "Utils/Logger.hpp"
+#include "Logging/Logger.hpp"
 #include "Modules/ModuleHeader.hpp"
 #include <array>
 #include <string>

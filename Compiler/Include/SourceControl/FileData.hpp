@@ -8,7 +8,9 @@
 
 namespace fs = std::filesystem;
 
-using FileId = size_t;
+/* === Imports === */
+
+#include "Core/Ids.hpp"
 
 /* === File Data === */
 

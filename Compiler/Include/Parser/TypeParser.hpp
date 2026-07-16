@@ -1,11 +1,16 @@
 #pragma once
 
-/* === Imports ===*/
+/* === Dependencies === */
+
 #include <expected>
 #include <vector>
+
+/* === Imports === */
+
 #include "Errors/Errors.hpp"
 
 /* === Forward Declarations === */
+
 struct ParsedType;
 
 class CompilationUnit;

@@ -1,15 +1,6 @@
+/* === Main Import === */
+
 #include "Driver/Driver.hpp"
-
-/* === Project Dependencies === */
-
-#include "Tokens/Tokenizer.hpp"
-#include "Parser/Parser.hpp"
-#include "Errors/Errors.hpp"
-#include "Utils/Logger.hpp"
-#include "AST/ASTPrinter.hpp"
-#include "Modules/ModuleHeaderScanner.hpp"
-#include "Config/CompilerConfig.hpp"
-#include "Utils/Output.hpp"
 
 /* === Dependencies === */
 
@@ -18,6 +9,17 @@
 #include <format>
 
 namespace chrono = std::chrono;
+
+/* === Imports === */
+
+#include "Tokens/Tokenizer.hpp"
+#include "Parser/Parser.hpp"
+#include "Errors/Errors.hpp"
+#include "Logging/Logger.hpp"
+#include "AST/ASTPrinter.hpp"
+#include "Modules/ModuleHeaderScanner.hpp"
+#include "Config/CompilerConfig.hpp"
+#include "Utils/Output.hpp"
 
 /* === Driver Methods === */
 
@@ -61,9 +63,9 @@ void Driver::compile() {
 
     ModuleHeaderScanner scanner = ModuleHeaderScanner( m_errReporter, m_srcManager );
 
-    auto maybeScanSuccessful = scanner.scan( m_config.sourcePath );
+    auto maybeScanSuccessful = scanner.scan( m_config.sourcePath, m_ctx );
 
-    if (!maybeScanSuccessful) {
+    if ( !maybeScanSuccessful ) {
         m_errReporter.report(
             Diagnostic(
                 "Failed to scan modules within source path folder tree",
@@ -73,9 +75,7 @@ void Driver::compile() {
         );
     }
 
-    m_modules = maybeScanSuccessful.value();
-
-    auto maybeModule = m_modules.find( m_config.entryModule );
+    auto maybeModule = m_ctx.getModuleHeader( m_config.entryModule );
 
     if ( maybeModule == nullptr ) {
         m_errReporter.report(
@@ -101,7 +101,7 @@ void Driver::compile() {
 
     ModuleId entryModuleId = maybeModule->id;
 
-    auto reachableModules = m_modules.resolveImports( entryModuleId );
+    auto reachableModules = m_ctx.resolveModuleImports( entryModuleId );
 
     auto moduleScanEnd = chrono::high_resolution_clock::now();
     auto ModuleScanDuration = duration_cast<chrono::microseconds>( moduleScanEnd - moduleScanStart );
@@ -124,11 +124,11 @@ void Driver::compile() {
     // TODO do something about reachable vs unreachable modules maybe throw a warning on the screen for
     // unreachable modules from the enrty point
 
-    std::vector<ModuleId> parseOrder = m_modules.buildParseOrder( entryModuleId );
+    std::vector<ModuleId> parseOrder = m_ctx.buildModuleParseOrder( entryModuleId );
     
     for( ModuleId moduleId : parseOrder )
     {
-        auto compUnit = std::make_unique<CompilationUnit>( m_modules.get( moduleId ) );
+        auto compUnit = std::make_unique<CompilationUnit>( m_ctx.getModuleHeader( moduleId ), m_ctx );
 
         auto tokenStart = chrono::high_resolution_clock::now();
 

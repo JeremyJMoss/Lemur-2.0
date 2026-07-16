@@ -1,6 +1,6 @@
 #pragma once
 
-/* === Dependencies ===*/
+/* === Imports === */
 
 #include "Utils/OwnershipKind.hpp"
 #include "Core/Ids.hpp"
