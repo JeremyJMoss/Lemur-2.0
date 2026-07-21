@@ -45,7 +45,7 @@ std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDe
         if ( !maybeEntryKeyword )
         {
             // Report entry keyword missing from entry function
-            m_ctx.errors().report(
+            m_compUnit.context().errors().report(
                 Diagnostic(
                     "Entry keyword missing from entry function",
                     ErrorCategory::Syntax,
@@ -59,7 +59,7 @@ std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDe
     auto maybeFunctionKeyword = m_tokenStream.expect( TokenKind::Keyword, TokenKeyword::Fn );
     if ( !maybeFunctionKeyword ) 
     {
-        m_ctx.errors().report( maybeFunctionKeyword.error() );
+        m_compUnit.context().errors().report( maybeFunctionKeyword.error() );
     }
 
     auto peekedToken = m_tokenStream.peek();
@@ -199,7 +199,7 @@ std::expected<Block*, Diagnostic> StatementParser::parseBlock()
         auto maybeStatement = m_parent.createStatement( current );
         if ( !maybeStatement ) 
         {
-            m_ctx.errors().report( maybeStatement.error() );
+            m_compUnit.context().errors().report( maybeStatement.error() );
 
             Logger::trace( "Recovering from error inside block" );
 
@@ -617,7 +617,7 @@ std::expected<ForLoop*, Diagnostic> StatementParser::parseForLoop()
         auto maybeStep = m_exprParser->parseExpression();
         if ( !maybeStep )
         {
-            m_ctx.errors().report(
+            m_compUnit.context().errors().report(
                 Diagnostic(
                     "Malformed or missing step statement inside loop parameters",
                     ErrorCategory::Syntax,
@@ -651,7 +651,7 @@ std::expected<ForLoop*, Diagnostic> StatementParser::parseForLoop()
             auto maybeWhere = m_exprParser->parseExpression();
             if ( !maybeWhere )
             {
-                m_ctx.errors().report(
+                m_compUnit.context().errors().report(
                     Diagnostic(
                         "Malformed or missing where statement inside loop parameters",
                         ErrorCategory::Syntax,
@@ -676,7 +676,7 @@ std::expected<ForLoop*, Diagnostic> StatementParser::parseForLoop()
         auto maybeWhere = m_exprParser->parseExpression();
         if ( !maybeWhere )
         {
-            m_ctx.errors().report(
+            m_compUnit.context().errors().report(
                 Diagnostic(
                     "Malformed or missing where statement inside loop parameters",
                     ErrorCategory::Syntax,

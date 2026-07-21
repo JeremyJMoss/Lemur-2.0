@@ -146,7 +146,7 @@ std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& source
             continue;
         }
 
-        bool inserted = ctx.addModule( fileId, maybeModuleIdentifier.value(), std::move( maybeImports.value() ) );
+        bool inserted = ctx.modules().add( fileId, maybeModuleIdentifier.value(), std::move( maybeImports.value() ) );
 
         if ( !inserted )
         {
@@ -162,7 +162,7 @@ std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& source
         }
     }
 
-    return ctx.moduleCount();
+    return ctx.modules().count();
 }
 
 std::expected<std::string, Diagnostic> ModuleHeaderScanner::parseModuleDirective()

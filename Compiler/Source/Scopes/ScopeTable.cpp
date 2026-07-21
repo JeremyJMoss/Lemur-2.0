@@ -4,7 +4,7 @@
 
 /* === Scope Table Methods === */
 
-ScopeId ScopeTable::addScope(
+ScopeId ScopeTable::add(
     ScopeId parentId,
     ScopeOwnerKind kind
 ) {
@@ -15,10 +15,10 @@ ScopeId ScopeTable::addScope(
     return id;
 }
 
-Scope* ScopeTable::getScope( ScopeId scopeId ) {
-    if ( m_scopes.size() < scopeId - 1 )
+Scope* ScopeTable::get( ScopeId scopeId ) {
+    if ( m_scopes.size() < scopeId )
     {
-        throw new InternalCompilerError( "Attempted to get scope outside of scope table bounds.\nPlease report this bug." );
+        throw InternalCompilerError( "Attempted to get scope outside of scope table bounds.\nPlease report this bug." );
     }
 
     return &m_scopes.at( scopeId ); 
@@ -33,7 +33,7 @@ std::expected<void, SymbolId> ScopeTable::declare( ScopeId scopeId, std::string_
         return std::unexpected( existing );
     }
 
-    Scope* scope = getScope( scopeId );
+    Scope* scope = get( scopeId );
 
     if (!scope->insert( name, symbolId ))
     {
@@ -52,7 +52,7 @@ SymbolId ScopeTable::lookup( ScopeId scopeId, std::string_view name )
 
     while ( scopeId != InvalidScopeId )
     {
-        Scope* scope = getScope( scopeId );
+        Scope* scope = get( scopeId );
 
         auto it = scope->m_declarations.find( std::string(name) );
 
@@ -74,7 +74,7 @@ SymbolId ScopeTable::lookupLocal( ScopeId scopeId, std::string_view name )
         throw InternalCompilerError( "Lookup function called with InvalidScopeId.\nPlease report this bug.");
     }
 
-    Scope* scope = getScope( scopeId );
+    Scope* scope = get( scopeId );
 
     auto it = scope->m_declarations.find( std::string(name) );
 

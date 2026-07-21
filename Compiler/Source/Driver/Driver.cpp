@@ -55,9 +55,12 @@ void Driver::compileProgram()
     }
 }
 
-void Driver::compile() {
+void Driver::compile() 
+{
     // Get entry point
     Logger::debug( "Attempting to parse entry point file" );
+
+    m_ctx.initialize();
 
     auto moduleScanStart = chrono::high_resolution_clock::now();
 
@@ -65,7 +68,8 @@ void Driver::compile() {
 
     auto maybeScanSuccessful = scanner.scan( m_config.sourcePath, m_ctx );
 
-    if ( !maybeScanSuccessful ) {
+    if ( !maybeScanSuccessful ) 
+    {
         m_ctx.errors().report(
             Diagnostic(
                 "Failed to scan modules within source path folder tree",
@@ -75,9 +79,10 @@ void Driver::compile() {
         );
     }
 
-    auto maybeModule = m_ctx.getModuleHeader( m_config.entryModule );
+    auto maybeModule = m_ctx.modules().find( m_config.entryModule );
 
-    if ( maybeModule == nullptr ) {
+    if ( maybeModule == nullptr ) 
+    {
         m_ctx.errors().report(
             Diagnostic(
                 std::format(
@@ -101,7 +106,7 @@ void Driver::compile() {
 
     ModuleId entryModuleId = maybeModule->id;
 
-    auto reachableModules = m_ctx.resolveModuleImports( entryModuleId );
+    auto reachableModules = m_ctx.modules().resolveImports( entryModuleId );
 
     auto moduleScanEnd = chrono::high_resolution_clock::now();
     auto ModuleScanDuration = duration_cast<chrono::microseconds>( moduleScanEnd - moduleScanStart );
@@ -113,7 +118,8 @@ void Driver::compile() {
         ) 
     );
 
-    if ( !reachableModules ) {
+    if ( !reachableModules ) 
+    {
         m_ctx.errors().report(
             reachableModules.error()
         );
@@ -124,11 +130,11 @@ void Driver::compile() {
     // TODO do something about reachable vs unreachable modules maybe throw a warning on the screen for
     // unreachable modules from the enrty point
 
-    std::vector<ModuleId> parseOrder = m_ctx.buildModuleParseOrder( entryModuleId );
+    std::vector<ModuleId> parseOrder = m_ctx.modules().buildParseOrder( entryModuleId );
     
-    for( ModuleId moduleId : parseOrder )
+    for ( ModuleId moduleId : parseOrder )
     {
-        auto compUnit = std::make_unique<CompilationUnit>( m_ctx.getModuleHeader( moduleId ), m_ctx );
+        auto compUnit = std::make_unique<CompilationUnit>( m_ctx.modules().get( moduleId ), m_ctx );
 
         auto tokenStart = chrono::high_resolution_clock::now();
 
@@ -177,29 +183,35 @@ void Driver::compile() {
             return;
         }
 
-        if ( m_config.emitAST ) {
+        if ( m_config.emitAST ) 
+        {
             ASTPrinter astPrinter = ASTPrinter();
-            astPrinter.print( compUnit->readStatements(), m_config.outputPath, compUnit->getModuleName() );
+            astPrinter.print( compUnit->ast().getStatements(), m_config.outputPath, compUnit->getModuleName() );
         }
 
         Logger::debug( 
             std::format(
                 "AST generated for module {} with {} top-level statements",
                 compUnit->getModuleName(),
-                compUnit->readStatements().size()
+                compUnit->ast().getStatements().size()
             )
         );
 
         Logger::debug( "Parsed module" );
 
+        Logger::debug( "Declaration Pass" );
+
+
+
         // free all memory within Compilation Unit
         compUnit->freeArena();
     }
 
-    
+    m_ctx.freeArena();
 }
 
-void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
+void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) 
+{
     fs::path filePath = m_ctx.source().getFilePath( compUnit.getFileId() );
     std::ifstream fileStream( filePath );
 
@@ -219,7 +231,7 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
         "Lexing tokens for module " + std::string( compUnit.getModuleName() )
     );
 
-    Tokenizer tokenizer = Tokenizer( compUnit, m_ctx );
+    Tokenizer tokenizer = Tokenizer( compUnit );
 
     tokenizer.tokenizeStream( fileStream );
 
@@ -233,13 +245,14 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
     );
 } 
 
-void Driver::parseCompilationUnit( CompilationUnit& compUnit ) {
+void Driver::parseCompilationUnit( CompilationUnit& compUnit ) 
+{
     
     Logger::debug( 
         "Parsing tokens for module " + std::string( compUnit.getModuleName() )
     );
 
-    Parser parser = Parser( compUnit, m_ctx );
+    Parser parser = Parser( compUnit );
 
     parser.parse();
 }

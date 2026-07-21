@@ -323,7 +323,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 m_compUnit.getFileId()
             };
 
-            m_ctx.errors().report( 
+            m_compUnit.context().errors().report( 
                 Diagnostic(
                     std::format(
                         "Unexpected token at line {} position {}: '{}'",
@@ -380,7 +380,7 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
         return;
     }
 
-    m_ctx.errors().report( 
+    m_compUnit.context().errors().report( 
         Diagnostic( 
             errorMessage,
             ErrorCategory::Lexical,

@@ -16,9 +16,9 @@
 
 class ScopeTable {
     public:
-        ScopeId addScope( ScopeId parentId, ScopeOwnerKind kind );
+        ScopeId add( ScopeId parentId, ScopeOwnerKind kind );
 
-        Scope* getScope( ScopeId scopeId );
+        Scope* get( ScopeId scopeId );
 
         std::expected<void, SymbolId> declare( ScopeId scopeId, std::string_view name, SymbolId symbol );
 

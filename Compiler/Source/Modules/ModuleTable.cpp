@@ -102,7 +102,7 @@ std::vector<ModuleId> ModuleTable::buildParseOrder( ModuleId entry )
     for( ImportDirective import : entryModuleHeader.imports )
     {
         if( !import.moduleId.has_value() ) {
-            throw new InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
+            throw InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
         }
 
         buildParseOrder( import.moduleId.value(), visited, order );
@@ -121,7 +121,7 @@ void ModuleTable::buildParseOrder( ModuleId id, std::unordered_set<ModuleId>& vi
 
     for ( ImportDirective& import : module.imports ) {
         if( !import.moduleId.has_value() ) {
-            throw new InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
+            throw InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
         }
 
         buildParseOrder( import.moduleId.value(), visited, order );

@@ -45,11 +45,11 @@ void BuiltInRegistry::registerPrimitive(
     PrimitiveType type
 )
 {
-   TypeId typeId = ctx.addType(
+   TypeId typeId = ctx.types().add(
         Type(TypeKind::Primitive, TypeState::Resolved, TypeOrigin::Builtin, PrimitiveInfo{type})
    );
 
-   SymbolId symbolId = ctx.addSymbol(
+   SymbolId symbolId = ctx.symbols().add(
         TypeSymbol( std::string( name ), typeId )
    );
 

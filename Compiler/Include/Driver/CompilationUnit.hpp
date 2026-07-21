@@ -10,9 +10,7 @@
 /* === Imports === */
 
 #include "Symbols/Symbol.hpp"
-#include "Symbols/SymbolTable.hpp"
-#include "Types/TypeTable.hpp"
-#include "Scopes/ScopeTable.hpp"
+#include "Semantics/NodeSemantics.hpp"
 #include "Tokens/TokenTable.hpp"
 #include "DataStructures/Arena.hpp"
 #include "Modules/ModuleHeader.hpp"
@@ -35,15 +33,15 @@ class CompilationUnit {
         }
 
         void bindSymbol( NodeId nodeId, SymbolId symbolId ) {
-            m_resolvedSymbols.emplace( nodeId, symbolId );
+            m_semanticInfo.bindSymbol( nodeId, symbolId );
         }
 
         void bindType( NodeId nodeId, TypeId typeId ) {
-            m_resolvedTypes.emplace( nodeId, typeId );
+            m_semanticInfo.bindType( nodeId, typeId );
         }
 
         void bindScope( NodeId nodeId, ScopeId scopeId ) {
-            m_nodeScopes.emplace( nodeId, scopeId );
+            m_semanticInfo.bindScope( nodeId, scopeId );
         }
         
         FileId getFileId() const { return m_moduleHeader.fileId; }
@@ -56,7 +54,7 @@ class CompilationUnit {
 
         std::span<const Token> readTokens() const { return m_tokens.getReadOnlyTokens(); }
 
-        const std::vector<const Statement*>& readStatements() const { return m_ast.m_statements; };
+        const AST& ast() { return m_ast; }
 
         template<typename T, typename... Args>
         T* allocate( Args&&... args ) {
@@ -64,6 +62,8 @@ class CompilationUnit {
         }
 
         void freeArena() { m_arena.reset(); }
+
+        CompilerContext& context() { return m_ctx; }
     private:
         const ModuleHeader& m_moduleHeader;
         CompilerContext& m_ctx;
@@ -72,7 +72,5 @@ class CompilationUnit {
         TokenTable m_tokens;
         AST m_ast;
 
-        std::unordered_map<NodeId, SymbolId> m_resolvedSymbols;
-        std::unordered_map<NodeId, TypeId> m_resolvedTypes;
-        std::unordered_map<NodeId, ScopeId> m_nodeScopes;
+        NodeSemantics m_semanticInfo;
 };

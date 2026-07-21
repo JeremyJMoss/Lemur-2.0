@@ -18,7 +18,6 @@
 
 struct Statement;
 
-class CompilerContext;
 class CompilationUnit;
 class Token;
 
@@ -27,7 +26,7 @@ class Token;
 class Parser 
 {
     public:
-        Parser(CompilationUnit& compUnit, CompilerContext& ctx);
+        Parser(CompilationUnit& compUnit );
         
         void parse();
 
@@ -35,7 +34,6 @@ class Parser
 
     private:
         CompilationUnit& m_compUnit;
-        CompilerContext& m_ctx;
         TokenStream m_tokenStream;
         TypeParser m_typeParser;
         ParameterParser m_paramParser;

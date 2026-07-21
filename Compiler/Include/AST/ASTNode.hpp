@@ -69,7 +69,7 @@ struct ASTVisitor
 
 /* === Enum Declaration === */
 
-enum class DeclarationVisibility: u_int8_t
+enum class DeclarationVisibility: uint8_t
 {
     Private,
     Public
@@ -104,11 +104,15 @@ struct Declaration : Statement {
 
 /* === Abstract Syntax Tree === */
 
-struct AST {
-    std::vector<const Statement*> m_statements;
+class AST {
+    public:
+        void addStatement( Statement* statement ) 
+        { 
+            m_statements.push_back( statement ); 
+        }
 
-    void addStatement( Statement* statement ) 
-    { 
-        m_statements.push_back( statement ); 
-    }
+        std::vector<const Statement*> getStatements() const { return m_statements; }
+    private:
+        std::vector<const Statement*> m_statements;
+        
 };

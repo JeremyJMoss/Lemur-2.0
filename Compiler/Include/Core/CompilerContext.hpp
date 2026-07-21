@@ -31,64 +31,7 @@ class CompilerContext
 
         void initialize();
 
-        SymbolId addSymbol( Symbol symbol ) {
-            return m_symbols.add( std::move( symbol ) );
-        }
-
-        TypeId addType( Type type ) {
-            return m_types.add( std::move( type ) );
-        }
-
-        ScopeId createScope( ScopeId parent, ScopeOwnerKind kind ) 
-        {
-            return m_scopes.addScope( parent, kind );
-        }
-
-        std::expected<void, Diagnostic> declareInScope( ScopeId scopeId, std::string_view name, SymbolId symbolId )
-        {
-            auto result = m_scopes.declare( scopeId, name, symbolId );
-
-            if (!result)
-            {
-                SymbolId previous = result.error();
-
-                const Symbol& oldSymbol = m_symbols.get(previous);
-
-                return std::unexpected(
-                    Diagnostic(
-                        std::format(
-                            "Symbol '{}' already declared in current scope. Cannot redeclare symbol '{}'",
-                            name, 
-                            name
-                        ),
-                        ErrorCategory::Semantic,
-                        ErrorSeverity::Error,
-                        oldSymbol.declaration
-                    )
-                );
-            }
-
-            return {};
-        }
-        
-        ModuleId addModule( FileId fileId, std::string moduleIdentifier, std::vector<ImportDirective> imports )
-        {
-            return m_modules.add( fileId, moduleIdentifier, std::move( imports ) );
-        }
-
-        const ModuleHeader& getModuleHeader( ModuleId moduleId ) { return m_modules.get( moduleId ); }
-
-        const ModuleHeader* getModuleHeader( const std::string& moduleName ) { return m_modules.find( moduleName ); }
-
-        std::expected<std::unordered_set<ModuleId>, Diagnostic> resolveModuleImports( ModuleId entryModuleId ) { 
-            return m_modules.resolveImports( entryModuleId ); 
-        }
-
-        std::vector<ModuleId> buildModuleParseOrder( ModuleId entryModuleId ) { 
-            return m_modules.buildParseOrder( entryModuleId ); 
-        }
-
-        std::size_t moduleCount() { return m_modules.count(); }
+        std::expected<void, Diagnostic> declareInScope( ScopeId scopeId, std::string_view name, SymbolId symbolId );
 
         ScopeId getBuiltInScope() const
         {
@@ -101,6 +44,14 @@ class CompilerContext
         }
 
         void freeArena() { m_globalArena.reset(); }
+
+        SymbolTable& symbols() { return m_symbols; }
+
+        TypeTable& types() { return m_types; }
+
+        ScopeTable& scopes() { return m_scopes; }
+
+        ModuleTable& modules() { return m_modules; }
 
         ErrorReporter& errors() { return m_errReporter; }
 

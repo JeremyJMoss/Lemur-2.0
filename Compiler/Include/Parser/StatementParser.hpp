@@ -28,7 +28,6 @@ class ParameterParser;
 class TypeParser;
 class Parser;
 class TokenStream;
-class CompilerContext;
 
 /* === StatementParser === */
 
@@ -39,13 +38,11 @@ class StatementParser
             Parser& parent,
             CompilationUnit& compUnit,
             TokenStream& tStream,
-            CompilerContext& ctx,
             TypeParser& typeParser,
             ParameterParser& paramParser
         ) : m_parent( parent ), 
             m_compUnit( compUnit ),
-            m_tokenStream( tStream ), 
-            m_ctx( ctx ), 
+            m_tokenStream( tStream ),
             m_typeParser( typeParser ), 
             m_paramParser( paramParser ) {}
 
@@ -74,7 +71,6 @@ class StatementParser
         Parser& m_parent;
         CompilationUnit& m_compUnit;
         TokenStream& m_tokenStream;
-        CompilerContext& m_ctx;
         TypeParser& m_typeParser;
         ParameterParser& m_paramParser;
         ExpressionParser* m_exprParser = nullptr;
