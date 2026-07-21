@@ -22,15 +22,15 @@
 /* === Forward Declarations === */
 
 class CompilationUnit;
-class ErrorReporter;
+class CompilerContext;
 
 /* === Tokenizer === */
 
 class Tokenizer
 {
     public:
-        Tokenizer( CompilationUnit& compUnit, ErrorReporter& errReporter ) 
-            : m_compUnit( compUnit ), m_errReporter( errReporter ) {}
+        Tokenizer( CompilationUnit& compUnit, CompilerContext& ctx ) 
+            : m_compUnit( compUnit ), m_ctx( ctx ) {}
         void tokenizeStream( std::istream& stream );
         static std::expected<std::string, Diagnostic> parseModuleName( std::string_view input );
         void checkIssueWithOutput( FileId fileId );
@@ -111,7 +111,7 @@ class Tokenizer
 
         Token m_partialToken = {};
         CompilationUnit& m_compUnit;
-        ErrorReporter& m_errReporter;
+        CompilerContext& m_ctx;
         bool m_inToken = false;
         std::size_t m_lineNum = 0;
         std::size_t m_lastLineLength = 0;

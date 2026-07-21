@@ -15,18 +15,18 @@
 #include "Driver/CompilationUnit.hpp"
 #include "AST/AllASTTypes.hpp"
 #include "Errors/Errors.hpp"
-#include "Errors/ErrorReporter.hpp"
 #include "Logging/Logger.hpp"
+#include "Core/CompilerContext.hpp"
 
 /* === Parser Methods === */
 
-Parser::Parser( CompilationUnit& compUnit, ErrorReporter& errReporter )
+Parser::Parser( CompilationUnit& compUnit, CompilerContext& ctx )
     : m_compUnit( compUnit ),
-    m_errReporter( errReporter ),
+    m_ctx( ctx ),
     m_tokenStream( m_compUnit.readTokens() ),
     m_typeParser( m_compUnit, m_tokenStream ),
     m_paramParser( m_compUnit, m_tokenStream, m_typeParser ),
-    m_stmtParser( *this, m_compUnit, m_tokenStream, m_errReporter, m_typeParser, m_paramParser ),
+    m_stmtParser( *this, m_compUnit, m_tokenStream, m_ctx, m_typeParser, m_paramParser ),
     m_exprParser( m_compUnit, m_tokenStream, m_typeParser, m_paramParser ) 
 {
     m_stmtParser.setExpressionParser( &m_exprParser );
@@ -62,7 +62,7 @@ void Parser::parseNextStatement()
             attrs
         );
 
-        m_errReporter.report( maybeStatement.error() );
+        m_ctx.errors().report( maybeStatement.error() );
 
         m_tokenStream.recoverFromError();
         return;

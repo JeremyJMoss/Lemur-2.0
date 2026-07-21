@@ -23,9 +23,7 @@ class Driver
 {
     public:
         Driver( const CompilerConfig& config )
-            : m_config( config ),
-              m_srcManager(), 
-              m_errReporter( m_srcManager ) {}
+            : m_config( config ) {}
 
         void compileProgram();
 
@@ -36,8 +34,6 @@ class Driver
         
         const CompilerConfig& m_config;
         CompilerContext m_ctx;
-        SourceManager m_srcManager;
-        ErrorReporter m_errReporter;
 
         std::unordered_map<FileId, CompilationUnit> m_compilationUnits;
 };

@@ -29,7 +29,7 @@ void Driver::compileProgram()
     {
         compile();
 
-        if ( m_errReporter.hasDiagnostics() ) m_errReporter.printAllDiagnostics();
+        if ( m_ctx.errors().hasDiagnostics() ) m_ctx.errors().printAllDiagnostics();
     } 
     catch ( const InternalCompilerError& error )
     {
@@ -37,7 +37,7 @@ void Driver::compileProgram()
     } 
     catch ( const CompilationAborted& error )
     {
-        m_errReporter.printAllDiagnostics();
+        m_ctx.errors().printAllDiagnostics();
         Output::error( error.what() );
     } 
     catch ( const std::runtime_error& error )
@@ -61,12 +61,12 @@ void Driver::compile() {
 
     auto moduleScanStart = chrono::high_resolution_clock::now();
 
-    ModuleHeaderScanner scanner = ModuleHeaderScanner( m_errReporter, m_srcManager );
+    ModuleHeaderScanner scanner = ModuleHeaderScanner( m_ctx );
 
     auto maybeScanSuccessful = scanner.scan( m_config.sourcePath, m_ctx );
 
     if ( !maybeScanSuccessful ) {
-        m_errReporter.report(
+        m_ctx.errors().report(
             Diagnostic(
                 "Failed to scan modules within source path folder tree",
                 ErrorCategory::Linking,
@@ -78,7 +78,7 @@ void Driver::compile() {
     auto maybeModule = m_ctx.getModuleHeader( m_config.entryModule );
 
     if ( maybeModule == nullptr ) {
-        m_errReporter.report(
+        m_ctx.errors().report(
             Diagnostic(
                 std::format(
                     "Unable to find entry module '{}' within declared modules",
@@ -114,7 +114,7 @@ void Driver::compile() {
     );
 
     if ( !reachableModules ) {
-        m_errReporter.report(
+        m_ctx.errors().report(
             reachableModules.error()
         );
 
@@ -139,12 +139,12 @@ void Driver::compile() {
 
         Output::success( std::format( "Lexer Execution time: {} µs", tokenDuration.count() ) );
 
-        if ( m_errReporter.hasErrors() )
+        if ( m_ctx.errors().hasErrors() )
         {
             Logger::error( 
                 std::format( 
                     "{} lexing error(s) found. Compilation terminated.", 
-                    m_errReporter.getErrCount() 
+                    m_ctx.errors().getErrCount() 
                 )
             );
 
@@ -165,12 +165,12 @@ void Driver::compile() {
             ) 
         );
 
-        if ( m_errReporter.hasErrors() )
+        if ( m_ctx.errors().hasErrors() )
         {
             Logger::error( 
                 std::format( 
                     "{} parser error(s) found. Compilation terminated.",  
-                    m_errReporter.getErrCount() 
+                    m_ctx.errors().getErrCount() 
                 )
             );
 
@@ -200,12 +200,12 @@ void Driver::compile() {
 }
 
 void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
-    fs::path filePath = m_srcManager.getFilePath( compUnit.getFileId() );
+    fs::path filePath = m_ctx.source().getFilePath( compUnit.getFileId() );
     std::ifstream fileStream( filePath );
 
     if ( !fileStream.is_open() ) 
     {
-        m_errReporter.report( 
+        m_ctx.errors().report( 
             Diagnostic (
                 "Error opening .lmur file",
                 ErrorCategory::FileIO,
@@ -219,11 +219,11 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) {
         "Lexing tokens for module " + std::string( compUnit.getModuleName() )
     );
 
-    Tokenizer tokenizer = Tokenizer( compUnit, m_errReporter );
+    Tokenizer tokenizer = Tokenizer( compUnit, m_ctx );
 
     tokenizer.tokenizeStream( fileStream );
 
-    if ( m_errReporter.hasErrors() ) return;
+    if ( m_ctx.errors().hasErrors() ) return;
 
     Logger::trace( 
         std::format( 
@@ -239,7 +239,7 @@ void Driver::parseCompilationUnit( CompilationUnit& compUnit ) {
         "Parsing tokens for module " + std::string( compUnit.getModuleName() )
     );
 
-    Parser parser = Parser( compUnit, m_errReporter );
+    Parser parser = Parser( compUnit, m_ctx );
 
     parser.parse();
 }

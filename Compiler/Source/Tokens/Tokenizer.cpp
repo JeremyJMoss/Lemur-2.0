@@ -1,7 +1,7 @@
 #include "Tokens/Tokenizer.hpp"
 #include "Tokens/Token.hpp"
 #include "Driver/CompilationUnit.hpp"
-#include "Errors/ErrorReporter.hpp"
+#include "Core/CompilerContext.hpp"
 #include <cctype>
 #include <expected>
 #include <iostream>
@@ -323,7 +323,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 m_compUnit.getFileId()
             };
 
-            m_errReporter.report( 
+            m_ctx.errors().report( 
                 Diagnostic(
                     std::format(
                         "Unexpected token at line {} position {}: '{}'",
@@ -380,7 +380,7 @@ void Tokenizer::checkIssueWithOutput( FileId fileId )
         return;
     }
 
-    m_errReporter.report( 
+    m_ctx.errors().report( 
         Diagnostic( 
             errorMessage,
             ErrorCategory::Lexical,

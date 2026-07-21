@@ -66,7 +66,7 @@ std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& source
             continue;
         }
 
-        auto maybeFileId = m_srcManager.addFile( path );
+        auto maybeFileId = m_ctx.source().addFile( path );
 
         if( !maybeFileId ) {
             return std::unexpected(
@@ -107,7 +107,7 @@ std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& source
         auto maybeModuleIdentifier = parseModuleDirective();
 
         if ( !maybeModuleIdentifier ) {
-            m_errReporter.report( 
+            m_ctx.errors().report( 
                 Diagnostic(
                     std::format(
                         "{} for file path {}", 
@@ -132,7 +132,7 @@ std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& source
         auto maybeImports = parseImportDirectives();
 
         if ( !maybeImports ) {
-            m_errReporter.report( 
+            m_ctx.errors().report( 
                 Diagnostic(
                     std::format(
                         "{} for file path {}", 
@@ -150,7 +150,7 @@ std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& source
 
         if ( !inserted )
         {
-            m_errReporter.report(
+            m_ctx.errors().report(
                 Diagnostic(
                     std::format( 
                         "Duplicate module '{}'",

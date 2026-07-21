@@ -23,7 +23,7 @@ struct Symbol
 
     ScopeId scope = InvalidScopeId;
 
-    SourceLocation declaration;
+    SourceRange declaration;
     
     void setId( SymbolId symbolId ) { id = symbolId; }
 

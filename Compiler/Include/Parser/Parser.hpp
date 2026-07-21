@@ -18,7 +18,7 @@
 
 struct Statement;
 
-class ErrorReporter;
+class CompilerContext;
 class CompilationUnit;
 class Token;
 
@@ -27,7 +27,7 @@ class Token;
 class Parser 
 {
     public:
-        Parser(CompilationUnit& compUnit, ErrorReporter& errReporter);
+        Parser(CompilationUnit& compUnit, CompilerContext& ctx);
         
         void parse();
 
@@ -35,7 +35,7 @@ class Parser
 
     private:
         CompilationUnit& m_compUnit;
-        ErrorReporter& m_errReporter;
+        CompilerContext& m_ctx;
         TokenStream m_tokenStream;
         TypeParser m_typeParser;
         ParameterParser m_paramParser;

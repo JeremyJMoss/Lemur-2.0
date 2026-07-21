@@ -1,5 +1,10 @@
 #pragma once
 
+/* === Dependencies === */
+
+#include <unordered_map>
+#include <string>
+
 /* === Imports === */
 
 #include "Core/Ids.hpp"
@@ -11,8 +16,13 @@ struct Scope {
     ScopeId m_id;
     ScopeId m_parentId;
     ScopeOwnerKind m_kind;
+    std::unordered_map<std::string, SymbolId> m_declarations;
 
-    bool hasParent( const Scope& scope ) { return scope.m_parentId != InvalidScopeId; }
+    bool hasParent() const { return m_parentId != InvalidScopeId; }
+
+    bool insert( std::string_view name, SymbolId symbolId );
+
+    bool remove( std::string_view name );
 
     Scope( ScopeId id, ScopeId parentId, ScopeOwnerKind kind )
         : m_id( id ), 

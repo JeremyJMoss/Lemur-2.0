@@ -1,23 +1,27 @@
 #pragma once
 
+/* === Dependencies === */
+
+#include <string>
+
 /* === Imports === */
 
 #include "Core/Ids.hpp"
+#include "Types/BuiltInType.hpp"
 
 /* === Forward Declarations === */
 
-class TypeTable;
-class SymbolTable;
+class CompilerContext;
 
 /* === Built In Registry === */
 
-class BuiltinRegistry
+class BuiltInRegistry
 {
-public:
-
-    static void initialize(
-        TypeTable& types,
-        SymbolTable& symbols,
-        ScopeId builtinScope
-    );
+    public:
+        static void initialize(
+            CompilerContext& ctx
+        );
+    private:
+        static void registerPrimitiveTypes( CompilerContext& context );
+        static void registerPrimitive( CompilerContext& context, std::string_view name, PrimitiveType primitive );
 };

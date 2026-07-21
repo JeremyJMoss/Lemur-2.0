@@ -18,22 +18,19 @@ namespace fs = std::filesystem;
 
 /* === Forward Declarations === */
 
-class ErrorReporter;
-class SourceManager;
 class CompilerContext;
 
 /* === Module Header Scanner === */
 
 class ModuleHeaderScanner {
     public:
-        ModuleHeaderScanner( ErrorReporter& errReporter, SourceManager& srcManager ) 
-            : m_errReporter( errReporter ), m_srcManager( srcManager ) {}
+        ModuleHeaderScanner( CompilerContext& ctx ) 
+            : m_ctx( ctx ) {}
         std::expected<int, Diagnostic> scan( const fs::path& sourcePath, CompilerContext& ctx );
         std::expected<std::string, Diagnostic> parseModuleDirective();
         std::expected<std::vector<ImportDirective>, Diagnostic> parseImportDirectives();
     private:
-        ErrorReporter& m_errReporter;
-        SourceManager& m_srcManager;
+        CompilerContext& m_ctx;
 
         std::ifstream m_stream;
 

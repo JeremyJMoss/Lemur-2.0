@@ -15,5 +15,5 @@ struct PrimitiveInfo
     const PrimitiveType name;
 
     PrimitiveInfo( PrimitiveType primType ) 
-        : name( name ) {}
+        : name( primType ) {}
 };

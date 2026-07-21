@@ -3,26 +3,28 @@
 /* === Dependencies ===*/
 
 #include <vector>
+#include <expected>
+#include <string>
 
 /* === Imports === */
 
 #include "Scopes/Scope.hpp"
 #include "Core/Ids.hpp"
+#include "Errors/Errors.hpp"
 
 /* === Scope Table === */
 
 class ScopeTable {
     public:
-        ScopeId addScope(
-            ScopeId parentId,
-            ScopeOwnerKind kind
-        ) {
-            ScopeId id = m_scopes.size();
+        ScopeId addScope( ScopeId parentId, ScopeOwnerKind kind );
 
-            m_scopes.emplace_back( id, parentId, kind );
+        Scope* getScope( ScopeId scopeId );
 
-            return id;
-        }
+        std::expected<void, SymbolId> declare( ScopeId scopeId, std::string_view name, SymbolId symbol );
+
+        SymbolId lookup( ScopeId scopeId, std::string_view name );
+
+        SymbolId lookupLocal( ScopeId scopeId, std::string_view name );
 
     private:
         std::vector<Scope> m_scopes;

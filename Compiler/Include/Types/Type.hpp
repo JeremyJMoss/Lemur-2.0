@@ -8,6 +8,9 @@
 /* === Imports === */
 
 #include "Core/Ids.hpp"
+#include "Types/PrimitiveInfo.hpp"
+#include "Types/OwnershipInfo.hpp"
+#include "Types/ArrayInfo.hpp"
 
 /* === Enum Declarations === */
 
@@ -37,19 +40,16 @@ enum class TypeOrigin
 
 /* === Forward Declarations === */
 
-struct PrimitiveInfo;
 struct FunctionInfo;
-struct OwnershipInfo;
-struct ArrayInfo;
 
 /* === Variants === */
 
 using TypeData = std::variant<
     std::monostate,   // for Null / Inferred / Unresolved
-    PrimitiveInfo*,
+    PrimitiveInfo,
     FunctionInfo*,
-    OwnershipInfo*,
-    ArrayInfo*
+    OwnershipInfo,
+    ArrayInfo
 >;
 
 /* === Utility === */
