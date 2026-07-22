@@ -23,50 +23,19 @@ class NodeSemantics
 {
 public:
 
-    bool contains( NodeId id ) const
-    {
-        return m_info.contains( id );
-    }
+    bool contains( NodeId id ) const;
 
-    NodeSemanticInfo* find( NodeId id )
-    {
-        auto it = m_info.find( id );
+    NodeSemanticInfo* find( NodeId id );
 
-        if ( it == m_info.end() )
-            return nullptr;
+    const NodeSemanticInfo* find( NodeId id ) const;
 
-        return &it->second;
-    }
+    NodeSemanticInfo& getOrCreate( NodeId id );
 
-    const NodeSemanticInfo* find( NodeId id ) const
-    {
-        auto it = m_info.find( id );
+    void bindSymbol( NodeId id, SymbolId symbol );
 
-        if ( it == m_info.end() )
-            return nullptr;
+    void bindType( NodeId id, TypeId type );
 
-        return &it->second;
-    }
-
-    NodeSemanticInfo& getOrCreate( NodeId id )
-    {
-        return m_info[id];
-    }
-
-    void bindSymbol( NodeId id, SymbolId symbol )
-    {
-        m_info[id].symbol = symbol;
-    }
-
-    void bindType( NodeId id, TypeId type )
-    {
-        m_info[id].type = type;
-    }
-
-    void bindScope( NodeId id, ScopeId scope )
-    {
-        m_info[id].scope = scope;
-    }
+    void bindScope( NodeId id, ScopeId scope );
 
 private:
 
