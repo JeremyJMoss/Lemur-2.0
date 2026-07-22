@@ -57,15 +57,15 @@ class CompilerContext
 
         SourceManager& source() { return m_sourceManager; }
 
-        private:
-            Arena m_globalArena;
+    private:
+        Arena m_globalArena;
 
-            SourceManager m_sourceManager;
-            ErrorReporter m_errReporter;
-            SymbolTable m_symbols;
-            TypeTable m_types;
-            ScopeTable m_scopes;
-            ModuleTable m_modules;
+        SourceManager m_sourceManager;
+        ErrorReporter m_errReporter;
+        SymbolTable m_symbols;
+        TypeTable m_types;
+        ScopeTable m_scopes;
+        ModuleTable m_modules;
 
-            ScopeId m_builtinScope;
+        ScopeId m_builtinScope;
 };

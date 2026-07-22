@@ -212,7 +212,7 @@ void Driver::compile()
 
 void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit ) 
 {
-    fs::path filePath = m_ctx.source().getFilePath( compUnit.getFileId() );
+    fs::path filePath = m_ctx.source().getFilePath( compUnit.fileId() );
     std::ifstream fileStream( filePath );
 
     if ( !fileStream.is_open() ) 
@@ -240,7 +240,7 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit )
     Logger::trace( 
         std::format( 
             "{} tokens generated", 
-            compUnit.getTokenCount() 
+            compUnit.tokenCount() 
         )
     );
 } 

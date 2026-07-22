@@ -18,6 +18,21 @@
 
 /* === Module Table Methods === */
 
+ModuleHeader& ModuleTable::get( ModuleId id ) 
+{ 
+    return m_modules[id]; 
+}
+
+const ModuleHeader& ModuleTable::get( ModuleId id ) const 
+{ 
+    return m_modules[id]; 
+}
+
+size_t ModuleTable::count() const 
+{ 
+    return m_modules.size(); 
+}
+
 bool ModuleTable::add( FileId fileId, std::string moduleName, std::vector<ImportDirective> imports )
 {
     ModuleId id = m_modules.size();

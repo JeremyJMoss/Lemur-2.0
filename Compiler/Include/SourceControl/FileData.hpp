@@ -23,12 +23,12 @@ class FileData
         std::vector<std::streampos> m_lineOffsets; // byte offset at start of each line
 
     public:
-        FileId getFileId() const 
+        FileId fileId() const 
         { 
             return m_id; 
         }
 
-        fs::path getFilePath() const 
+        fs::path filePath() const 
         { 
             return m_filePath; 
         }

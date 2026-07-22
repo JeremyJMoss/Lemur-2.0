@@ -22,7 +22,7 @@
 
 Parser::Parser( CompilationUnit& compUnit )
     : m_compUnit( compUnit ),
-    m_tokenStream( m_compUnit.readTokens() ),
+    m_tokenStream( m_compUnit.tokens() ),
     m_typeParser( m_compUnit, m_tokenStream ),
     m_paramParser( m_compUnit, m_tokenStream, m_typeParser ),
     m_stmtParser( *this, m_compUnit, m_tokenStream, m_typeParser, m_paramParser ),
@@ -72,7 +72,7 @@ void Parser::parseNextStatement()
         attrs
     );
 
-    m_compUnit.addToAST( maybeStatement.value() );
+    m_compUnit.addStatement( maybeStatement.value() );
 }
 
 std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& token, DeclarationVisibility visibility ) 

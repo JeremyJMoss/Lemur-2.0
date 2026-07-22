@@ -13,19 +13,9 @@
 
 class TypeTable {
     public:
-        TypeId add( Type type ) {
-            TypeId id = types.size();
+        TypeId add( Type type );
 
-            type.setId( id );
-
-            types.push_back( std::move( type ) );
-
-            return id;
-        }
-
-        const Type& get( TypeId id ) const {
-            return types[id];
-        }
+        const Type& get( TypeId id ) const;
     private:
         std::vector<Type> types;
 };

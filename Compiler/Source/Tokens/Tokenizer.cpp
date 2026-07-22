@@ -251,7 +251,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 SourceRange range = {
                     { m_lineNum, start },
                     { m_lineNum, pos },
-                    m_compUnit.getFileId()
+                    m_compUnit.fileId()
                 };
 
                 auto newToken = Token( TokenKind::Char, std::string( value ), range );
@@ -268,7 +268,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 SourceRange range = {
                     { m_lineNum, start },
                     { m_lineNum, pos },
-                    m_compUnit.getFileId()
+                    m_compUnit.fileId()
                 };
 
                 auto newToken = Token( type, std::string( value ), range );
@@ -284,7 +284,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 SourceRange range = {
                     { m_lineNum, start },
                     { m_lineNum, pos },
-                    m_compUnit.getFileId()
+                    m_compUnit.fileId()
                 };
 
                 if ( type == TokenKind::Keyword ) 
@@ -308,7 +308,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
                 SourceRange range = {
                     { m_lineNum, pos - symbol.size() },
                     { m_lineNum, pos },
-                    m_compUnit.getFileId()
+                    m_compUnit.fileId()
                 };
 
                 TokenSymbol symbolType = m_SYMBOLS.at( symbol );
@@ -320,7 +320,7 @@ void Tokenizer::tokenizeStream( std::istream& stream )
             SourceRange errorLocation = {
                 { m_lineNum, pos },
                 { m_lineNum, pos + 1 },
-                m_compUnit.getFileId()
+                m_compUnit.fileId()
             };
 
             m_compUnit.context().errors().report( 
@@ -344,13 +344,13 @@ void Tokenizer::tokenizeStream( std::istream& stream )
     SourceRange eofLocation = {
         { m_lineNum, pos },
         { m_lineNum, pos },
-        m_compUnit.getFileId()
+        m_compUnit.fileId()
     };
 
     auto newToken = Token( TokenKind::EndOfFile, "", eofLocation );
     m_compUnit.addToken( newToken );
 
-    checkIssueWithOutput( m_compUnit.getFileId() );
+    checkIssueWithOutput( m_compUnit.fileId() );
 }
 
 void Tokenizer::checkIssueWithOutput( FileId fileId ) 

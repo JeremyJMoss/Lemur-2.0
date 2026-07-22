@@ -21,11 +21,11 @@ class ModuleTable
     public:
         bool add( FileId fileId, std::string moduleName, std::vector<ImportDirective> imports );
 
-        ModuleHeader& get( ModuleId id ) { return m_modules[id]; }
+        ModuleHeader& get( ModuleId id );
 
-        const ModuleHeader& get( ModuleId id ) const { return m_modules[id]; }
+        const ModuleHeader& get( ModuleId id ) const;
 
-        size_t count() const { return m_modules.size(); }
+        size_t count() const;
 
         const ModuleHeader* find( std::string_view name ) const;
 

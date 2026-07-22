@@ -72,18 +72,18 @@ std::expected<FileId, Diagnostic> SourceManager::addFile( const fs::path& filePa
         pathAttr
     );
 
-    m_files.emplace( data.getFileId(), std::move( data ) );
-    m_pathToId.emplace( filePath, data.getFileId() );
+    m_files.emplace( data.fileId(), std::move( data ) );
+    m_pathToId.emplace( filePath, data.fileId() );
 
     Logger::trace( 
         std::format(
             "Assigned file ID {} to {}",
-            data.getFileId(),
+            data.fileId(),
             filePath.string()
         )
     );
 
-    return data.getFileId();
+    return data.fileId();
 }
 
 std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, std::size_t lineNumber ) const
@@ -113,7 +113,7 @@ std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, st
     const FileData& data = it->second;
 
     const std::array pathAttr { 
-        Attribute{ "Path", std::format( "'{}'", data.getFilePath().string() ) } 
+        Attribute{ "Path", std::format( "'{}'", data.filePath().string() ) } 
     };
 
     if ( lineNumber == 0 || lineNumber > data.getLinesCollected() )
@@ -143,7 +143,7 @@ std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, st
         pathAttr
     );
 
-    std::ifstream file( data.getFilePath(), std::ios::binary );
+    std::ifstream file( data.filePath(), std::ios::binary );
 
     if ( !file.is_open() ) 
     {
@@ -173,10 +173,15 @@ std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, st
             lineNumber
         ),
         std::to_array<Attribute>({
-            { "Path", std::format( "'{}'", data.getFilePath().string() ) },
+            { "Path", std::format( "'{}'", data.filePath().string() ) },
             { "Length", std::to_string( line.size() ) }
         })
     );
 
     return line;
+}
+
+fs::path SourceManager::getFilePath( FileId fileId ) const
+{
+    return m_files.at( fileId ).filePath().string();
 }

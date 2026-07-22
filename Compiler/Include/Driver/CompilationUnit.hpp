@@ -44,17 +44,17 @@ class CompilationUnit {
             m_semanticInfo.bindScope( nodeId, scopeId );
         }
         
-        FileId getFileId() const { return m_moduleHeader.fileId; }
+        FileId fileId() const { return m_moduleHeader.fileId; }
 
         std::string_view getModuleName() const { return m_moduleHeader.name; }
 
-        size_t getTokenCount() const { return m_tokens.count(); }
+        size_t tokenCount() const { return m_tokens.count(); }
 
-        void addToAST( Statement* statement) { m_ast.addStatement( statement ); }
+        void addStatement( Statement* statement) { m_ast.addStatement( statement ); }
 
-        std::span<const Token> readTokens() const { return m_tokens.getReadOnlyTokens(); }
+        std::span<const Token> tokens() const { return m_tokens.getReadOnlyTokens(); }
 
-        const AST& ast() { return m_ast; }
+        const AST& ast() const { return m_ast; }
 
         template<typename T, typename... Args>
         T* allocate( Args&&... args ) {

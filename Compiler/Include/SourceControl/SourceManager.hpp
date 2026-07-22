@@ -24,10 +24,7 @@ class SourceManager
 
         std::expected<std::string, Diagnostic> getLine( FileId fileId, std::size_t lineNumber ) const;
 
-        fs::path getFilePath( FileId fileId ) const
-        {
-            return m_files.at( fileId ).getFilePath().string();
-        }
+        fs::path getFilePath( FileId fileId ) const;
 
     private:
         std::unordered_map<FileId, FileData> m_files;

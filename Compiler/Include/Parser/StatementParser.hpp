@@ -51,11 +51,17 @@ class StatementParser
             m_exprParser = exprParser; 
         }
 
-        std::expected<FunctionDeclaration*, Diagnostic> parseFunctionDeclaration( const bool isEntry = false, DeclarationVisibility visibility = DeclarationVisibility::Private );
+        std::expected<FunctionDeclaration*, Diagnostic> parseFunctionDeclaration( 
+            const bool isEntry = false, 
+            DeclarationVisibility visibility = DeclarationVisibility::Private 
+        );
 
         std::expected<Block*, Diagnostic> parseBlock();
 
-        std::expected<VariableDeclaration*, Diagnostic> parseVariableDeclaration( const bool locked = false, DeclarationVisibility visibility = DeclarationVisibility::Private );
+        std::expected<VariableDeclaration*, Diagnostic> parseVariableDeclaration( 
+            const bool locked = false, 
+            DeclarationVisibility visibility = DeclarationVisibility::Private 
+        );
 
         std::expected<Return*, Diagnostic> parseReturn();
 

@@ -31,17 +31,5 @@ struct SourceRange
 
     static SourceRange getLocation( const Token& token );
 
-    std::string toString() const { 
-        // If start and end are the same line/column, just show one position
-        if ( start.line == end.line && start.column == end.column ) 
-        {
-            return start.toString();
-        }
-        else if ( start.line == end.line )
-        {
-            return std::to_string( start.line ) + ":" + std::to_string( start.column ) + "-" + std::to_string( end.column );
-        }
-
-        return start.toString() + " - " + end.toString();
-    }
+    std::string toString() const;
 };

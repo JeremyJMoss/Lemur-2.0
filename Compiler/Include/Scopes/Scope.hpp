@@ -18,7 +18,7 @@ struct Scope {
     ScopeOwnerKind m_kind;
     std::unordered_map<std::string, SymbolId> m_declarations;
 
-    bool hasParent() const { return m_parentId != InvalidScopeId; }
+    bool hasParent() const;
 
     bool insert( std::string_view name, SymbolId symbolId );
 
