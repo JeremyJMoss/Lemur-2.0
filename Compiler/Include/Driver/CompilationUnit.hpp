@@ -15,6 +15,7 @@
 #include "DataStructures/Arena.hpp"
 #include "Modules/ModuleHeader.hpp"
 #include "Core/Ids.hpp"
+#include "AST/ASTNode.hpp"
 
 /* === Forward Declarations === */
 
@@ -30,18 +31,6 @@ class CompilationUnit {
 
         TokenId addToken( Token token ) {
             return m_tokens.add( std::move( token ) );
-        }
-
-        void bindSymbol( NodeId nodeId, SymbolId symbolId ) {
-            m_semanticInfo.bindSymbol( nodeId, symbolId );
-        }
-
-        void bindType( NodeId nodeId, TypeId typeId ) {
-            m_semanticInfo.bindType( nodeId, typeId );
-        }
-
-        void bindScope( NodeId nodeId, ScopeId scopeId ) {
-            m_semanticInfo.bindScope( nodeId, scopeId );
         }
         
         FileId fileId() const { return m_moduleHeader.fileId; }
@@ -71,6 +60,4 @@ class CompilationUnit {
         Arena m_arena;
         TokenTable m_tokens;
         AST m_ast;
-
-        NodeSemantics m_semanticInfo;
 };

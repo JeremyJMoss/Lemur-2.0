@@ -10,11 +10,13 @@
 #include "Symbols/SymbolTable.hpp"
 #include "Types/TypeTable.hpp"
 #include "Scopes/ScopeTable.hpp"
+#include "Scopes/ScopeStack.hpp"
 #include "Modules/ModuleTable.hpp"
 #include "Errors/Errors.hpp"
 #include "DataStructures/Arena.hpp"
 #include "Errors/ErrorReporter.hpp"
 #include "SourceControl/SourceManager.hpp"
+#include "Semantics/NodeSemantics.hpp"
 
 /* === Forward Declarations === */
 
@@ -56,6 +58,13 @@ class CompilerContext
         ErrorReporter& errors() { return m_errReporter; }
 
         SourceManager& source() { return m_sourceManager; }
+        NodeSemantics& nodeSemantics() { return m_semanticInfo; }
+
+        ScopeId CompilerContext::enterScope(NodeId owner, ScopeOwnerKind kind);
+
+        void CompilerContext::leaveScope();
+
+        ScopeId CompilerContext::currentScope() const;
 
     private:
         Arena m_globalArena;
@@ -67,5 +76,7 @@ class CompilerContext
         ScopeTable m_scopes;
         ModuleTable m_modules;
 
+        ScopeStack m_scopeStack;
         ScopeId m_builtinScope;
+        NodeSemantics m_semanticInfo;
 };

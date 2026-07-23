@@ -17,13 +17,12 @@ class CompilationUnit;
 
 class ScopeStack {
     public:
-        ScopeId enter(NodeId owner, ScopeOwnerKind kind);
+        void enter( ScopeId scopeId );
 
         void leave();
 
         ScopeId current() const;
 
     private:
-        CompilationUnit& m_unit;
         std::vector<ScopeId> m_stack;
 };

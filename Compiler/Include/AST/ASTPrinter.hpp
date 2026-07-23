@@ -60,31 +60,6 @@ class ASTPrinter : public ASTVisitor {
         ///
         /// @param statements statements to loop over to print
         void print( const std::vector<const Statement*>& statements, const fs::path& outputPath, const std::string_view moduleName );
-        
-        /* === Visitors for each AST Node === */
-        void visit( const Literal& lit ) override;
-        void visit( const Assignment& assignment ) override;
-        void visit( const Identifier& identifier ) override;
-        void visit( const ExpressionStatement& expressionStmt ) override;
-        void visit( const BinaryExpression& binExp ) override;
-        void visit( const Block& block ) override;
-        void visit( const Break& breakStmt ) override;
-        void visit( const Continue& continueStmt ) override;
-        void visit( const Return& returnStmt ) override;
-        void visit( const VariableDeclaration& varDec ) override;
-        void visit( const FunctionDeclaration& funDec ) override;
-        void visit( const FunctionLiteral& funLit ) override;
-        void visit( const IfConditional& ifCond ) override;
-        void visit( const ForLoop& forl ) override;
-        void visit( const Range& range ) override;
-        void visit( const Unary& unary ) override;
-        void visit( const FunctionCall& funCall ) override;
-        void visit( const Parameter& parameter ) override;
-        void visit( const ParsedType& parsedType ) override;
-        void visit( const ModuleDeclaration& modDec ) override;
-        void visit( const ImportedSymbol& importSymbol ) override;
-        void visit( const Import& import ) override;
-        void visit( const QualifiedName& qualName ) override;
 
         /// @brief Converts a binary operator enum to its textual representation.
         /// @param op binary operator enum
@@ -123,6 +98,31 @@ class ASTPrinter : public ASTVisitor {
         void endBlock() const;
         void increaseIndent();
         void decreaseIndent();
+
+        /* === Visitors for each AST Node === */
+        void visit( const Literal& lit ) override;
+        void visit( const Assignment& assignment ) override;
+        void visit( const Identifier& identifier ) override;
+        void visit( const ExpressionStatement& expressionStmt ) override;
+        void visit( const BinaryExpression& binExp ) override;
+        void visit( const Block& block ) override;
+        void visit( const Break& breakStmt ) override;
+        void visit( const Continue& continueStmt ) override;
+        void visit( const Return& returnStmt ) override;
+        void visit( const VariableDeclaration& varDec ) override;
+        void visit( const FunctionDeclaration& funDec ) override;
+        void visit( const FunctionLiteral& funLit ) override;
+        void visit( const IfConditional& ifCond ) override;
+        void visit( const ForLoop& forl ) override;
+        void visit( const Range& range ) override;
+        void visit( const Unary& unary ) override;
+        void visit( const FunctionCall& funCall ) override;
+        void visit( const Parameter& parameter ) override;
+        void visit( const ParsedType& parsedType ) override;
+        void visit( const ModuleDeclaration& modDec ) override;
+        void visit( const ImportedSymbol& importSymbol ) override;
+        void visit( const Import& import ) override;
+        void visit( const QualifiedName& qualName ) override;
 
         /// @brief Print a file labelled with given label in JSON format
         /// @tparam T Type of the field value 
