@@ -13,9 +13,9 @@
 
 class TypeTable {
     public:
-        TypeId add( Type type );
+        TypeId add( Type* type );
 
         const Type& get( TypeId id ) const;
     private:
-        std::vector<Type> types;
+        std::vector<Type*> types;
 };

@@ -56,4 +56,7 @@ class Parser
         );
 
         std::expected<Statement*, Diagnostic> parseExpressionStatement( const Token& token );
+
+        std::expected<Statement*, Diagnostic> parseBlockStatement( const Token& token );
+
 };

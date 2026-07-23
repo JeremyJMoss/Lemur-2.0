@@ -6,6 +6,7 @@
 #include "AST/ASTPrinter.hpp"
 #include "AST/FunctionDeclaration.hpp"
 #include "AST/Block.hpp"
+#include "AST/BlockStatement.hpp"
 #include "AST/Identifier.hpp"
 #include "AST/VariableDeclaration.hpp"
 #include "AST/Return.hpp"

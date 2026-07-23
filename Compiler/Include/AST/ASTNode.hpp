@@ -18,6 +18,7 @@ struct Identifier;
 struct BinaryExpression;
 struct ExpressionStatement;
 struct Block;
+struct BlockStatement;
 struct Break;
 struct Continue;
 struct Return;
@@ -47,6 +48,7 @@ struct ASTVisitor
     virtual void visit(const ExpressionStatement&) = 0;
     virtual void visit(const BinaryExpression&) = 0;
     virtual void visit(const Block&) = 0;
+    virtual void visit(const BlockStatement&) = 0;
     virtual void visit(const Break&) = 0;
     virtual void visit(const Continue&) = 0;
     virtual void visit(const Return&) = 0;

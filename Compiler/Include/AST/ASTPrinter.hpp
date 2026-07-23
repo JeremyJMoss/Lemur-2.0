@@ -19,6 +19,7 @@ namespace fs = std::filesystem;
 struct Assignment;
 struct BinaryExpression;
 struct Block;
+struct BlockStatement;
 struct Break;
 struct Continue;
 struct ExpressionStatement;
@@ -106,6 +107,7 @@ class ASTPrinter : public ASTVisitor {
         void visit( const ExpressionStatement& expressionStmt ) override;
         void visit( const BinaryExpression& binExp ) override;
         void visit( const Block& block ) override;
+        void visit( const BlockStatement& blockStmt ) override;
         void visit( const Break& breakStmt ) override;
         void visit( const Continue& continueStmt ) override;
         void visit( const Return& returnStmt ) override;

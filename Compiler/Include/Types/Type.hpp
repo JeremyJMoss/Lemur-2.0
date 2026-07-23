@@ -35,7 +35,8 @@ enum class TypeState
 enum class TypeOrigin 
 {
     Builtin,
-    UserDefined
+    UserDefined,
+    Derived
 };
 
 /* === Forward Declarations === */

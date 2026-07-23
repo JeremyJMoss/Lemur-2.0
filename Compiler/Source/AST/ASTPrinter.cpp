@@ -321,6 +321,16 @@ void ASTPrinter::visit(const Block& block ) {
     endBlock();
 }
 
+void ASTPrinter::visit(const BlockStatement& blockStmt ) {
+    startBlock();
+    increaseIndent();
+    writeField( "id", blockStmt.id );
+    writeField( "type", std::string_view( "Block Statement" ) );
+    writeNodeField( "block", *blockStmt.block, false );
+    decreaseIndent();
+    endBlock();
+}
+
 void ASTPrinter::visit( const Break& breakStmt ) {
     startBlock();
     increaseIndent();

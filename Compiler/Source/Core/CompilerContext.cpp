@@ -44,17 +44,21 @@ std::expected<void, Diagnostic> CompilerContext::declareInScope( ScopeId scopeId
 
 ScopeId CompilerContext::enterScope(NodeId owner, ScopeOwnerKind kind)
 {
-    NodeSemanticInfo& info = m_semanticInfo.getOrCreate( owner );
+    if (owner != InvalidNodeId) {
+        NodeSemanticInfo& info = m_semanticInfo.getOrCreate( owner );
 
-    if ( info.scope != InvalidScopeId )
-    {
-        m_scopeStack.enter( info.scope );
-        return info.scope;
+        if ( info.scope != InvalidScopeId )
+        {
+            m_scopeStack.enter( info.scope );
+            return info.scope;
+        }
     }
 
     auto scope = m_scopes.add( m_scopeStack.current(), kind );
 
-    m_semanticInfo.bindScope(owner, scope);
+    if (owner != InvalidNodeId) {
+        m_semanticInfo.bindScope( owner, scope );
+    }
 
     m_scopeStack.enter(scope);
     return scope;

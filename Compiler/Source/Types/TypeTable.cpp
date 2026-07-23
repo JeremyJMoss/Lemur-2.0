@@ -4,11 +4,11 @@
 
 /* === Type Table Methods === */
 
-TypeId TypeTable::add( Type type ) 
+TypeId TypeTable::add( Type* type ) 
 {
     TypeId id = types.size();
 
-    type.setId( id );
+    type->setId( id );
 
     types.push_back( std::move( type ) );
 
@@ -17,5 +17,5 @@ TypeId TypeTable::add( Type type )
 
 const Type& TypeTable::get( TypeId id ) const 
 {
-    return types[id];
+    return *types[id];
 }

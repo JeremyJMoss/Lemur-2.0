@@ -5,6 +5,7 @@
 #include "AST/Assignment.hpp"
 #include "AST/BinaryExpression.hpp"
 #include "AST/Block.hpp"
+#include "AST/BlockStatement.hpp"
 #include "AST/Break.hpp"
 #include "AST/Continue.hpp"
 #include "AST/ExpressionStatement.hpp"

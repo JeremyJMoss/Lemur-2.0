@@ -4,10 +4,10 @@
 
 /* === Symbol Table Methods === */
 
-SymbolId SymbolTable::add( Symbol symbol ) {
+SymbolId SymbolTable::add( Symbol* symbol ) {
     SymbolId id = symbols.size();
 
-    symbol.setId( id );
+    symbol->setId( id );
 
     symbols.push_back( std::move( symbol ) );
 
@@ -15,10 +15,10 @@ SymbolId SymbolTable::add( Symbol symbol ) {
 }
 
 Symbol& SymbolTable::get( SymbolId id ) {
-    return symbols[id];
+    return *symbols[id];
 }
 
 const Symbol& SymbolTable::get( SymbolId id ) const {
-    return symbols[id];
+    return *symbols[id];
 }
 

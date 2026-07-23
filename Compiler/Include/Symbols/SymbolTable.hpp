@@ -14,7 +14,7 @@
 class SymbolTable
 {
     public:
-        SymbolId add( Symbol symbol );
+        SymbolId add( Symbol* symbol );
 
         Symbol& get( SymbolId id );
 
@@ -23,5 +23,5 @@ class SymbolTable
         SymbolTable() {}
 
     private:
-        std::vector<Symbol> symbols;
+        std::vector<Symbol*> symbols;
 };

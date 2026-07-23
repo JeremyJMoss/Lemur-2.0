@@ -103,6 +103,15 @@ std::expected<Statement*, Diagnostic> Parser::createStatement( const Token& toke
         return parseIdentifierStatement( token, visibility );
     }
 
+    if (token.checkMatches( TokenKind::Symbol, TokenSymbol::LBrace ))
+    {
+        Logger::trace(
+            "Token matched block statement"
+        );
+
+        return parseBlockStatement( token );
+    }
+
     Logger::trace( 
         "Token matched expression statement",
         attrs
@@ -447,6 +456,20 @@ std::expected<Statement*, Diagnostic> Parser::parseExpressionStatement( const To
     if ( !maybeEndingNode ) return std::unexpected( maybeEndingNode.error() );
 
     stmt->location = SourceRange::getLocation( token, maybeEndingNode.value() );
+
+    return stmt;
+}
+
+std::expected<Statement*, Diagnostic> Parser::parseBlockStatement( const Token& token )
+{
+    auto maybeBlock = m_stmtParser.parseBlock();
+    if (!maybeBlock)
+    {
+        return std::unexpected(maybeBlock.error());
+    }
+
+    auto stmt = m_compUnit.allocate<BlockStatement>(maybeBlock.value());
+    stmt->location = { token.getLocation().start, maybeBlock.value()->location.end, token.getLocation().fileId };
 
     return stmt;
 }
