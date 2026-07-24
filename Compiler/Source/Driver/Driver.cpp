@@ -20,6 +20,7 @@ namespace chrono = std::chrono;
 #include "Modules/ModuleHeaderScanner.hpp"
 #include "Config/CompilerConfig.hpp"
 #include "Utils/Output.hpp"
+#include "Semantics/DeclarationPass.hpp"
 
 /* === Driver Methods === */
 
@@ -197,11 +198,19 @@ void Driver::compile()
             )
         );
 
-        Logger::debug( "Parsed module" );
+        auto declarationPassStart = chrono::high_resolution_clock::now();
 
-        Logger::debug( "Declaration Pass" );
+        semanticDeclarationPass( *compUnit );
 
+        auto declarationPassEnd = chrono::high_resolution_clock::now();
+        auto declarationPassDuration = duration_cast<chrono::microseconds>( declarationPassEnd - declarationPassStart );
 
+        Output::success( 
+            std::format( 
+                "DeclarationPass Execution time: {} µs", 
+                declarationPassDuration.count() 
+            ) 
+        );
 
         // free all memory within Compilation Unit
         compUnit->freeArena();
@@ -247,7 +256,6 @@ void Driver::tokenizeCompilationUnit( CompilationUnit& compUnit )
 
 void Driver::parseCompilationUnit( CompilationUnit& compUnit ) 
 {
-    
     Logger::debug( 
         "Parsing tokens for module " + std::string( compUnit.getModuleName() )
     );
@@ -255,4 +263,19 @@ void Driver::parseCompilationUnit( CompilationUnit& compUnit )
     Parser parser = Parser( compUnit );
 
     parser.parse();
+
+    Logger::debug(
+        "Parsed tokens for module " + std::string( compUnit.getModuleName() )
+    );
+}
+
+void Driver::semanticDeclarationPass( CompilationUnit& compUnit )
+{
+    Logger::debug(
+        "Carrying out declaration pass for module " + std::string( compUnit.getModuleName() ) 
+    );
+
+    DeclarationPass declarationPass = DeclarationPass();
+
+    declarationPass.run( compUnit );
 }

@@ -31,6 +31,7 @@ class Driver
         void compile();
         void tokenizeCompilationUnit( CompilationUnit& compUnit );
         void parseCompilationUnit( CompilationUnit& compUnit );
+        void semanticDeclarationPass( CompilationUnit& compUnit );
         
         const CompilerConfig& m_config;
         CompilerContext m_ctx;

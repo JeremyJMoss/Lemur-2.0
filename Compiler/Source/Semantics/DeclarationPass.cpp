@@ -25,6 +25,9 @@
 #include "AST/Assignment.hpp"
 #include "AST/IfConditional.hpp"
 #include "AST/ForLoop.hpp"
+#include "AST/Unary.hpp"
+#include "AST/FunctionCall.hpp"
+#include "AST/Range.hpp"
 
 /* === Declaration Pass Methods === */
 
@@ -35,9 +38,14 @@ void DeclarationPass::run( CompilationUnit& compUnit ) {
 
     m_compUnit->context().enterScope( NodeId{}, ScopeOwnerKind::Module );
 
-    for ( auto& statement : statements ) {
+    for ( auto& statement : statements ) 
+    {
+        if ( !statement ) throw InternalCompilerError( "Missing statement in ast tree statement list.\nPlease report this bug." );
+
         statement->accept( *this );
     }
+
+    m_compUnit->context().leaveScope();
 }
 
 void DeclarationPass::visit( const Literal& lit )
@@ -47,6 +55,10 @@ void DeclarationPass::visit( const Literal& lit )
 
 void DeclarationPass::visit( const Assignment& assign )
 {
+    if ( !assign.identifier ) throw InternalCompilerError( "Missing identifier for assignment.\nPlease report this bug." );
+    assign.identifier->accept( *this );
+
+    if ( !assign.value ) throw InternalCompilerError( "Missing value for assignment.\nPlease report this bug." );
     assign.value->accept( *this );
 }
 
@@ -57,12 +69,16 @@ void DeclarationPass::visit( const Identifier& id )
 
 void DeclarationPass::visit( const ExpressionStatement& exprStmt )
 {
+    if ( !exprStmt.expression ) throw InternalCompilerError( "Missing expression within expression statement.\nPlease report this bug" );
     exprStmt.expression->accept( *this );
 }
 
 void DeclarationPass::visit( const BinaryExpression& binExpr )
 {
+    if ( !binExpr.right ) throw InternalCompilerError( "Missing right side of binary expression.\nPlease report this bug." );
     binExpr.right->accept( *this );
+
+    if ( !binExpr.left ) throw InternalCompilerError( "Missing left side of binary expression.\nPlease report this bug." );
     binExpr.left->accept( *this );
 }
 
@@ -70,12 +86,16 @@ void DeclarationPass::visit( const Block& block )
 {
     for ( Statement* stmt : block.statements )
     {
+        if ( !stmt ) throw InternalCompilerError( "Missing statement in block list.\nPlease report this bug." );
+
         stmt->accept(*this);
     }
 }
 
 void DeclarationPass::visit( const BlockStatement& blockStmt )
 {
+    if ( !blockStmt.block ) throw InternalCompilerError( "Missing block within block statement.\nPlease report this bug." );
+
     m_compUnit->context().enterScope( blockStmt.id, ScopeOwnerKind::Block );
 
     blockStmt.block->accept(*this);
@@ -102,10 +122,10 @@ void DeclarationPass::visit( const VariableDeclaration& varDec )
 {
     CompilerContext& ctx = m_compUnit->context();
 
-    if ( varDec.identifier->name.empty() ) throw InternalCompilerError( "Missing variable name during semantic analysis.\nPlease report this bug." );
+    if ( !varDec.identifier || varDec.identifier->name.empty() ) throw InternalCompilerError( "Missing variable name during semantic analysis.\nPlease report this bug." );
 
     // Create Variable Symbol
-    VariableSymbol* varSymbol = ctx.allocate<VariableSymbol>( std::string( varDec.identifier->name ), TypeId{} );
+    VariableSymbol* varSymbol = ctx.allocate<VariableSymbol>( std::string( varDec.identifier->name ), TypeId{}, VariableStorage::Local, varDec.locked );
 
     // Add symbol to symbol table
     SymbolId symbolId = ctx.symbols().add( varSymbol );
@@ -117,13 +137,15 @@ void DeclarationPass::visit( const VariableDeclaration& varDec )
     auto declared = ctx.declareInScope( ctx.currentScope(), varDec.identifier->name, symbolId );
 
     if ( !declared ) ctx.errors().report( declared.error() );
+
+    if ( varDec.initialiser ) varDec.initialiser->accept( *this );
 }
 
 void DeclarationPass::visit( const FunctionDeclaration& funDec )
 {
     CompilerContext& ctx = m_compUnit->context();
 
-    if ( funDec.identifier->name.empty() ) throw InternalCompilerError( "Missing function name during semantic analysis.\nPlease report this bug." );
+    if ( !funDec.identifier || funDec.identifier->name.empty() ) throw InternalCompilerError( "Missing function name during semantic analysis.\nPlease report this bug." );
 
     // Create Function Symbol
     FunctionSymbol* funSymbol = ctx.allocate<FunctionSymbol>( std::string( funDec.identifier->name ), TypeId{} ); 
@@ -145,11 +167,15 @@ void DeclarationPass::visit( const FunctionDeclaration& funDec )
 
     if ( !funDec.hasImplementation ) throw InternalCompilerError( "Missing implementation for function declaration.\nPlease report this bug." );
 
+    if ( !funDec.body ) throw InternalCompilerError( "Missing function body for function declaration.\nPlease report this bug." ); 
+
     // Enter scope for Function
     ctx.enterScope( funDec.body->id, ScopeOwnerKind::Function );
 
     for( auto& parameter : funDec.parameters )
     {
+        if ( !parameter ) throw InternalCompilerError( "Missing parameter in function declaration parameter list.\nPlease report this bug." );
+
         parameter->accept( *this );
     }
 
@@ -164,10 +190,14 @@ void DeclarationPass::visit( const FunctionLiteral& funLit )
 {
     CompilerContext& ctx = m_compUnit->context();
 
+    if ( !funLit.body ) throw InternalCompilerError( "Missing function body for function literal.\nPlease report this bug." );
+
     ctx.enterScope( funLit.body->id, ScopeOwnerKind::Function );
 
     for ( auto& parameter : funLit.parameters )
     {
+        if ( !parameter ) throw InternalCompilerError( "Missing parameter in function literal parameter list.\nPlease report this bug." );
+
         parameter->accept( *this );
     }
 
@@ -180,10 +210,12 @@ void DeclarationPass::visit( const IfConditional& ifCond )
 {
     CompilerContext& ctx = m_compUnit->context();
 
+    if ( !ifCond.then ) throw InternalCompilerError( "Missing then block for if conditional.\nPlease report this bug." );
+
     // Collect declarations within condition
     ctx.enterScope( ifCond.id, ScopeOwnerKind::If );
 
-    ifCond.condition->accept( *this );
+    if ( ifCond.condition ) ifCond.condition->accept( *this );
 
     ctx.enterScope( ifCond.then->id, ScopeOwnerKind::Block );
 
@@ -203,6 +235,10 @@ void DeclarationPass::visit( const ForLoop& forL )
 {
     CompilerContext& ctx = m_compUnit->context();
 
+    if ( !forL.loopVar ) throw InternalCompilerError( "Missing loop variable for for loop.\nPlease report this bug." );
+
+    if ( !forL.body ) throw InternalCompilerError( "Missing body for for loop.\nPlease report this bug." );
+
     ctx.enterScope( forL.id, ScopeOwnerKind::For );
 
     forL.loopVar->accept( *this );
@@ -218,17 +254,32 @@ void DeclarationPass::visit( const ForLoop& forL )
 
 void DeclarationPass::visit( const Range& range )
 {
-    // No need to do anything this pass
+    if ( !range.start ) throw InternalCompilerError( "Missing start expression for range.\nPlease report this bug.");
+    range.start->accept( *this );
+
+    if ( !range.end ) throw InternalCompilerError( "Missing end expression for range.\nPlease report this bug.");
+    range.end->accept( *this );
 }
 
 void DeclarationPass::visit( const Unary& unary )
 {
-    // No need to do anything this pass
+    if ( !unary.argument ) throw InternalCompilerError( "Missing argument for unary expression.\nPlease report this bug.");
+
+    unary.argument->accept( *this );
 }
 
 void DeclarationPass::visit( const FunctionCall& funCall )
 {
-    
+    if ( !funCall.callee ) throw InternalCompilerError( "Missing callee for function call.\nPlease report this bug." );
+
+    funCall.callee->accept( *this );
+
+    for ( auto arg : funCall.arguments )
+    {
+        if ( !arg ) throw InternalCompilerError( "Missing argument in function call.\nPlease report this bug." );
+
+        arg->accept( *this );
+    }
 }
 
 void DeclarationPass::visit( const ParsedType& parsedType )
@@ -236,9 +287,25 @@ void DeclarationPass::visit( const ParsedType& parsedType )
     // No need to do anything this pass
 }
 
-void DeclarationPass::visit( const Parameter& )
+void DeclarationPass::visit( const Parameter& param )
 {
+    CompilerContext& ctx = m_compUnit->context();
 
+    if ( !param.identifier || param.identifier->name.empty() ) throw InternalCompilerError( "Missing parameter name during semantic analysis.\nPlease report this bug." );
+
+    // Create Variable Symbol
+    VariableSymbol* paramSymbol = ctx.allocate<VariableSymbol>( std::string( param.identifier->name ), TypeId{}, VariableStorage::Parameter );
+
+    // Add symbol to symbol table
+    SymbolId symbolId = ctx.symbols().add( paramSymbol );
+
+    // Add relationship between node and symbol
+    ctx.nodeSemantics().bindSymbol( param.id, symbolId );
+
+     // Declare symbol in current scope
+    auto declared = ctx.declareInScope( ctx.currentScope(), param.identifier->name, symbolId );
+
+    if ( !declared ) ctx.errors().report( declared.error() );
 }
 
 void DeclarationPass::visit( const ModuleDeclaration& )

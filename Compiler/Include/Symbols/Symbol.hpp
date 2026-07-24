@@ -39,23 +39,29 @@ struct Symbol
             typeId( typeId ) {}
 };
 
+enum class VariableStorage : uint8_t 
+{
+    Local,
+    Parameter,
+    Temporary,
+};
+
 struct VariableSymbol : Symbol {
+    VariableStorage storage;
     bool isMutable;
-    bool isTemporary;
-    bool isParameter;
 
     VariableSymbol(
         std::string name,
-        bool isMutable,
         TypeId typeId,
-        bool isTemporary = false
+        VariableStorage storage,
+        bool isMutable = false
     ) : Symbol( 
             std::move( name ), 
             SymbolKind::Variable, 
             typeId 
-        ), 
-        isMutable( isMutable ), 
-        isTemporary( isTemporary ) {}
+        ),
+        storage( storage ),
+        isMutable( isMutable ) {}
 };
 
 struct FunctionSymbol : Symbol {

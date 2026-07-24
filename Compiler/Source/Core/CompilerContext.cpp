@@ -12,7 +12,9 @@ void CompilerContext::initialize()
         ScopeOwnerKind::BuiltIn
     );
 
-    BuiltInRegistry::initialize(*this);
+    m_scopeStack.enter( m_builtinScope );
+
+    BuiltInRegistry::initialize( *this );
 }
 
 std::expected<void, Diagnostic> CompilerContext::declareInScope( ScopeId scopeId, std::string_view name, SymbolId symbolId )
