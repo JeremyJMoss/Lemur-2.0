@@ -11,6 +11,8 @@ std::string_view toString( const ScopeOwnerKind& scopeOwnerKind ) {
         case ScopeOwnerKind::Module:    return "Module";
         case ScopeOwnerKind::Function:  return "Function";
         case ScopeOwnerKind::Block:     return "Block";
+        case ScopeOwnerKind::If:        return "If";
+        case ScopeOwnerKind::For:       return "For";
         default:                        return "Unknown";
     }
 }

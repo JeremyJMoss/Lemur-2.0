@@ -12,7 +12,9 @@ enum class ScopeOwnerKind
     BuiltIn,
     Module,
     Function,
-    Block
+    Block,
+    If,
+    For
 };
 
 std::string_view toString( const ScopeOwnerKind& scopeOwnerKind );
