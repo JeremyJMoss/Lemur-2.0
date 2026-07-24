@@ -5,7 +5,7 @@
 /* === Symbol Table Methods === */
 
 SymbolId SymbolTable::add( Symbol* symbol ) {
-    SymbolId id = symbols.size();
+    SymbolId id{ symbols.size() };
 
     symbol->setId( id );
 
@@ -15,10 +15,10 @@ SymbolId SymbolTable::add( Symbol* symbol ) {
 }
 
 Symbol& SymbolTable::get( SymbolId id ) {
-    return *symbols[id];
+    return *symbols[id.value];
 }
 
 const Symbol& SymbolTable::get( SymbolId id ) const {
-    return *symbols[id];
+    return *symbols[id.value];
 }
 

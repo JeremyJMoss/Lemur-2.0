@@ -12,6 +12,7 @@
 #include "Scopes/ScopeTable.hpp"
 #include "Scopes/ScopeStack.hpp"
 #include "Modules/ModuleTable.hpp"
+#include "Symbols/OverloadSetTable.hpp"
 #include "Errors/Errors.hpp"
 #include "DataStructures/Arena.hpp"
 #include "Errors/ErrorReporter.hpp"
@@ -58,13 +59,16 @@ class CompilerContext
         ErrorReporter& errors() { return m_errReporter; }
 
         SourceManager& source() { return m_sourceManager; }
+
         NodeSemantics& nodeSemantics() { return m_semanticInfo; }
 
-        ScopeId CompilerContext::enterScope(NodeId owner, ScopeOwnerKind kind);
+        OverloadSetTable& overloads() { return m_overloadSets; };
 
-        void CompilerContext::leaveScope();
+        ScopeId enterScope( NodeId owner, ScopeOwnerKind kind );
 
-        ScopeId CompilerContext::currentScope() const;
+        void leaveScope();
+
+        ScopeId currentScope() const;
 
     private:
         Arena m_globalArena;
@@ -75,8 +79,9 @@ class CompilerContext
         TypeTable m_types;
         ScopeTable m_scopes;
         ModuleTable m_modules;
+        OverloadSetTable m_overloadSets;
 
         ScopeStack m_scopeStack;
-        ScopeId m_builtinScope;
+        ScopeId m_builtinScope{};
         NodeSemantics m_semanticInfo;
 };

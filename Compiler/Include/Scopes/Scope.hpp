@@ -4,11 +4,14 @@
 
 #include <unordered_map>
 #include <string>
+#include <variant>
 
 /* === Imports === */
 
 #include "Core/Ids.hpp"
 #include "Scopes/ScopeOwnerKind.hpp"
+
+using NameBinding = std::variant<SymbolId, OverloadSetId>;
 
 /* === Scope === */
 
@@ -16,11 +19,11 @@ struct Scope {
     ScopeId m_id;
     ScopeId m_parentId;
     ScopeOwnerKind m_kind;
-    std::unordered_map<std::string, SymbolId> m_declarations;
+    std::unordered_map<std::string, NameBinding> m_declarations;
 
     bool hasParent() const;
 
-    bool insert( std::string_view name, SymbolId symbolId );
+    bool insert( std::string_view name, NameBinding nameBinding );
 
     bool remove( std::string_view name );
 

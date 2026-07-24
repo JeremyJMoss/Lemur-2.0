@@ -6,12 +6,12 @@
 
 bool Scope::hasParent() const 
 { 
-    return m_parentId != InvalidScopeId; 
+    return m_parentId.valid(); 
 }
 
-bool Scope::insert( std::string_view name, SymbolId symbolId )
+bool Scope::insert( std::string_view name, NameBinding nameBinding )
 {
-    auto [it, success] = m_declarations.try_emplace( std::string( name ), symbolId );
+    auto [it, success] = m_declarations.try_emplace( std::string( name ), nameBinding );
 
     return success;
 }

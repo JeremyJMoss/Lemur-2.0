@@ -13,15 +13,15 @@ void ErrorReporter::printErrorDiagnostic(
     if ( diagnostic.range ) 
     {
         const SourceRange& range = diagnostic.range.value();
-        std::size_t startLine = range.start.line;
-        std::size_t endLine   = range.end.line;
-        std::size_t startCol  = range.start.column;
-        std::size_t endCol    = range.end.column;
-        FileId fileId = range.fileId;
-        const fs::path filePath = m_srcManager.getFilePath( fileId );
+        std::size_t startLine    = range.start.line;
+        std::size_t endLine      = range.end.line;
+        std::size_t startCol     = range.start.column;
+        std::size_t endCol       = range.end.column;
+        FileId fileId            = range.fileId;
+        const fs::path filePath  = m_srcManager.getFilePath( fileId );
 
         std::string lineNumberWidth = std::to_string( endLine );
-        std::size_t width = lineNumberWidth.length();
+        std::size_t width           = lineNumberWidth.length();
 
         std::format_to( 
             std::back_inserter( buffer ),

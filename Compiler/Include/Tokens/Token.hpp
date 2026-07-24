@@ -18,7 +18,7 @@
 class Token 
 {
     public:
-        static inline TokenId nextId = 0;
+        static inline size_t nextId = 0;
 
         bool checkMatches( TokenKind inputType, TokenSymbol inputValue ) const;
 
@@ -76,7 +76,7 @@ class Token
             : m_id( nextId++ ), m_type( type ), m_value( value ), m_location( location ) {}
     
     private:
-        TokenId m_id;
+        TokenId m_id{};
         TokenKind m_type = TokenKind::None;
         TokenSymbol m_symbol = TokenSymbol::None;
         TokenKeyword m_keyword = TokenKeyword::None;

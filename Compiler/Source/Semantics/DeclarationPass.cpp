@@ -11,6 +11,7 @@
 
 #include "Driver/CompilationUnit.hpp"
 #include "Core/CompilerContext.hpp"
+#include "Errors/Errors.hpp"
 #include "AST/BlockStatement.hpp"
 #include "AST/Block.hpp"
 #include "AST/Return.hpp"
@@ -25,10 +26,10 @@ void DeclarationPass::run( CompilationUnit& compUnit ) {
 
     auto statements = compUnit.ast().getStatements();
 
-    m_compUnit->context().enterScope(InvalidNodeId, ScopeOwnerKind::Module);
+    m_compUnit->context().enterScope( NodeId{}, ScopeOwnerKind::Module );
 
     for ( auto& statement : statements ) {
-        statement->accept(*this);
+        statement->accept( *this );
     }
 }
 
@@ -95,22 +96,46 @@ void DeclarationPass::visit( const VariableDeclaration& varDec )
 
 void DeclarationPass::visit( const FunctionDeclaration& funDec )
 {
-    Type* type = m_compUnit->context().allocate<Type>(
+    CompilerContext& ctx = m_compUnit->context();
+
+    if ( funDec.identifier->name.empty() ) throw InternalCompilerError( "Missing function name during semantic analysis.\nPlease report this bug." );
+
+    // Create Function Type
+    Type* type = ctx.allocate<Type>(
         TypeKind::Function,
         TypeState::Unresolved,
         TypeOrigin::Derived,
         std::monostate{}
     );
 
-    TypeId typeId = m_compUnit->context().types().add( type );
+    // Add Type to types table
+    TypeId typeId = ctx.types().add( type );
 
-    m_compUnit->context().nodeSemantics().bindType( funDec.id, typeId );
+    // Add relationship between node and type
+    ctx.nodeSemantics().bindType( funDec.id, typeId );
 
-    FunctionSymbol* funSymbol = m_compUnit->context().allocate<FunctionSymbol>( std::string( funDec.identifier->name ), typeId ); 
+    // Create Function Symbol
+    FunctionSymbol* funSymbol = ctx.allocate<FunctionSymbol>( std::string( funDec.identifier->name ), typeId ); 
     
-    SymbolId symbolId = m_compUnit->context().symbols().add( funSymbol );
+    // Add symbol to symbol table
+    SymbolId symbolId = ctx.symbols().add( funSymbol );
 
-    m_compUnit->context().nodeSemantics().bindSymbol( funDec.id, symbolId );
+    // Declare symbol in current scope
+    ctx.declareInScope( ctx.currentScope(), funDec.identifier->name, symbolId );
+
+    // Add relationship between node and symbol
+    ctx.nodeSemantics().bindSymbol( funDec.id, symbolId );
+
+    if ( !funDec.hasImplementation ) throw InternalCompilerError( "Missing implementation for function declaration.\nPlease report this bug." );
+
+    // Enter scope for Function
+    ctx.enterScope( funDec.body->id, ScopeOwnerKind::Function );
+
+    // Go over body statements
+    funDec.body->accept(*this);
+
+    // Leave function scope
+    ctx.leaveScope();
 }
 
 void DeclarationPass::visit( const FunctionLiteral& )

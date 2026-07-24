@@ -17,8 +17,8 @@ namespace fs = std::filesystem;
 class FileData
 {
     private:
-        static inline FileId s_nextId = 0;
-        FileId m_id;
+        static inline size_t s_nextId = 0;
+        FileId m_id{};
         fs::path m_filePath;
         std::vector<std::streampos> m_lineOffsets; // byte offset at start of each line
 

@@ -84,7 +84,7 @@ std::expected<int, Diagnostic> ModuleHeaderScanner::scan( const fs::path& source
             "File added to source manager",
             std::to_array<Attribute>({
                 { "Path", pathStr },
-                { "FileId", std::to_string( fileId ) }
+                { "FileId", std::to_string( fileId.value ) }
             })
         );
 

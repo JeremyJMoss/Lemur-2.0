@@ -20,12 +20,12 @@
 
 ModuleHeader& ModuleTable::get( ModuleId id ) 
 { 
-    return m_modules[id]; 
+    return m_modules[id.value]; 
 }
 
 const ModuleHeader& ModuleTable::get( ModuleId id ) const 
 { 
-    return m_modules[id]; 
+    return m_modules[id.value]; 
 }
 
 size_t ModuleTable::count() const 
@@ -35,9 +35,9 @@ size_t ModuleTable::count() const
 
 bool ModuleTable::add( FileId fileId, std::string moduleName, std::vector<ImportDirective> imports )
 {
-    ModuleId id = m_modules.size();
+    ModuleId id{ m_modules.size() };
 
-    auto [it, inserted] = m_lookup.emplace(moduleName, id );
+    auto [it, inserted] = m_lookup.emplace( moduleName, id );
 
     if ( !inserted ) return false;
 
@@ -52,7 +52,7 @@ const ModuleHeader* ModuleTable::find( std::string_view name ) const
 
     if ( it != m_lookup.end() ) 
     {   
-        return &m_modules[it->second];
+        return &m_modules[it->second.value];
     }
 
     return nullptr;

@@ -15,12 +15,12 @@ TokenId TokenTable::add( Token token )
 
 Token& TokenTable::get( TokenId id ) 
 {
-    return m_tokens[id];
+    return m_tokens[id.value];
 }
 
 const Token& TokenTable::get( TokenId id ) const 
 {
-    return m_tokens[id];
+    return m_tokens[id.value];
 }
 
 size_t TokenTable::count() const 

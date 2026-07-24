@@ -6,7 +6,7 @@
 
 TypeId TypeTable::add( Type* type ) 
 {
-    TypeId id = types.size();
+    TypeId id { types.size() };
 
     type->setId( id );
 
@@ -15,7 +15,12 @@ TypeId TypeTable::add( Type* type )
     return id;
 }
 
+Type& TypeTable::get( TypeId id )
+{
+    return *types[id.value];
+}
+
 const Type& TypeTable::get( TypeId id ) const 
 {
-    return *types[id];
+    return *types[id.value];
 }

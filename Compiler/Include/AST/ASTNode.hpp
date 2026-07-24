@@ -81,7 +81,7 @@ enum class DeclarationVisibility: uint8_t
 
 struct ASTNode 
 {
-    static inline NodeId nextId = 0;
+    static inline size_t nextId = 0;
 
     const NodeId id;
     SourceRange location;

@@ -4,6 +4,10 @@
 
 #include <string>
 
+/* === Imports === */
+
+#include "Core/Ids.hpp"
+
 /* === Forward Declarations === */
 
 class Token;
@@ -25,7 +29,7 @@ struct SourceRange
 {
     SourceLocation start;
     SourceLocation end;
-    std::size_t fileId;
+    FileId fileId{};
 
     static SourceRange getLocation( const Token& startToken, const Token& endToken );
 

@@ -15,13 +15,13 @@
 struct Symbol 
 {
     // Symbolid assigned via Symbol Table
-    SymbolId id = InvalidSymbolId;
+    SymbolId id{};
     
     std::string name;
     const SymbolKind kind;
     TypeId typeId;
 
-    ScopeId scope = InvalidScopeId;
+    ScopeId scope{};
 
     SourceRange declaration;
     

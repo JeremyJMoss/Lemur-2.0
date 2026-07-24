@@ -78,7 +78,7 @@ std::expected<FileId, Diagnostic> SourceManager::addFile( const fs::path& filePa
     Logger::trace( 
         std::format(
             "Assigned file ID {} to {}",
-            data.fileId(),
+            data.fileId().value,
             filePath.string()
         )
     );
@@ -97,7 +97,7 @@ std::expected<std::string, Diagnostic> SourceManager::getLine( FileId fileId, st
                 lineNumber
             ),
             std::to_array<Attribute>({
-                { "fileId", std::to_string( fileId ) }
+                { "fileId", std::to_string( fileId.value ) }
             })
         );
 

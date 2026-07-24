@@ -3,38 +3,54 @@
 /* === Dependencies === */
 
 #include <limits>
+#include <compare>
 
-/* === IDs === */
+/* === Ids === */
 
-using NodeId        = std::size_t;
-using SymbolId      = std::size_t;
-using TypeId        = std::size_t;
-using ScopeId       = std::size_t;
-using FileId        = std::size_t;
-using TokenId       = std::size_t;
-using ModuleId      = std::size_t;
-using OverloadSetId = std::size_t;
+template<typename Tag>
+struct Id
+{
+    using ValueType = std::size_t;
 
-inline constexpr NodeId InvalidNodeId =
-    std::numeric_limits<NodeId>::max();
+    static constexpr ValueType Invalid =
+        std::numeric_limits<ValueType>::max();
 
-inline constexpr SymbolId InvalidSymbolId =
-    std::numeric_limits<SymbolId>::max();
+    ValueType value = Invalid;
 
-inline constexpr TypeId InvalidTypeId =
-    std::numeric_limits<TypeId>::max();
+    constexpr bool valid() const
+    {
+        return value != Invalid;
+    }
 
-inline constexpr ScopeId InvalidScopeId =
-    std::numeric_limits<ScopeId>::max();
+    auto operator<=>(const Id&) const = default;
+};
 
-inline constexpr FileId InvalidFileId =
-    std::numeric_limits<FileId>::max();
+namespace std
+{
+    template<typename Tag>
+   struct hash<Id<Tag>>
+    {
+        size_t operator()(const Id<Tag>& id) const noexcept
+        {
+            return std::hash<size_t>{}(id.value);
+        }
+    };
+}
 
-inline constexpr TokenId InvalidTokenId =
-    std::numeric_limits<TokenId>::max();
+struct NodeTag {};
+struct SymbolTag {};
+struct TypeTag {};
+struct ScopeTag {};
+struct FileTag {};
+struct TokenTag {};
+struct ModuleTag {};
+struct OverloadSetTag {};
 
-inline constexpr ModuleId InvalidModuleId =
-    std::numeric_limits<ModuleId>::max();
-
-inline constexpr OverloadSetId InvalidOverloadSetId =
-    std::numeric_limits<OverloadSetId>::max();
+using NodeId        = Id<NodeTag>;
+using SymbolId      = Id<SymbolTag>;
+using TypeId        = Id<TypeTag>;
+using ScopeId       = Id<ScopeTag>;
+using FileId        = Id<FileTag>;
+using TokenId       = Id<TokenTag>;
+using ModuleId      = Id<ModuleTag>;
+using OverloadSetId = Id<OverloadSetTag>;

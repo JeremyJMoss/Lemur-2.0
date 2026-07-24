@@ -42,26 +42,26 @@ void BuiltInRegistry::registerPrimitiveTypes(
 void BuiltInRegistry::registerPrimitive(
     CompilerContext& ctx,
     std::string_view name,
-    PrimitiveType type
+    PrimitiveType primType
 )
 {
-   TypeId typeId = ctx.types().add(
-        Type(TypeKind::Primitive, TypeState::Resolved, TypeOrigin::Builtin, PrimitiveInfo{type})
-   );
+    Type* type = ctx.allocate<Type>(TypeKind::Primitive, TypeState::Resolved, TypeOrigin::Builtin, PrimitiveInfo{primType});
+    
+    TypeId typeId = ctx.types().add( type );
 
-   SymbolId symbolId = ctx.symbols().add(
-        TypeSymbol( std::string( name ), typeId )
-   );
+    TypeSymbol* symbol = ctx.allocate<TypeSymbol>( std::string( name ), typeId );
 
-   auto result = ctx.declareInScope( ctx.getBuiltInScope(), name, symbolId );
+    SymbolId symbolId = ctx.symbols().add( symbol );
 
-   if ( !result )
-   {
+    auto result = ctx.declareInScope( ctx.getBuiltInScope(), name, symbolId );
+
+    if ( !result )
+    {
         throw InternalCompilerError( 
             std::format(
                 "Duplicate builtin declaration '{}'.\nBuiltinRegistry attempted to register the same primitive twice.\nPlease report this bug.",
                 name
             )
         );
-   }
+    }
 }

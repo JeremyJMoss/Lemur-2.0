@@ -187,7 +187,7 @@ void ASTPrinter::visit( const ParsedType& parsedType ) {
             auto functionType = static_cast<const ParsedFunctionType*>( &parsedType );
             startBlock();
             increaseIndent();
-            writeField( "id", functionType->id );
+            writeField( "id", functionType->id.value );
             writeField( "type", getParsedType( functionType->kind ) );
             writeNodeField( "returnType", *functionType->returnType );
             writeArrayField( "parameters", functionType->parameters );
@@ -201,7 +201,7 @@ void ASTPrinter::visit( const ParsedType& parsedType ) {
             auto inferredType = static_cast<const ParsedInferredType*>( &parsedType );
             startBlock();
             increaseIndent();
-            writeField( "id", inferredType->id );
+            writeField( "id", inferredType->id.value );
             writeField( "type", getParsedType( inferredType->kind ) );
             decreaseIndent();
             endBlock();
@@ -213,7 +213,7 @@ void ASTPrinter::visit( const ParsedType& parsedType ) {
             auto ownershipType = static_cast<const ParsedOwnershipType*>( &parsedType );
             startBlock();
             increaseIndent();
-            writeField( "id", ownershipType->id );
+            writeField( "id", ownershipType->id.value );
             writeField( "type", getParsedType( ownershipType->kind ) );
             writeField( "ownership", getOwnershipKind( ownershipType->ownership ) );
             writeNodeField( "inner", *ownershipType->inner, false );
@@ -227,7 +227,7 @@ void ASTPrinter::visit( const ParsedType& parsedType ) {
             auto arrayType = static_cast<const ParsedArrayType*>( &parsedType );
             startBlock();
             increaseIndent();
-            writeField( "id", arrayType->id );
+            writeField( "id", arrayType->id.value );
             writeField( "type", getParsedType( arrayType->kind ) );
             writeNodeField( "elementType", *arrayType->elementType );
             writeNodeField( "arraySize", *arrayType->size, false );
@@ -241,7 +241,7 @@ void ASTPrinter::visit( const ParsedType& parsedType ) {
             auto namedType = static_cast<const ParsedNamedType*>( &parsedType );
             startBlock();
             increaseIndent();
-            writeField( "id", namedType->id );
+            writeField( "id", namedType->id.value );
             writeField( "type", getParsedType( namedType->kind ) );
             writeNodeField( "identifier", *namedType->identifier, false );
             decreaseIndent();
@@ -261,9 +261,9 @@ void ASTPrinter::visit( const ParsedType& parsedType ) {
 void ASTPrinter::visit( const Literal& literal ) {
     startBlock();
     increaseIndent();
-    writeField("id", literal.id);
-    writeField("type", std::string_view( "Literal" ) );
-    writeRawField("value", getLiteralValue( literal.value ), false);
+    writeField( "id", literal.id.value );
+    writeField( "type", std::string_view( "Literal" ) );
+    writeRawField( "value", getLiteralValue( literal.value ), false );
     decreaseIndent();
     endBlock();
 }
@@ -271,7 +271,7 @@ void ASTPrinter::visit( const Literal& literal ) {
 void ASTPrinter::visit( const Assignment& assignment ) {
     startBlock();
     increaseIndent();
-    writeField( "id", assignment.id );
+    writeField( "id", assignment.id.value );
     writeField( "type", std::string_view( "Assignment" ) );
     writeNodeField( "identifier", *assignment.identifier );
     writeNodeField( "value", *assignment.value, false );
@@ -282,7 +282,7 @@ void ASTPrinter::visit( const Assignment& assignment ) {
 void ASTPrinter::visit( const Identifier& identifier ) {
     startBlock();
     increaseIndent();
-    writeField( "id", identifier.id );
+    writeField( "id", identifier.id.value );
     writeField( "type", std::string_view( "Identifier" ) );
     writeField( "name", identifier.name, false );
     decreaseIndent();
@@ -292,7 +292,7 @@ void ASTPrinter::visit( const Identifier& identifier ) {
 void ASTPrinter::visit( const ExpressionStatement& expressionStmt ) {
     startBlock();
     increaseIndent();
-    writeField( "id", expressionStmt.id );
+    writeField( "id", expressionStmt.id.value );
     writeField( "type", std::string_view( "Expression Statement" ) );
     writeNodeField( "expression", *expressionStmt.expression, false );
     decreaseIndent();
@@ -302,7 +302,7 @@ void ASTPrinter::visit( const ExpressionStatement& expressionStmt ) {
 void ASTPrinter::visit( const BinaryExpression& binExp ) {
     startBlock();
     increaseIndent();
-    writeField( "id", binExp.id );
+    writeField( "id", binExp.id.value );
     writeField( "type", std::string_view( "Binary Expression" ) );
     writeField( "op", getBinaryOperator( binExp.op ) );
     writeNodeField( "left", *binExp.left );
@@ -314,7 +314,7 @@ void ASTPrinter::visit( const BinaryExpression& binExp ) {
 void ASTPrinter::visit(const Block& block ) {
     startBlock();
     increaseIndent();
-    writeField( "id", block.id );
+    writeField( "id", block.id.value );
     writeField( "type", std::string_view( "Block" ) );
     writeArrayField( "statements", block.statements, false );
     decreaseIndent();
@@ -324,7 +324,7 @@ void ASTPrinter::visit(const Block& block ) {
 void ASTPrinter::visit(const BlockStatement& blockStmt ) {
     startBlock();
     increaseIndent();
-    writeField( "id", blockStmt.id );
+    writeField( "id", blockStmt.id.value );
     writeField( "type", std::string_view( "Block Statement" ) );
     writeNodeField( "block", *blockStmt.block, false );
     decreaseIndent();
@@ -334,7 +334,7 @@ void ASTPrinter::visit(const BlockStatement& blockStmt ) {
 void ASTPrinter::visit( const Break& breakStmt ) {
     startBlock();
     increaseIndent();
-    writeField( "id", breakStmt.id );
+    writeField( "id", breakStmt.id.value );
     writeField( "type", std::string_view( "Break" ) );
     decreaseIndent();
     endBlock();
@@ -343,7 +343,7 @@ void ASTPrinter::visit( const Break& breakStmt ) {
 void ASTPrinter::visit( const Continue& continueStmt ) {
     startBlock();
     increaseIndent();
-    writeField( "id", continueStmt.id );
+    writeField( "id", continueStmt.id.value );
     writeField( "type", std::string_view( "Continue" ) );
     decreaseIndent();
     endBlock();
@@ -352,7 +352,7 @@ void ASTPrinter::visit( const Continue& continueStmt ) {
 void ASTPrinter::visit( const Return& returnStmt ) {
     startBlock();
     increaseIndent();
-    writeField( "id", returnStmt.id );
+    writeField( "id", returnStmt.id.value );
     writeField( "type", std::string_view( "Return" ) );
     writeNodeField( "value", *returnStmt.value, false );
     decreaseIndent();
@@ -362,7 +362,7 @@ void ASTPrinter::visit( const Return& returnStmt ) {
 void ASTPrinter::visit( const VariableDeclaration& varDec ) {
     startBlock();
     increaseIndent();
-    writeField( "id", varDec.id );
+    writeField( "id", varDec.id.value );
     writeField( "type", std::string_view( "Variable Declaration" ) );
     writeField( "exported", varDec.visibility == DeclarationVisibility::Private ? "false" : "true" );
     writeRawField( "locked", varDec.locked ? "true" : "false" );
@@ -376,7 +376,7 @@ void ASTPrinter::visit( const VariableDeclaration& varDec ) {
 void ASTPrinter::visit( const FunctionDeclaration& funDec ) {
     startBlock();
     increaseIndent();
-    writeField( "id", funDec.id );
+    writeField( "id", funDec.id.value );
     writeField( "type", std::string_view( "Function Declaration" ) );
     writeField( "exported", funDec.visibility == DeclarationVisibility::Private ? "false" : "true" );
     writeNodeField( "returnType", *funDec.returnType );
@@ -389,7 +389,7 @@ void ASTPrinter::visit( const FunctionDeclaration& funDec ) {
 void ASTPrinter::visit(const FunctionLiteral& funLit ) {
     startBlock();
     increaseIndent();
-    writeField( "id", funLit.id );
+    writeField( "id", funLit.id.value );
     writeField( "type", std::string_view( "Function Literal" ) );
     writeNodeField( "returnType", *funLit.returnType );
     writeArrayField( "parameters", funLit.parameters );
@@ -401,7 +401,7 @@ void ASTPrinter::visit(const FunctionLiteral& funLit ) {
 void ASTPrinter::visit(const IfConditional& ifCond ) {
     startBlock();
     increaseIndent();
-    writeField( "id", ifCond.id );
+    writeField( "id", ifCond.id.value );
     writeField( "type", std::string_view( "If Statement" ) );
     writeNodeField( "condition", *ifCond.condition);
     writeNodeField( "then", *ifCond.then );
@@ -413,7 +413,7 @@ void ASTPrinter::visit(const IfConditional& ifCond ) {
 void ASTPrinter::visit(const ForLoop& forl ) {
     startBlock();
     increaseIndent();
-    writeField( "id", forl.id );
+    writeField( "id", forl.id.value );
     writeField( "type", std::string_view( "For Loop" ) );
     writeNodeField( "loopVar", *forl.loopVar);
     writeNodeField( "iterable", *forl.iterable );
@@ -428,7 +428,7 @@ void ASTPrinter::visit( const Range& range )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", range.id );
+    writeField( "id", range.id.value );
     writeField( "type", std::string_view( "Range" ) );
     writeNodeField( "start", *range.start);
     writeNodeField( "end", *range.end );
@@ -441,7 +441,7 @@ void ASTPrinter::visit( const Unary& unary )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", unary.id );
+    writeField( "id", unary.id.value );
     writeField( "type", std::string_view( "Unary" ) );
     writeField( "op", getUnaryOperator( unary.op ) );
     writeNodeField( "argument", *unary.argument, false );
@@ -453,7 +453,7 @@ void ASTPrinter::visit( const FunctionCall& funCall )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", funCall.id );
+    writeField( "id", funCall.id.value );
     writeField( "type", std::string_view( "Function Call" ) );
     writeNodeField( "callee", *funCall.callee );
     writeArrayField( "arguments", funCall.arguments, false );
@@ -465,7 +465,7 @@ void ASTPrinter::visit( const Parameter& parameter )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", parameter.id );
+    writeField( "id", parameter.id.value );
     writeField( "type", std::string_view( "Parameter" ) );
     writeNodeField( "identifier", *parameter.identifier );
     if ( parameter.defaultValue != nullptr ) {
@@ -480,7 +480,7 @@ void ASTPrinter::visit( const ModuleDeclaration& modDec )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", modDec.id );
+    writeField( "id", modDec.id.value );
     writeField( "type", std::string_view("Module Declaration") );
     writeNodeField( "name", *modDec.name, false );
     decreaseIndent();
@@ -491,7 +491,7 @@ void ASTPrinter::visit( const Import& import )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", import.id );
+    writeField( "id", import.id.value );
     writeField( "type", std::string_view("Import") );
     writeNodeField( "moduleName", *import.moduleName, import.alias.has_value() || !import.importedSymbols.empty() );
     if ( import.alias.has_value() ) 
@@ -510,7 +510,7 @@ void ASTPrinter::visit( const ImportedSymbol& importSymbol )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", importSymbol.id );
+    writeField( "id", importSymbol.id.value );
     writeField( "type", std::string_view( "Import Symbol" ) );
     writeNodeField( "name", *importSymbol.name, importSymbol.alias.has_value() );
     if ( importSymbol.alias.has_value() )
@@ -525,7 +525,7 @@ void ASTPrinter::visit( const QualifiedName& qualName )
 {
     startBlock();
     increaseIndent();
-    writeField( "id", qualName.id );
+    writeField( "id", qualName.id.value );
     writeField( "type", std::string_view( "Qualified Name" ) );
     writeField( "name", qualName.name, false );
     decreaseIndent();

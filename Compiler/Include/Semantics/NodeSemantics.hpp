@@ -12,9 +12,9 @@
 
 struct NodeSemanticInfo
 {
-    SymbolId symbol = InvalidSymbolId;
-    TypeId   type   = InvalidTypeId;
-    ScopeId  scope  = InvalidScopeId;
+    SymbolId symbol{};
+    TypeId   type{};
+    ScopeId  scope{};
 };
 
 /* === Node Semantics === */

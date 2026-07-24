@@ -74,7 +74,7 @@ inline const std::string toString( const TypeKind kind )
 
 struct Type
 {
-    TypeId id;
+    TypeId id{};
     TypeKind kind;
     TypeState state;
     TypeOrigin origin;
@@ -83,8 +83,7 @@ struct Type
     void setId( TypeId typeId ) { id = typeId; }
 
     Type( TypeKind kind, TypeState state, TypeOrigin origin, TypeData data ) 
-        : id( InvalidTypeId ), 
-        kind( kind ),
+        : kind( kind ),
         state( state ),
         origin( origin ),
         data( data ) {};

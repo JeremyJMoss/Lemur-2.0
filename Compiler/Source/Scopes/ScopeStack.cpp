@@ -7,13 +7,13 @@
 
 void ScopeStack::enter( ScopeId scope )
 {
-    m_stack.push_back(scope);
+    m_stack.push_back( scope );
 }
 
 void ScopeStack::leave()
 {
     if ( m_stack.empty() ) {
-        throw InternalCompilerError("Tried to leave Top Level Scope.\nPlease report this bug.");
+        throw InternalCompilerError( "Tried to leave Top Level Scope.\nPlease report this bug." );
     }
 
     m_stack.pop_back();
@@ -22,7 +22,7 @@ void ScopeStack::leave()
 ScopeId ScopeStack::current() const 
 {
     if ( m_stack.empty() ) {
-        throw InternalCompilerError( "Current scope is invalid.\nPlease report this bug.");
+        throw InternalCompilerError( "Current scope is invalid.\nPlease report this bug." );
     }
 
     return m_stack.back();

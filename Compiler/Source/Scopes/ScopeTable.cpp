@@ -4,84 +4,58 @@
 
 /* === Scope Table Methods === */
 
-ScopeId ScopeTable::add(
-    ScopeId parentId,
-    ScopeOwnerKind kind
-) {
-    ScopeId id = m_scopes.size();
+ScopeId ScopeTable::add( ScopeId parentId, ScopeOwnerKind kind ) 
+{
+    ScopeId id{ m_scopes.size() };
 
     m_scopes.emplace_back( id, parentId, kind );
 
     return id;
 }
 
-Scope* ScopeTable::get( ScopeId scopeId ) {
-    if ( m_scopes.size() < scopeId )
-    {
-        throw InternalCompilerError( "Attempted to get scope outside of scope table bounds.\nPlease report this bug." );
-    }
+Scope* ScopeTable::get( ScopeId scopeId ) 
+{
+    if ( scopeId.value >= m_scopes.size() ) throw InternalCompilerError( "Attempted to get scope outside of scope table bounds.\nPlease report this bug." );
 
-    return &m_scopes.at( scopeId ); 
+    return &m_scopes.at( scopeId.value ); 
 }
 
-std::expected<void, SymbolId> ScopeTable::declare( ScopeId scopeId, std::string_view name, SymbolId symbolId )
+bool ScopeTable::insert( ScopeId scopeId, std::string_view name, NameBinding nameBinding )
 {
-    SymbolId existing = lookupLocal(scopeId, name);
-
-    if ( existing != InvalidSymbolId )
-    {
-        return std::unexpected( existing );
-    }
-
     Scope* scope = get( scopeId );
 
-    if (!scope->insert( name, symbolId ))
-    {
-        throw InternalCompilerError("Attempt to insert symbol into scope failed.\n Please report this bug.");
-    }
+    if (!scope->insert( name, nameBinding )) throw InternalCompilerError( "Attempt to insert symbol into scope failed.\n Please report this bug." );
 
     return {};
 }
 
-SymbolId ScopeTable::lookup( ScopeId scopeId, std::string_view name )
+std::optional<NameBinding> ScopeTable::lookup( ScopeId scopeId, std::string_view name )
 {
-    if ( scopeId == InvalidScopeId )
-    {
-        throw InternalCompilerError( "Lookup function called with InvalidScopeId.\nPlease report this bug.");
-    }
+    if ( !scopeId.valid() ) throw InternalCompilerError( "Lookup function called with InvalidScopeId.\nPlease report this bug." );
 
-    while ( scopeId != InvalidScopeId )
+    while ( !scopeId.valid() )
     {
         Scope* scope = get( scopeId );
 
         auto it = scope->m_declarations.find( std::string(name) );
 
-        if ( it != scope->m_declarations.end())
-        {
-            return it->second;
-        }
+        if ( it != scope->m_declarations.end()) return it->second;
 
         scopeId = scope->m_parentId;
     }
 
-    return InvalidSymbolId;
+    return std::nullopt;
 }
 
-SymbolId ScopeTable::lookupLocal( ScopeId scopeId, std::string_view name )
+std::optional<NameBinding> ScopeTable::lookupLocal( ScopeId scopeId, std::string_view name )
 {
-    if ( scopeId == InvalidScopeId )
-    {
-        throw InternalCompilerError( "Lookup function called with InvalidScopeId.\nPlease report this bug.");
-    }
+    if ( !scopeId.valid() ) throw InternalCompilerError( "Lookup function called with InvalidScopeId.\nPlease report this bug.");
 
     Scope* scope = get( scopeId );
 
     auto it = scope->m_declarations.find( std::string(name) );
 
-    if ( it != scope->m_declarations.end() )
-    {
-        return it->second;
-    }
+    if ( it != scope->m_declarations.end() ) return it->second;
 
-    return InvalidSymbolId;
+    return std::nullopt;
 }
