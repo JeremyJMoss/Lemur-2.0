@@ -16,7 +16,7 @@ namespace chrono = std::chrono;
 #include "Parser/Parser.hpp"
 #include "Errors/Errors.hpp"
 #include "Logging/Logger.hpp"
-#include "AST/ASTPrinter.hpp"
+#include "Utils/ASTPrinter.hpp"
 #include "Modules/ModuleHeaderScanner.hpp"
 #include "Config/CompilerConfig.hpp"
 #include "Utils/Output.hpp"

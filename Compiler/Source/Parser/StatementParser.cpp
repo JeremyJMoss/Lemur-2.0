@@ -3,7 +3,7 @@
 #include "Logging/Logger.hpp"
 #include "Errors/Errors.hpp"
 #include "Core/CompilerContext.hpp"
-#include "AST/ASTPrinter.hpp"
+#include "Utils/ASTPrinter.hpp"
 #include "AST/FunctionDeclaration.hpp"
 #include "AST/Block.hpp"
 #include "AST/BlockStatement.hpp"

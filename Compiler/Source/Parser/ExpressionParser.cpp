@@ -25,7 +25,7 @@
 #include "AST/Identifier.hpp"
 #include "AST/Literal.hpp"
 #include "AST/Assignment.hpp"
-#include "AST/ASTPrinter.hpp"
+#include "Utils/ASTPrinter.hpp"
 #include "Logging/Logger.hpp"
 
 /* === Helper Methods === */

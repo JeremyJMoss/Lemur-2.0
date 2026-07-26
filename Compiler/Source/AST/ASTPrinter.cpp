@@ -1,6 +1,6 @@
 /* === Main Import === */
 
-#include "AST/ASTPrinter.hpp"
+#include "Utils/ASTPrinter.hpp"
 
 /* === Dependencies === */
 
