@@ -16,11 +16,13 @@ namespace chrono = std::chrono;
 #include "Parser/Parser.hpp"
 #include "Errors/Errors.hpp"
 #include "Logging/Logger.hpp"
-#include "Utils/ASTPrinter.hpp"
+#include "Debug/ASTJsonWriter.hpp"
 #include "Modules/ModuleHeaderScanner.hpp"
 #include "Config/CompilerConfig.hpp"
 #include "Utils/Output.hpp"
 #include "Semantics/DeclarationPass.hpp"
+#include "Debug/TypeTableJsonWriter.hpp"
+#include "Debug/SymbolTableJsonWriter.hpp"
 
 /* === Driver Methods === */
 
@@ -105,7 +107,7 @@ void Driver::compile()
         return;
     }
 
-    ModuleId entryModuleId = maybeModule->id;
+    ModuleId entryModuleId = maybeModule->header.id;
 
     auto reachableModules = m_ctx.modules().resolveImports( entryModuleId );
 
@@ -132,6 +134,8 @@ void Driver::compile()
     // unreachable modules from the enrty point
 
     std::vector<ModuleId> parseOrder = m_ctx.modules().buildParseOrder( entryModuleId );
+
+    JsonWriter writer{};
     
     for ( ModuleId moduleId : parseOrder )
     {
@@ -184,10 +188,9 @@ void Driver::compile()
             return;
         }
 
-        if ( m_config.emitAST ) 
+        if ( m_config.dumpAST ) 
         {
-            ASTPrinter astPrinter = ASTPrinter();
-            astPrinter.print( compUnit->ast().getStatements(), m_config.outputPath, compUnit->getModuleName() );
+            ASTJsonWriter{writer}.write( compUnit->ast().getStatements(), m_config.outputPath, compUnit->getModuleName() );
         }
 
         Logger::debug( 
@@ -214,6 +217,16 @@ void Driver::compile()
 
         // free all memory within Compilation Unit
         compUnit->freeArena();
+    }
+
+    if ( m_config.dumpTypes )
+    {
+        TypeTableJsonWriter{writer}.write( m_ctx, m_config.outputPath );
+    }
+
+    if ( m_config.dumpSymbols )
+    {
+        SymbolTableJsonWriter{writer}.write( m_ctx, m_config.outputPath );
     }
 
     m_ctx.freeArena();

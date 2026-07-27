@@ -1,5 +1,12 @@
+/* === Main Import === */
+
 #include "Utils/Output.hpp"
+
+/* === Dependencies === */
+
 #include <iostream>
+
+/* === Output Methods === */
 
 void Output::success( std::string_view msg, std::size_t indent ) 
 {

@@ -1,17 +1,24 @@
+/* === Main Import === */
+
 #include "Utils/TomlConfigHandler.hpp"
 
-#include "Config/CompilerConfig.hpp"
-#include "Errors/Errors.hpp"
-#include "Tokens/Tokenizer.hpp"
-#include <toml++/toml.hpp>
+/* === Dependencies === */
+
 #include <filesystem>
 #include <expected>
 
 namespace fs = std::filesystem;
 
+/* === Imports === */
+
+#include "Config/CompilerConfig.hpp"
+#include "Errors/Errors.hpp"
+#include "Tokens/Tokenizer.hpp"
+#include <toml++/toml.hpp>
+
 std::expected<fs::path, Diagnostic> TomlConfigHandler::findProjectRoot( fs::path start )
 {
-    while (true)
+    while ( true )
     {
         if ( fs::exists( start / "lemur.toml" ) )
             return start;
@@ -41,16 +48,16 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
             return std::unexpected( maybeProjectRoot.error() );
         }
 
-        const fs::path projectRoot = std::move(maybeProjectRoot.value());
+        const fs::path projectRoot = std::move( maybeProjectRoot.value() );
 
         fs::path tomlFilePath = fs::absolute( projectRoot / "lemur.toml" );
 
         toml::table tbl = toml::parse_file( tomlFilePath.string() );
 
-        if (auto build = tbl["build"].as_table())
+        if ( auto build = tbl["build"].as_table() )
         {
-            if (auto src = build->get_as<std::string>("source")) {
-                config.sourcePath = fs::absolute(projectRoot / src->get());
+            if ( auto src = build->get_as<std::string>( "source" ) ) {
+                config.sourcePath = fs::absolute( projectRoot / src->get() );
             } else {
                 return std::unexpected(
                     Diagnostic(
@@ -61,13 +68,13 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
                 );
             }
 
-            if (auto entry = build->get_as<std::string>("entry")) {
+            if ( auto entry = build->get_as<std::string>( "entry" ) ) {
                 std::string entryModuleString = entry->get();
                 
                 auto maybeParsedModuleName = Tokenizer::parseModuleName( entryModuleString );
 
-                if (!maybeParsedModuleName) {
-                    return std::unexpected(maybeParsedModuleName.error());
+                if ( !maybeParsedModuleName ) {
+                    return std::unexpected( maybeParsedModuleName.error() );
                 }
 
                 config.entryModule = maybeParsedModuleName.value();
@@ -81,8 +88,8 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
                 );
             }
 
-            if (auto output = build->get_as<std::string>("output")) {
-                config.outputPath = fs::absolute(projectRoot / output->get());
+            if ( auto output = build->get_as<std::string>( "output" ) ) {
+                config.outputPath = fs::absolute( projectRoot / output->get() );
             } else {
                 return std::unexpected(
                     Diagnostic(
@@ -93,12 +100,34 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
                 );
             }
 
-            if (auto emitAst = build->get_as<bool>("emitAst")) {
-                config.emitAST = emitAst->get();
-            }
-            
-            if (auto optimize = build->get_as<bool>("optimize")) {
+            if ( auto optimize = build->get_as<bool>( "optimize" ) ) {
                 config.optimize = optimize->get();
+            }
+        }
+        if ( auto debug = tbl["debug"].as_table() ) {
+
+            if ( auto dumpAST = debug->get_as<bool>( "dump_ast" ) ) {
+                config.dumpAST = dumpAST->get();
+            }
+
+            if ( auto dumpScopes = debug->get_as<bool>( "dump_scopes" ) ) {
+                config.dumpScopes = dumpScopes->get();
+            }
+
+            if ( auto dumpSymbols = debug->get_as<bool>( "dump_symbols" ) ) {
+                config.dumpSymbols = dumpSymbols->get();
+            }
+
+            if ( auto dumpTypes = debug->get_as<bool>( "dump_types" ) ) {
+                config.dumpTypes = dumpTypes->get();
+            }
+
+            if ( auto dumpOverloads = debug->get_as<bool>( "dump_overloads" ) ) {
+                config.dumpOverloads = dumpOverloads->get();
+            }
+
+            if ( auto dumpSemantics = debug->get_as<bool>( "dump_semantics" ) ) {
+                config.dumpNodeSemantics = dumpSemantics->get();
             }
 
         }
@@ -111,9 +140,9 @@ std::expected<CompilerConfig, Diagnostic> TomlConfigHandler::parseOrFail()
     return config;
 }
 
-bool TomlConfigHandler::createTomlFile(std::string_view projectName) 
+bool TomlConfigHandler::createTomlFile( std::string_view projectName ) 
 {
-    fs::path tomlFilePath = fs::absolute( fs::current_path() / fs::path("lemur.toml" ));
+    fs::path tomlFilePath = fs::absolute( fs::current_path() / fs::path( "lemur.toml" ) );
 
     try
     {
@@ -122,31 +151,31 @@ bool TomlConfigHandler::createTomlFile(std::string_view projectName)
         // Build section
         toml::table build;
 
-        build.insert("source", "src");
-        build.insert("output", "build");
-        build.insert("entry", "app");
+        build.insert( "source", "src" );
+        build.insert( "output", "build" );
+        build.insert( "entry", "app" );
 
-        root.insert("build", build);
+        root.insert( "build", build );
 
         toml::table project;
 
-        project.insert("name", projectName);
-        project.insert("version", "1.0.0");
-        project.insert("language", "lemur");
+        project.insert( "name", projectName );
+        project.insert( "version", "1.0.0" );
+        project.insert( "language", "lemur" );
 
-        root.insert("project", project);
+        root.insert( "project", project );
 
 
         // Ensure directory exists
-        if (tomlFilePath.has_parent_path())
+        if ( tomlFilePath.has_parent_path() )
         {
-            fs::create_directories(tomlFilePath.parent_path());
+            fs::create_directories( tomlFilePath.parent_path() );
         }
 
         // Write to file
-        std::ofstream file(tomlFilePath);
+        std::ofstream file( tomlFilePath );
 
-        if (!file.is_open())
+        if ( !file.is_open() )
             return false;
 
         file << toml::toml_formatter{ root };

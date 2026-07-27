@@ -25,7 +25,7 @@
 #include "AST/Identifier.hpp"
 #include "AST/Literal.hpp"
 #include "AST/Assignment.hpp"
-#include "Utils/ASTPrinter.hpp"
+#include "Debug/ASTJsonWriter.hpp"
 #include "Logging/Logger.hpp"
 
 /* === Helper Methods === */
@@ -334,7 +334,7 @@ std::expected<Expression*, Diagnostic> ExpressionParser::parsePrimaryLiteral()
 
         const Token& idToken = m_tokenStream.consume();
 
-        auto id = m_compUnit.allocate<Identifier>( idToken.getValue() );
+        auto id = m_compUnit.allocate<Identifier>( std::string( idToken.getValue() ) );
         id->location = SourceRange::getLocation( idToken );
 
         return id;
@@ -768,7 +768,7 @@ std::expected<FunctionCall*, Diagnostic> ExpressionParser::parseFunctionCall()
 
     const Token& idToken = m_tokenStream.consume();
 
-    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+    auto identifier = m_compUnit.allocate<Identifier>( std::string( idToken.getValue() ) );
     identifier->location = SourceRange::getLocation( idToken );
 
     auto maybeFunctionCallParams = parseFunctionCallArgs();

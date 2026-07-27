@@ -19,7 +19,6 @@ struct Symbol
     
     std::string name;
     const SymbolKind kind;
-    TypeId typeId;
 
     ScopeId scope{};
 
@@ -32,10 +31,24 @@ struct Symbol
     protected:
         Symbol( 
             std::string name,
+            SymbolKind kind
+        ) : name( std::move( name ) ), 
+            kind( kind ) {}
+};
+
+struct TypedSymbol : Symbol
+{
+    TypeId typeId;
+
+    protected:
+        TypedSymbol(
+            std::string name,
             SymbolKind kind,
             TypeId typeId
-        ) : name( std::move( name ) ), 
-            kind( kind ),
+        ) : Symbol(
+                std::move( name ),
+                kind
+            ),
             typeId( typeId ) {}
 };
 
@@ -46,7 +59,19 @@ enum class VariableStorage : uint8_t
     Temporary,
 };
 
-struct VariableSymbol : Symbol {
+inline std::string toString( const VariableStorage storage )
+{
+    switch( storage )
+    {
+        case VariableStorage::Local:     return "Local";
+        case VariableStorage::Parameter: return "Parameter";
+        case VariableStorage::Temporary: return "Temporary";
+        default:                         return "Unknown";
+    }
+}
+
+struct VariableSymbol : TypedSymbol 
+{
     VariableStorage storage;
     bool isMutable;
 
@@ -55,33 +80,64 @@ struct VariableSymbol : Symbol {
         TypeId typeId,
         VariableStorage storage,
         bool isMutable = false
-    ) : Symbol( 
+    ) : TypedSymbol( 
             std::move( name ), 
-            SymbolKind::Variable, 
-            typeId 
+            SymbolKind::Variable,
+            typeId
         ),
         storage( storage ),
         isMutable( isMutable ) {}
 };
 
-struct FunctionSymbol : Symbol {
+struct FunctionSymbol : TypedSymbol 
+{
     FunctionSymbol(
         std::string name,
         TypeId typeId
-    ) : Symbol( 
-            std::move(name), 
-            SymbolKind::Function, 
-            typeId 
+    ) : TypedSymbol( 
+            std::move( name ), 
+            SymbolKind::Function,
+            typeId
         ) {}
 };
 
-struct TypeSymbol : Symbol {
+struct TypeSymbol : TypedSymbol 
+{
     TypeSymbol(
         std::string name,
         TypeId typeId
-    ) : Symbol( 
+    ) : TypedSymbol( 
             std::move( name ), 
-            SymbolKind::Type, 
-            typeId 
+            SymbolKind::Type,
+            typeId
         ) {}
+};
+
+struct ImportSymbol : Symbol
+{
+    SymbolId target;
+
+    ImportSymbol(
+        std::string name,
+        SymbolId target
+    )
+    : Symbol (
+            std::move( name ),
+            SymbolKind::Import
+        ),
+        target( target ) {}
+};
+
+struct ModuleSymbol : Symbol
+{
+    ModuleId target;
+
+    ModuleSymbol(
+        std::string name,
+        ModuleId target
+    ) : Symbol (
+        std::move( name ),
+        SymbolKind::Module
+    ),
+    target( target ) {}
 };

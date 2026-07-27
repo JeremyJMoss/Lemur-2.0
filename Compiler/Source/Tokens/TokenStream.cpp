@@ -1,5 +1,12 @@
+/* === Main Import === */
+
 #include "Tokens/TokenStream.hpp"
+
+/* === Import === */
+
 #include "Logging/Logger.hpp"
+
+/* === Token Stream Methods === */
 
 /**
  * Attempts to check the next token in the token list

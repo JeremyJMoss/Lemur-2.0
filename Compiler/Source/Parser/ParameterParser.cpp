@@ -98,7 +98,7 @@ std::expected<Parameter*, Diagnostic> ParameterParser::parseParameter()
 
     const Token& idToken = m_tokenStream.consume();
 
-    Identifier* identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+    Identifier* identifier = m_compUnit.allocate<Identifier>( std::string( idToken.getValue() ) );
 
     identifier->location = SourceRange::getLocation( idToken );
 

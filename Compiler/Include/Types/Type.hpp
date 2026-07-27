@@ -14,29 +14,19 @@
 
 /* === Enum Declarations === */
 
-enum class TypeKind 
+enum class TypeKind : uint8_t
 {
     Unknown,
     Function,
     Primitive,
     Ownership,
     Array,
+    Enum,
+    Class,
+    Trait,
+    Data,
     Null,
     Error
-};
-
-enum class TypeState 
-{
-    Resolved,
-    Inferred,
-    Unresolved
-};
-
-enum class TypeOrigin 
-{
-    Builtin,
-    UserDefined,
-    Derived
 };
 
 /* === Forward Declarations === */
@@ -64,6 +54,10 @@ inline const std::string toString( const TypeKind kind )
         case TypeKind::Ownership:     return "Ownership";
         case TypeKind::Array:         return "Array";
         case TypeKind::Function:      return "Function";
+        case TypeKind::Enum:          return "Enum";
+        case TypeKind::Class:         return "Class";
+        case TypeKind::Trait:         return "Trait";
+        case TypeKind::Data:          return "Data";
         case TypeKind::Null:          return "Null";
         case TypeKind::Error:         return "Error";
         default:                      return "Unknown";
@@ -76,16 +70,12 @@ struct Type
 {
     TypeId id{};
     TypeKind kind;
-    TypeState state;
-    TypeOrigin origin;
     TypeData data;
 
     void setId( TypeId typeId ) { id = typeId; }
 
-    Type( TypeKind kind, TypeState state, TypeOrigin origin, TypeData data ) 
+    Type( TypeKind kind, TypeData data ) 
         : kind( kind ),
-        state( state ),
-        origin( origin ),
         data( data ) {};
 
     virtual ~Type() = default;

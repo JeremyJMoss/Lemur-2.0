@@ -9,10 +9,10 @@
 
 struct OwnershipInfo
 {
-    const TypeId m_inner;
-    const OwnershipKind m_ownership;
+    const TypeId inner;
+    const OwnershipKind ownership;
 
     OwnershipInfo( TypeId inner, OwnershipKind owner ) 
-        : m_inner( inner ), 
-          m_ownership( owner ) {}
+        : inner( inner ), 
+          ownership( owner ) {}
 };

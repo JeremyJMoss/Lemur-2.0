@@ -19,7 +19,12 @@ namespace fs = std::filesystem;
 struct BuildCLIConfig {
     std::optional<bool> optimize;
     std::optional<bool> loggingEnabled;
-    std::optional<bool> emitAST;
+    std::optional<bool> dumpAST;
+    std::optional<bool> dumpScopes;
+    std::optional<bool> dumpSymbols;
+    std::optional<bool> dumpTypes;
+    std::optional<bool> dumpOverloads;
+    std::optional<bool> dumpNodeSemantics;
     std::optional<fs::path> sourcePath;
     std::optional<fs::path> outputPath;
     std::optional<LogLevel> logLevel;

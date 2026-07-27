@@ -3,6 +3,7 @@
 /* === Dependencies === */
 
 #include <vector>
+#include <span>
 
 /* === Imports === */
 
@@ -18,6 +19,8 @@ class TypeTable {
         Type& get( TypeId id );
 
         const Type& get( TypeId id ) const;
+
+        std::span<const Type* const> getAll() const;
     private:
         std::vector<Type*> types;
 };

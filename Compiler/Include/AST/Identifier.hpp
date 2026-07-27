@@ -12,10 +12,10 @@
 
 struct Identifier : Expression 
 {
-    std::string_view name;
+    std::string name;
     
-    Identifier( std::string_view value ) 
-        : name( value ) {}
+    Identifier( std::string value ) 
+        : name( std::move( value ) ) {}
     
     void accept( ASTVisitor& v ) const override 
     { 

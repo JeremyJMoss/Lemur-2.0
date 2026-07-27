@@ -1,6 +1,12 @@
+/* === Main Import === */
+
 #include "Tokens/Token.hpp"
 
+/* === Dependencies === */
+
 #include <algorithm>
+
+/* === Token Methods === */
 
 bool Token::checkMatches( TokenKind inputType, TokenSymbol inputValue ) const 
 { 

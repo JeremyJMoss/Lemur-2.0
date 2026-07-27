@@ -1,6 +1,5 @@
 #include "SourceControl/SourceManager.hpp"
 #include "Logging/Logger.hpp"
-#include "Modules/ModuleHeader.hpp"
 #include <array>
 #include <string>
 #include <filesystem>

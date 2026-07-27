@@ -24,3 +24,7 @@ const Type& TypeTable::get( TypeId id ) const
 {
     return *types[id.value];
 }
+
+std::span<const Type* const> TypeTable::getAll() const {
+    return types;
+}

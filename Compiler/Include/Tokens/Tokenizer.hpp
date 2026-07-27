@@ -16,7 +16,6 @@
 #include "SourceControl/SourceLocation.hpp"
 #include "SourceControl/SourceManager.hpp"
 #include "Errors/Errors.hpp"
-#include "Modules/ModuleHeader.hpp"
 #include "Core/Ids.hpp"
 
 /* === Forward Declarations === */

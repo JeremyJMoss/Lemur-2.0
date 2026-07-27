@@ -18,12 +18,12 @@
 
 /* === Module Table Methods === */
 
-ModuleHeader& ModuleTable::get( ModuleId id ) 
+ModuleInfo& ModuleTable::get( ModuleId id ) 
 { 
     return m_modules[id.value]; 
 }
 
-const ModuleHeader& ModuleTable::get( ModuleId id ) const 
+const ModuleInfo& ModuleTable::get( ModuleId id ) const 
 { 
     return m_modules[id.value]; 
 }
@@ -37,16 +37,17 @@ bool ModuleTable::add( FileId fileId, std::string moduleName, std::vector<Import
 {
     ModuleId id{ m_modules.size() };
 
+
     auto [it, inserted] = m_lookup.emplace( moduleName, id );
 
     if ( !inserted ) return false;
 
-    m_modules.emplace_back( id, fileId, std::move( moduleName ), std::move( imports ) );
+    m_modules.emplace_back( ModuleHeader(id, fileId, std::move( moduleName ), std::move( imports )) );
 
     return true;
 }
 
-const ModuleHeader* ModuleTable::find( std::string_view name ) const 
+const ModuleInfo* ModuleTable::find( std::string_view name ) const 
 {
     auto it = m_lookup.find( std::string( name ) );
 
@@ -73,11 +74,11 @@ std::expected<std::unordered_set<ModuleId>, Diagnostic> ModuleTable::resolveImpo
         ModuleId current = pending.front();
         pending.pop();
 
-        ModuleHeader& module = this->get( current );
+        ModuleInfo& module = this->get( current );
 
-        for ( ImportDirective& import : module.imports )
+        for ( ImportDirective& import : module.header.imports )
         {
-            const ModuleHeader* imported = this->find( import.moduleName );
+            const ModuleInfo* imported = this->find( import.moduleName );
 
             if ( imported == nullptr )
             {
@@ -86,7 +87,7 @@ std::expected<std::unordered_set<ModuleId>, Diagnostic> ModuleTable::resolveImpo
                         std::format(
                             "Importing module '{}' into module '{}' failed. Unable to resolve module '{}'",
                             import.moduleName,
-                            module.name,
+                            module.header.name,
                             import.moduleName
                         ),
                         ErrorCategory::Linking,
@@ -95,11 +96,11 @@ std::expected<std::unordered_set<ModuleId>, Diagnostic> ModuleTable::resolveImpo
                 );
             }
 
-            import.moduleId = imported->id;
+            import.moduleId = imported->header.id;
 
-            if ( visited.insert(imported->id).second )
+            if ( visited.insert(imported->header.id).second )
             {
-                pending.push( imported->id );
+                pending.push( imported->header.id );
             }
         }
     }
@@ -112,9 +113,9 @@ std::vector<ModuleId> ModuleTable::buildParseOrder( ModuleId entry )
     std::vector<ModuleId> order;
     std::unordered_set<ModuleId> visited;
 
-    ModuleHeader entryModuleHeader = this->get( entry );
+    ModuleInfo entryModule = this->get( entry );
 
-    for( ImportDirective import : entryModuleHeader.imports )
+    for( ImportDirective import : entryModule.header.imports )
     {
         if( !import.moduleId.has_value() ) {
             throw InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
@@ -132,9 +133,9 @@ void ModuleTable::buildParseOrder( ModuleId id, std::unordered_set<ModuleId>& vi
 {
     if ( !visited.insert(id).second ) return;
 
-    ModuleHeader& module = get( id );
+    ModuleInfo& module = get( id );
 
-    for ( ImportDirective& import : module.imports ) {
+    for ( ImportDirective& import : module.header.imports ) {
         if( !import.moduleId.has_value() ) {
             throw InternalCompilerError( "Unexpected module id missing.\nPlease report this bug.");
         }

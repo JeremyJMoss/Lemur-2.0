@@ -28,6 +28,10 @@
 #include "AST/Unary.hpp"
 #include "AST/FunctionCall.hpp"
 #include "AST/Range.hpp"
+#include "AST/Import.hpp"
+#include "AST/QualifiedName.hpp"
+#include "Modules/ModuleInfo.hpp"
+#include "AST/ImportedSymbol.hpp"
 
 /* === Declaration Pass Methods === */
 
@@ -48,7 +52,7 @@ void DeclarationPass::run( CompilationUnit& compUnit ) {
     m_compUnit->context().leaveScope();
 }
 
-void DeclarationPass::visit( const Literal& lit )
+void DeclarationPass::visit( const Literal& )
 {
     // No need to do anything on this pass
 }
@@ -62,7 +66,7 @@ void DeclarationPass::visit( const Assignment& assign )
     assign.value->accept( *this );
 }
 
-void DeclarationPass::visit( const Identifier& id )
+void DeclarationPass::visit( const Identifier& )
 {
     // No need to do anything on this pass
 }
@@ -103,12 +107,12 @@ void DeclarationPass::visit( const BlockStatement& blockStmt )
     m_compUnit->context().leaveScope();
 }
 
-void DeclarationPass::visit( const Break& breakStmt )
+void DeclarationPass::visit( const Break& )
 {
     // No need to do anything this pass
 }
 
-void DeclarationPass::visit( const Continue& contineuStmt )
+void DeclarationPass::visit( const Continue& )
 {
     // No need to do anything this pass
 }
@@ -282,7 +286,7 @@ void DeclarationPass::visit( const FunctionCall& funCall )
     }
 }
 
-void DeclarationPass::visit( const ParsedType& parsedType )
+void DeclarationPass::visit( const ParsedType& )
 {
     // No need to do anything this pass
 }
@@ -310,20 +314,54 @@ void DeclarationPass::visit( const Parameter& param )
 
 void DeclarationPass::visit( const ModuleDeclaration& )
 {
-    // No need to do anything this pass
+    // No need to do anything ever
 }
 
-void DeclarationPass::visit( const ImportedSymbol& )
+void DeclarationPass::visit( const ImportedSymbol& importSym )
 {
-    // No need to do anything this pass
+    CompilerContext& ctx = m_compUnit->context();
+
+    if (!importSym.name || importSym.name->name.empty() ) throw InternalCompilerError( "Missing import symbol name during semantic analysis.\nPlease report this bug." );
+
+    std::string symbolAlias = importSym.alias.has_value() ? importSym.alias.value()->name : importSym.name->name;
+
 }
 
-void DeclarationPass::visit( const Import& )
+void DeclarationPass::visit( const Import& importStmt )
 {
-    // No need to do anything this pass
+    CompilerContext& ctx = m_compUnit->context();
+
+    if (!importStmt.moduleName ||  importStmt.moduleName->name.empty() ) throw InternalCompilerError( "Missing module name for import statement during semantic analysis.\nPlease report this bug." );
+
+    if ( importStmt.importedSymbols.empty() )
+    {
+        std::string moduleAlias = importStmt.alias.has_value() ? importStmt.alias.value()->name : importStmt.moduleName->name;
+
+        const ModuleInfo* moduleInfo = ctx.modules().find( std::string_view( importStmt.moduleName->name ) );
+
+        // Create Module Symbol
+        ModuleSymbol* moduleSymbol = ctx.allocate<ModuleSymbol>( moduleAlias, moduleInfo->header.id );
+
+        // Add symbol to symbol table
+        SymbolId symbolId = ctx.symbols().add( moduleSymbol );
+        
+        // Add relationship between node and symbol
+        ctx.nodeSemantics().bindSymbol( importStmt.id, symbolId );
+
+        auto declared = ctx.declareInScope( ctx.currentScope(), moduleAlias, symbolId );
+
+        if ( !declared ) ctx.errors().report( declared.error() );
+    }
+    else
+    {
+        for ( auto& importSym : importStmt.importedSymbols )
+        {
+            importSym->accept( *this );
+        }
+    }
 }
 
-void DeclarationPass::visit( const QualifiedName& qualName )
+void DeclarationPass::visit( const QualifiedName& )
 {
     // No need to do anything this pass
 }

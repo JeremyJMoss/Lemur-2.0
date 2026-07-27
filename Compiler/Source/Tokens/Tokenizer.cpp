@@ -1,10 +1,20 @@
+/* === Main Import === */
+
 #include "Tokens/Tokenizer.hpp"
-#include "Tokens/Token.hpp"
-#include "Driver/CompilationUnit.hpp"
-#include "Core/CompilerContext.hpp"
+
+/* === Dependencies === */
+
 #include <cctype>
 #include <expected>
 #include <iostream>
+
+/* === Imports === */
+
+#include "Tokens/Token.hpp"
+#include "Driver/CompilationUnit.hpp"
+#include "Core/CompilerContext.hpp"
+
+/* === Tokenizer Methods === */
 
 bool Tokenizer::isWhitespaceChar( char c ) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f';

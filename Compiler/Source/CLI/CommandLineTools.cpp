@@ -102,8 +102,33 @@ std::expected<CLIConfig, CLIStatus> CommandLineTools::parse( int argc, char* arg
                     continue;
                 }
 
-                if ( arg == "--emit-ast" ) {
-                    buildConfig.emitAST = true;
+                if ( arg == "--dump-ast" ) {
+                    buildConfig.dumpAST = true;
+                    continue;
+                }
+
+                if ( arg == "--dump-scopes" ) {
+                    buildConfig.dumpScopes = true;
+                    continue;
+                }
+
+                if ( arg == "--dump-symbols" ) {
+                    buildConfig.dumpSymbols = true;
+                    continue;
+                }
+
+                if ( arg == "--dump-types" ) {
+                    buildConfig.dumpTypes = true;
+                    continue;
+                }
+
+                if ( arg == "--dump-overloads" ) {
+                    buildConfig.dumpOverloads = true;
+                    continue;
+                }
+
+                if ( arg == "--dump-semantics" ) {
+                    buildConfig.dumpNodeSemantics = true;
                     continue;
                 }
 

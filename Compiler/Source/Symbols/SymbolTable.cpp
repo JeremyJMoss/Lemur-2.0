@@ -4,7 +4,8 @@
 
 /* === Symbol Table Methods === */
 
-SymbolId SymbolTable::add( Symbol* symbol ) {
+SymbolId SymbolTable::add( Symbol* symbol ) 
+{
     SymbolId id{ symbols.size() };
 
     symbol->setId( id );
@@ -14,11 +15,18 @@ SymbolId SymbolTable::add( Symbol* symbol ) {
     return id;
 }
 
-Symbol& SymbolTable::get( SymbolId id ) {
+Symbol& SymbolTable::get( SymbolId id ) 
+{
     return *symbols[id.value];
 }
 
-const Symbol& SymbolTable::get( SymbolId id ) const {
+const Symbol& SymbolTable::get( SymbolId id ) const 
+{
     return *symbols[id.value];
+}
+
+std::span<const Symbol* const> SymbolTable::getAll() const 
+{
+    return symbols;
 }
 

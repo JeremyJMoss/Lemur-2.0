@@ -45,7 +45,7 @@ void BuiltInRegistry::registerPrimitive(
     PrimitiveType primType
 )
 {
-    Type* type = ctx.allocate<Type>(TypeKind::Primitive, TypeState::Resolved, TypeOrigin::Builtin, PrimitiveInfo{primType});
+    Type* type = ctx.allocate<Type>(TypeKind::Primitive, PrimitiveInfo{primType});
     
     TypeId typeId = ctx.types().add( type );
 

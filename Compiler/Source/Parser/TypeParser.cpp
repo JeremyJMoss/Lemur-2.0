@@ -181,7 +181,7 @@ std::expected<ParsedType*, Diagnostic> TypeParser::parseNamedType()
 {
     const Token& idToken = m_tokenStream.consume();
 
-    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+    auto identifier = m_compUnit.allocate<Identifier>( std::string( idToken.getValue() ) );
 
     identifier->location = SourceRange::getLocation(idToken);
 

@@ -11,7 +11,9 @@ enum class SymbolKind : uint8_t
 {
     Variable,
     Function,
-    Type
+    Type,
+    Import,
+    Module
 };
 
 std::string_view toString( const SymbolKind& kind );

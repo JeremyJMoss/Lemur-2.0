@@ -24,3 +24,23 @@ enum class PrimitiveType : uint8_t
     Bool,
     Char
 };
+
+inline std::string toString ( const PrimitiveType prim )
+{
+    switch( prim )
+    {
+        case PrimitiveType::Int:     return "int";
+        case PrimitiveType::Int32:   return "int32";
+        case PrimitiveType::Int16:   return "int16";
+        case PrimitiveType::Int8:    return "int8";
+        case PrimitiveType::UInt:    return "uint";
+        case PrimitiveType::UInt32:  return "uint32";
+        case PrimitiveType::UInt16:  return "uint16";
+        case PrimitiveType::UInt8:   return "uint8";
+        case PrimitiveType::Float:   return "float";
+        case PrimitiveType::Float32: return "float32";
+        case PrimitiveType::Bool:    return "bool";
+        case PrimitiveType::Char:    return "char";
+        default:                     return "Unknown";
+    }
+}

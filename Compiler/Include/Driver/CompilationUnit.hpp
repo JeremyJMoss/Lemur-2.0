@@ -13,7 +13,7 @@
 #include "Semantics/NodeSemantics.hpp"
 #include "Tokens/TokenTable.hpp"
 #include "DataStructures/Arena.hpp"
-#include "Modules/ModuleHeader.hpp"
+#include "Modules/ModuleInfo.hpp"
 #include "Core/Ids.hpp"
 #include "AST/ASTNode.hpp"
 
@@ -26,16 +26,16 @@ class CompilerContext;
 
 class CompilationUnit {
     public:
-        CompilationUnit( const ModuleHeader& moduleHeader, CompilerContext& ctx ) 
-            : m_moduleHeader( moduleHeader ), m_ctx( ctx ) {}
+        CompilationUnit( const ModuleInfo& moduleInfo, CompilerContext& ctx ) 
+            : m_moduleInfo( moduleInfo ), m_ctx( ctx ) {}
 
         TokenId addToken( Token token ) {
             return m_tokens.add( std::move( token ) );
         }
         
-        FileId fileId() const { return m_moduleHeader.fileId; }
+        FileId fileId() const { return m_moduleInfo.header.fileId; }
 
-        std::string_view getModuleName() const { return m_moduleHeader.name; }
+        std::string_view getModuleName() const { return m_moduleInfo.header.name; }
 
         size_t tokenCount() const { return m_tokens.count(); }
 
@@ -54,7 +54,7 @@ class CompilationUnit {
 
         CompilerContext& context() { return m_ctx; }
     private:
-        const ModuleHeader& m_moduleHeader;
+        const ModuleInfo& m_moduleInfo;
         CompilerContext& m_ctx;
 
         Arena m_arena;

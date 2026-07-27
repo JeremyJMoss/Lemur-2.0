@@ -3,6 +3,7 @@
 /* === Dependencies === */
 
 #include <vector>
+#include <span>
 
 /* === Imports === */
 
@@ -19,6 +20,8 @@ class SymbolTable
         Symbol& get( SymbolId id );
 
         const Symbol& get( SymbolId id ) const;
+
+        std::span<const Symbol* const> getAll() const;
 
         SymbolTable() {}
 

@@ -11,7 +11,12 @@ namespace fs = std::filesystem;
 
 struct CompilerConfig {
     bool optimize = false;
-    bool emitAST = false;
+    bool dumpAST = false;
+    bool dumpScopes = false;
+    bool dumpSymbols = false;
+    bool dumpTypes = false;
+    bool dumpOverloads = false;
+    bool dumpNodeSemantics = false;
     fs::path sourcePath;
     fs::path outputPath;
     std::string entryModule;

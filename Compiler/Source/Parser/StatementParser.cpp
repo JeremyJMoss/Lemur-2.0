@@ -3,7 +3,7 @@
 #include "Logging/Logger.hpp"
 #include "Errors/Errors.hpp"
 #include "Core/CompilerContext.hpp"
-#include "Utils/ASTPrinter.hpp"
+#include "Debug/ASTJsonWriter.hpp"
 #include "AST/FunctionDeclaration.hpp"
 #include "AST/Block.hpp"
 #include "AST/BlockStatement.hpp"
@@ -85,7 +85,7 @@ std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDe
         })
     );
 
-    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+    auto identifier = m_compUnit.allocate<Identifier>( std::string( idToken.getValue() ) );
 
     identifier->location = SourceRange::getLocation( idToken );
 
@@ -109,7 +109,7 @@ std::expected<FunctionDeclaration*, Diagnostic> StatementParser::parseFunctionDe
     Logger::trace(
         "Return type parsed", 
         std::to_array<Attribute>({
-            { "Type", std::format( "'{}'", ASTPrinter::getParsedType( maybeReturnType.value()->kind ) ) }
+            { "Type", std::format( "'{}'", ASTJsonWriter::getParsedType( maybeReturnType.value()->kind ) ) }
         })
     );
 
@@ -286,7 +286,7 @@ std::expected<VariableDeclaration*, Diagnostic> StatementParser::parseVariableDe
         })
     );
 
-    auto identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+    auto identifier = m_compUnit.allocate<Identifier>( std::string( idToken.getValue() ) );
     identifier->location = SourceRange::getLocation( front, idToken );
 
     auto maybeColon = m_tokenStream.expect( TokenKind::Symbol, TokenSymbol::Colon );
@@ -310,7 +310,7 @@ std::expected<VariableDeclaration*, Diagnostic> StatementParser::parseVariableDe
     Logger::trace(
         "Parsed variable type", 
         std::to_array<Attribute>({ 
-            { "Type", std::format("'{}'", ASTPrinter::getParsedType( varType->kind ) ) } 
+            { "Type", std::format("'{}'", ASTJsonWriter::getParsedType( varType->kind ) ) } 
         })
     );
 
@@ -903,7 +903,7 @@ std::expected<Import*, Diagnostic> StatementParser::parseImport()
 
             m_tokenStream.consume();
 
-            Identifier* aliasIdentifier = m_compUnit.allocate<Identifier>( aliasToken.getValue() );
+            Identifier* aliasIdentifier = m_compUnit.allocate<Identifier>( std::string( aliasToken.getValue() ) );
 
             aliasIdentifier->location = SourceRange::getLocation(aliasToken);
 
@@ -1052,7 +1052,7 @@ std::expected<ImportedSymbol*, Diagnostic> StatementParser::parseSymbolImport()
 
     const Token& idToken = m_tokenStream.consume();
 
-    Identifier* identifier = m_compUnit.allocate<Identifier>( idToken.getValue() );
+    Identifier* identifier = m_compUnit.allocate<Identifier>( std::string( idToken.getValue() ) );
 
     identifier->location = SourceRange::getLocation( idToken );
 
@@ -1077,7 +1077,7 @@ std::expected<ImportedSymbol*, Diagnostic> StatementParser::parseSymbolImport()
 
         const Token& aliasToken = m_tokenStream.consume();
 
-        Identifier* aliasIdentifier = m_compUnit.allocate<Identifier>( aliasToken.getValue() );
+        Identifier* aliasIdentifier = m_compUnit.allocate<Identifier>( std::string( aliasToken.getValue() ) );
 
         aliasIdentifier->location = SourceRange::getLocation( aliasToken );
 

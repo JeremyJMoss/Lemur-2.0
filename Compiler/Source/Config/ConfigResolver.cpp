@@ -6,7 +6,7 @@
 void ConfigResolver::mergeConfigurations( const BuildCLIConfig& bConfig, CompilerConfig& cConfig ) {
     if ( bConfig.sourcePath.has_value() ) cConfig.sourcePath = bConfig.sourcePath.value();
     if ( bConfig.outputPath.has_value() ) cConfig.outputPath = bConfig.outputPath.value();
-    if ( bConfig.emitAST.has_value() ) cConfig.emitAST = bConfig.emitAST.value();
+    if ( bConfig.dumpAST.has_value() ) cConfig.dumpAST = bConfig.dumpAST.value();
     if ( bConfig.optimize.has_value() ) cConfig.optimize = bConfig.optimize.value();
 
     if ( bConfig.entryModule.has_value() ) {
