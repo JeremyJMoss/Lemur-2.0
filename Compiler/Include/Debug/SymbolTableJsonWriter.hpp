@@ -33,7 +33,11 @@ class SymbolTableJsonWriter
 
         void writeSymbol( const Symbol& sym, CompilerContext& ctx );
 
-        void writeKindSpecificFields( const Symbol& sym );
+        void writeKindSpecificFields( const Symbol& sym, CompilerContext& ctx );
 
-        void writeVariableSymbolFields( const VariableSymbol& varSymbol );
+        void writeVariableSymbolFields( const VariableSymbol& varSymbol, CompilerContext& ctx );
+
+        void writeFunctionSymbolFields( const FunctionSymbol& funSymbol, CompilerContext& ctx );
+
+        void writeTypeSymbolFields( const TypeSymbol& typeSymbol, CompilerContext& ctx );
 };

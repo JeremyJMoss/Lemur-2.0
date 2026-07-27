@@ -14,7 +14,7 @@ bool ExportTable::add( std::string_view name, SymbolId id )
     return true;
 }
 
-SymbolId ExportTable::find( std::string_view name )
+const SymbolId ExportTable::find( std::string_view name ) const
 {
     auto it = symbols.find( name );
 

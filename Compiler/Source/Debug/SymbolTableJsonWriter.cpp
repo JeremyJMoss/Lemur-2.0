@@ -18,25 +18,67 @@ void SymbolTableJsonWriter::writeSymbol( const Symbol& sym, CompilerContext& ctx
     m_writer.increaseIndent();
     m_writer.writeField( "id", sym.id.value );
     m_writer.writeField( "name", sym.name );
-    writeKindSpecificFields( sym );
+    writeKindSpecificFields( sym, ctx );
     m_writer.writeField( "kind", toString( sym.kind ) );
     m_writer.decreaseIndent();
     m_writer.endBlock();
 }
 
-void SymbolTableJsonWriter::writeKindSpecificFields( const Symbol& sym )
+void SymbolTableJsonWriter::writeKindSpecificFields( const Symbol& sym, CompilerContext& ctx )
 {
-    if ( sym.kind == SymbolKind::Variable )
+    switch ( sym.kind )
     {
-        writeVariableSymbolFields( static_cast<const VariableSymbol&>( sym ) );
+        case SymbolKind::Variable: {
+            writeVariableSymbolFields( static_cast<const VariableSymbol&>( sym ), ctx );
+            return;
+        }
+        case SymbolKind::Function: {
+            writeFunctionSymbolFields( static_cast<const FunctionSymbol&>( sym ), ctx );
+            return;
+        }
+        case SymbolKind::Type: {
+            writeTypeSymbolFields( static_cast<const TypeSymbol&>( sym ), ctx );
+            return;
+        }
+
     }
 }
 
-void SymbolTableJsonWriter::writeVariableSymbolFields( const VariableSymbol& varSymbol )
+void SymbolTableJsonWriter::writeVariableSymbolFields( const VariableSymbol& varSymbol, CompilerContext& ctx )
 {
+    if ( varSymbol.typeId.valid() ){
+        m_type_writer.writeTypeField( "type", ctx.types().get(varSymbol.typeId), ctx );
+    }
+    else
+    {
+        m_writer.writeField( "type", "\"Unresolved\"" );
+    }
     m_writer.writeField( "stored", toString( varSymbol.storage ) );
     m_writer.writeField( "isMutable", ( varSymbol.isMutable ? "true" : "false" ) );
 }
+
+void SymbolTableJsonWriter::writeFunctionSymbolFields( const FunctionSymbol& funSymbol, CompilerContext& ctx )
+{
+    if ( funSymbol.typeId.valid() ){
+        m_type_writer.writeTypeField( "type", ctx.types().get(funSymbol.typeId), ctx );
+    }
+    else
+    {
+        m_writer.writeField( "type", "\"Unresolved\"" );
+    }
+}
+
+void SymbolTableJsonWriter::writeTypeSymbolFields( const TypeSymbol& typeSymbol, CompilerContext& ctx )
+{
+    if ( typeSymbol.typeId.valid() ){
+        m_type_writer.writeTypeField( "type", ctx.types().get(typeSymbol.typeId), ctx );
+    }
+    else
+    {
+        m_writer.writeField( "type", "\"Unresolved\"" );
+    }
+}
+
 
 
 void SymbolTableJsonWriter::write( CompilerContext& ctx, const fs::path& outputPath )

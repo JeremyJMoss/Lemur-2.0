@@ -46,6 +46,7 @@ class DeclarationPass : public ASTVisitor
 
     private:
         CompilationUnit* m_compUnit = nullptr;
+        const ModuleInfo* m_currentImportingModule = nullptr;
 
         void visit( const Literal& lit ) override;
         void visit( const Assignment& assign ) override;

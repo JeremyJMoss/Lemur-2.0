@@ -340,8 +340,20 @@ void DeclarationPass::visit( const ImportedSymbol& importSym )
 
     if (!importSym.name || importSym.name->name.empty() ) throw InternalCompilerError( "Missing import symbol name during semantic analysis.\nPlease report this bug." );
 
+    const SymbolId symbolId = m_currentImportingModule->exports.find( importSym.name->name );
+
     std::string symbolAlias = importSym.alias.has_value() ? importSym.alias.value()->name : importSym.name->name;
 
+    ImportSymbol* importSymbol = ctx.allocate<ImportSymbol>(symbolAlias, symbolId );
+
+    SymbolId symbolId = ctx.symbols().add( importSymbol );
+
+    // Add relationship between node and symbol
+    ctx.nodeSemantics().bindSymbol( importSym.id, symbolId );
+
+    auto declared = ctx.declareInScope( ctx.currentScope(), symbolAlias, symbolId );
+
+    if ( !declared ) ctx.errors().report( declared.error() );
 }
 
 void DeclarationPass::visit( const Import& importStmt )
@@ -350,11 +362,11 @@ void DeclarationPass::visit( const Import& importStmt )
 
     if (!importStmt.moduleName ||  importStmt.moduleName->name.empty() ) throw InternalCompilerError( "Missing module name for import statement during semantic analysis.\nPlease report this bug." );
 
+    const ModuleInfo* moduleInfo = ctx.modules().find( std::string_view( importStmt.moduleName->name ) );
+
     if ( importStmt.importedSymbols.empty() )
     {
         std::string moduleAlias = importStmt.alias.has_value() ? importStmt.alias.value()->name : importStmt.moduleName->name;
-
-        const ModuleInfo* moduleInfo = ctx.modules().find( std::string_view( importStmt.moduleName->name ) );
 
         // Create Module Symbol
         ModuleSymbol* moduleSymbol = ctx.allocate<ModuleSymbol>( moduleAlias, moduleInfo->header.id );
@@ -371,6 +383,8 @@ void DeclarationPass::visit( const Import& importStmt )
     }
     else
     {
+        m_currentImportingModule = moduleInfo;
+
         for ( auto& importSym : importStmt.importedSymbols )
         {
             importSym->accept( *this );
