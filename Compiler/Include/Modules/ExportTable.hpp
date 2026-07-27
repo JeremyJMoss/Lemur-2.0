@@ -13,5 +13,9 @@
 
 struct ExportTable
 {
-    std::unordered_map<std::string, SymbolId> symbols;
+    bool add( std::string_view name, SymbolId id );
+
+    SymbolId find( std::string_view name );
+
+    std::unordered_map<std::string_view, SymbolId> symbols;
 };

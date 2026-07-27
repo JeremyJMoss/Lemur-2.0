@@ -26,7 +26,7 @@ class CompilerContext;
 
 class CompilationUnit {
     public:
-        CompilationUnit( const ModuleInfo& moduleInfo, CompilerContext& ctx ) 
+        CompilationUnit( ModuleInfo& moduleInfo, CompilerContext& ctx ) 
             : m_moduleInfo( moduleInfo ), m_ctx( ctx ) {}
 
         TokenId addToken( Token token ) {
@@ -36,6 +36,8 @@ class CompilationUnit {
         FileId fileId() const { return m_moduleInfo.header.fileId; }
 
         std::string_view getModuleName() const { return m_moduleInfo.header.name; }
+
+        ExportTable& exports() { return m_moduleInfo.exports; }
 
         size_t tokenCount() const { return m_tokens.count(); }
 
@@ -54,7 +56,7 @@ class CompilationUnit {
 
         CompilerContext& context() { return m_ctx; }
     private:
-        const ModuleInfo& m_moduleInfo;
+        ModuleInfo& m_moduleInfo;
         CompilerContext& m_ctx;
 
         Arena m_arena;

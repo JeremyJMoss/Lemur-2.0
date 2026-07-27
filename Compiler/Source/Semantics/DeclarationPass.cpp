@@ -142,6 +142,23 @@ void DeclarationPass::visit( const VariableDeclaration& varDec )
 
     if ( !declared ) ctx.errors().report( declared.error() );
 
+    if ( varDec.visibility == DeclarationVisibility::Public )
+    {
+        bool success = m_compUnit->exports().add( varDec.identifier->name, symbolId );
+        if ( !success ) 
+        {
+            ctx.errors().report( 
+                Diagnostic(
+                    "Unable to export symbol",
+                    ErrorCategory::Linking,
+                    ErrorSeverity::Error,
+                    varDec.location
+                )
+            );
+        }
+    }
+
+
     if ( varDec.initialiser ) varDec.initialiser->accept( *this );
 }
 
